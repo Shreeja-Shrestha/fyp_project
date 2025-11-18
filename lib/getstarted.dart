@@ -23,7 +23,7 @@ class TravelIntroScreen extends StatelessWidget {
                   Column(
                     children: [
                       _roundedImage(
-                        "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.discovertreks.com%2Fnepal-at-glance%2F&psig=AOvVaw0Z2jYQ39myb8Q08ydbDAnp&ust=1763556330818000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCOCj2Lfd-5ADFQAAAAAdAAAAABAL",
+                        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTmxvZ2OX4gRmcpx1D08s0g9x4_1gV7R2u4IQ&s",
                         height: 130,
                         width: 90,
                       ),
