@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MyApp()); //first widgets flutter holds
 }
 
+//statelessidget ley no changing data hold garcha
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -17,31 +18,34 @@ class MyApp extends StatelessWidget {
 }
 
 class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+  const LoginPage({
+    super.key,
+  }); //parent class ie;statelesswidget lai key pathauxa
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      //background handle garxa,body rakhxa,basically, its a screen layout
       // Remove backgroundColor or make it transparent if needed
       backgroundColor: const Color.fromRGBO(255, 255, 255, 0.912),
       body: Container(
+        // actutally an empty box jasko through hamle color,size dina sakxam.
         // This container sets the page background if you want something behind everything
         width: double.infinity,
         height: double.infinity,
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // ---------------- IMAGE WITH CURVED BOTTOM ----------------
+              //  IMAGE WITH CURVED BOTTOM
               ClipPath(
+                // since login page ma curve image paste gardaixu tesko lagi shape define garna
                 clipper: BottomCurveClipper(),
                 child: Container(
                   height: 260,
                   width: double.infinity,
                   decoration: const BoxDecoration(
                     image: DecorationImage(
-                      image: AssetImage(
-                        "assets/your_image.jpg",
-                      ), // your image here
+                      image: AssetImage("image.jpg"), // your image here
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -50,7 +54,6 @@ class LoginPage extends StatelessWidget {
 
               const SizedBox(height: 10),
 
-              // ---------------- TITLE ----------------
               Column(
                 children: const [
                   Text(
@@ -70,12 +73,12 @@ class LoginPage extends StatelessWidget {
 
               const SizedBox(height: 30),
 
-              // ---------------- EMAIL INPUT ----------------
+              //  EMAIL INPUT
               _inputField(hint: "enter your email", icon: Icons.email_outlined),
 
               const SizedBox(height: 15),
 
-              // ---------------- PASSWORD INPUT ----------------
+              // PASSWORD INPUT
               _inputField(
                 hint: "enter your password",
                 icon: Icons.lock_outline,
@@ -84,7 +87,7 @@ class LoginPage extends StatelessWidget {
 
               const SizedBox(height: 10),
 
-              // ---------------- REMEMBER + FORGOT ----------------
+              // REMEMBER and FORGOT
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 30),
                 child: Row(
@@ -106,7 +109,7 @@ class LoginPage extends StatelessWidget {
 
               const SizedBox(height: 10),
 
-              // ---------------- LOGIN BUTTON ----------------
+              //  LOGIN BUTTON
               Container(
                 width: 250,
                 height: 45,
@@ -157,7 +160,6 @@ class LoginPage extends StatelessWidget {
   }
 }
 
-// ---------------- CUSTOM CLIPPER FOR CURVE ----------------
 class BottomCurveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
