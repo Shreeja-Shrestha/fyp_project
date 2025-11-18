@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'login.dart';
+import 'package:fyp_project/getstarted.dart';
+//import 'package:fyp_project/login.dart';
+import 'package:fyp_project/signup.dart';
+//import 'signup.dart';
 //import 'signup.dart';
 
 void main() {
@@ -18,7 +21,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: LoginPage(),
+      home: TravelIntroScreen(),
     );
   }
 }
