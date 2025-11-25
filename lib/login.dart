@@ -85,7 +85,7 @@ class LoginPage extends StatelessWidget {
                 obscure: true,
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 15),
 
               // REMEMBER and FORGOT
               Padding(
@@ -107,7 +107,7 @@ class LoginPage extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 15),
 
               //  LOGIN BUTTON
               Container(
