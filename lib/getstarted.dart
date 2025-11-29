@@ -6,22 +6,23 @@ class TravelIntroScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // IMAGE GRID
-                Row(
+        child: Column(
+          children: [
+            // ---------- TOP IMAGE GRID ----------
+            Expanded(
+              flex: 6,
+              child: Center(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // LEFT COLUMN
                     Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _roundedImage(
                           "assets/images/img1.png",
@@ -36,10 +37,12 @@ class TravelIntroScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+
                     const SizedBox(width: 12),
 
                     // MIDDLE COLUMN
                     Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _roundedImage(
                           "assets/images/img2.png",
@@ -48,10 +51,12 @@ class TravelIntroScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+
                     const SizedBox(width: 12),
 
                     // RIGHT COLUMN
                     Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _roundedImage(
                           "assets/images/img3.png",
@@ -68,69 +73,72 @@ class TravelIntroScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+            ),
 
-                const SizedBox(height: 40),
-
-                // TEXT TITLE
-                const Text(
-                  "Find perfect\ndestination for\nevery mood",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // SUBTEXT
-                const Text(
-                  "Explore you've never seen\nbefore & Discover just for you",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-
-                const SizedBox(height: 30),
-
-                // BUTTON
-                SizedBox(
-                  width: 180,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6AA9FF),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+            // ---------- BOTTOM TEXT + BUTTON ----------
+            Expanded(
+              flex: 4,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    const Text(
+                      "Find perfect\ndestination for\nevery mood",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
                     ),
-                    child: const Text(
-                      "Get Started",
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-                  ),
-                ),
 
-                const SizedBox(height: 30),
-              ],
+                    const SizedBox(height: 16),
+
+                    const Text(
+                      "Explore you've never seen\nbefore & Discover just for you",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    SizedBox(
+                      width: 200,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFF6AA9FF),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: const Text(
+                          "Get Started",
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  // Reusable Image Widget
-  Widget _roundedImage(String imgPath, double width, double height) {
+  // Reusable rounded image widget
+  Widget _roundedImage(String path, double width, double height) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
-      child: Image.asset(
-        imgPath,
-        width: width,
-        height: height,
-        fit: BoxFit.cover,
-      ),
+      child: Image.asset(path, width: width, height: height, fit: BoxFit.cover),
     );
   }
 }

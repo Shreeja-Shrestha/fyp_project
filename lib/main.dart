@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fyp_project/getstarted.dart';
+import 'package:fyp_project/mardi.dart';
 //import 'package:fyp_project/login.dart';
 import 'package:fyp_project/signup.dart';
 //import 'signup.dart';
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: TravelIntroScreen(),
+      home: TrekDetailPage(),
     );
   }
 }
