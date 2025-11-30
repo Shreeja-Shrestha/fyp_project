@@ -148,7 +148,7 @@ class TrekDetailPage extends StatelessWidget {
 
                     // ------------------- DESCRIPTION -------------------
                     Text(
-                      """Mardi Gras can refer to the festive season preceding Lent or the Mardi Himal trek in Nepal. The Mardi Gras festival has roots in ancient pagan and spring fertility rites.""",
+                      """Mardi Himal is one of Nepal’s newest and most popular trekking destinations, located in the Annapurna region. It is known for its peaceful trail, stunning mountain views, and short trekking duration. The route was opened officially in 2012 and quickly became famous for its scenic ridges and close-up views of Machhapuchhre (Fishtail Mountain).""",
                       style: TextStyle(
                         fontSize: 15,
                         height: 1.5,
