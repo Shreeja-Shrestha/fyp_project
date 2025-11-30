@@ -12,7 +12,6 @@ class TrekDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --------------------- TOP IMAGE ---------------------
             Stack(
               children: [
                 Container(
@@ -20,9 +19,7 @@ class TrekDetailPage extends StatelessWidget {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: AssetImage(
-                        "assets/images/mardi.jpg",
-                      ), // CHANGE IMAGE
+                      image: AssetImage("image"), // CHANGE IMAGE
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -48,7 +45,6 @@ class TrekDetailPage extends StatelessWidget {
               ],
             ),
 
-            // --------------------- CONTENT ---------------------
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
@@ -80,7 +76,6 @@ class TrekDetailPage extends StatelessWidget {
                           ),
                         ),
 
-                        // Green stars (use emoji for simplicity)
                         Row(
                           children: List.generate(
                             5,
@@ -114,7 +109,6 @@ class TrekDetailPage extends StatelessWidget {
 
                     SizedBox(height: 14),
 
-                    // ------------------- OPEN NOW + TIME + ARROW -------------------
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -148,7 +142,7 @@ class TrekDetailPage extends StatelessWidget {
 
                     // ------------------- DESCRIPTION -------------------
                     Text(
-                      """Mardi Himal is one of Nepal’s newest and most popular trekking destinations, located in the Annapurna region. It is known for its peaceful trail, stunning mountain views, and short trekking duration. The route was opened officially in 2012 and quickly became famous for its scenic ridges and close-up views of Machhapuchhre (Fishtail Mountain).""",
+                      """.""",
                       style: TextStyle(
                         fontSize: 15,
                         height: 1.5,
