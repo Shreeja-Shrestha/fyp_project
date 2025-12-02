@@ -40,7 +40,7 @@ class HotelPageUI extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
                 image: const DecorationImage(
-                  image: AssetImage("assets/hotel.jpg"),
+                  image: AssetImage(""),
                   fit: BoxFit.cover,
                 ),
               ),
