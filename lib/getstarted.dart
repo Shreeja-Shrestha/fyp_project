@@ -25,13 +25,13 @@ class TravelIntroScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _roundedImage(
-                          "assets/images/img1.png",
+                          "",
                           width * 0.25,
                           150,
                         ),
                         const SizedBox(height: 12),
                         _roundedImage(
-                          "assets/images/img4.png",
+                          "",
                           width * 0.25,
                           150,
                         ),
@@ -45,7 +45,7 @@ class TravelIntroScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _roundedImage(
-                          "assets/images/img2.png",
+                          "",
                           width * 0.25,
                           220,
                         ),
@@ -59,13 +59,13 @@ class TravelIntroScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _roundedImage(
-                          "assets/images/img3.png",
+                          "",
                           width * 0.25,
                           150,
                         ),
                         const SizedBox(height: 12),
                         _roundedImage(
-                          "assets/images/img5.png",
+                          "",
                           width * 0.25,
                           150,
                         ),
@@ -76,7 +76,6 @@ class TravelIntroScreen extends StatelessWidget {
               ),
             ),
 
-            // ---------- BOTTOM TEXT + BUTTON ----------
             Expanded(
               flex: 4,
               child: Container(
