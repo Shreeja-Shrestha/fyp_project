@@ -72,7 +72,7 @@ class HotelScreen extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Image.asset(
-                  "assets/resort.jpg",
+                  "",
                   height: 220,
                   width: double.infinity,
                   fit: BoxFit.cover,
