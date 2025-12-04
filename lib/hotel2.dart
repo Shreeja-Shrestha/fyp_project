@@ -141,7 +141,7 @@ class HotelScreen extends StatelessWidget {
                     ),
                     child: const Text(
                       "Book",
-                      style: TextStyle(fontSize: 15, color: Colors.white),
+                      style: TextStyle(fontSize: 10, color: Colors.white),
                     ),
                   ),
                 ],
