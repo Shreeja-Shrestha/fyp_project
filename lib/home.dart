@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
 
-class TopSection extends StatelessWidget {
-  const TopSection({super.key});
+class TopSectionScreen extends StatelessWidget {
+  const TopSectionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+
       body: Padding(
         padding: const EdgeInsets.fromLTRB(20, 50, 20, 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Search + Notification
+            // 🔍 Search bar + Notification icon
             Row(
               children: [
                 Expanded(
@@ -44,9 +44,9 @@ class TopSection extends StatelessWidget {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 15),
 
-            // A placeholder row for 3 categories (no image)
+            // 🔳 Category boxes (no images)
             Row(
               children: [
                 categoryBox("Adventures"),
@@ -62,7 +62,7 @@ class TopSection extends StatelessWidget {
     );
   }
 
-  // Simple placeholder category boxes (no image)
+  // Simple category box widget
   Widget categoryBox(String title) {
     return Expanded(
       child: Container(
