@@ -46,14 +46,23 @@ class TopSectionScreen extends StatelessWidget {
 
             const SizedBox(height: 15),
 
-            // 🔳 Category boxes (no images)
+            // 🔳 Category boxes with images
             Row(
               children: [
-                categoryBox("Adventures"),
+                categoryBox(
+                  "Adventures",
+                  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
+                ),
                 const SizedBox(width: 12),
-                categoryBox("Foods"),
+                categoryBox(
+                  "Foods",
+                  "https://images.unsplash.com/photo-1478145787956-f6f12c59624d",
+                ),
                 const SizedBox(width: 12),
-                categoryBox("Culture"),
+                categoryBox(
+                  "Culture",
+                  "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05",
+                ),
               ],
             ),
           ],
@@ -62,19 +71,37 @@ class TopSectionScreen extends StatelessWidget {
     );
   }
 
-  // Simple category box widget
-  Widget categoryBox(String title) {
+  // Category box widget WITH image
+  Widget categoryBox(String title, String imageUrl) {
     return Expanded(
       child: Container(
-        height: 80,
+        height: 100,
         decoration: BoxDecoration(
-          color: Colors.grey.shade200,
           borderRadius: BorderRadius.circular(18),
+          image: DecorationImage(
+            image: NetworkImage(imageUrl),
+            fit: BoxFit.cover,
+          ),
         ),
-        alignment: Alignment.center,
-        child: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        child: Container(
+          alignment: Alignment.bottomLeft,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [Colors.black.withOpacity(0.4), Colors.transparent],
+            ),
+          ),
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );
