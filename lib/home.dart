@@ -59,10 +59,7 @@ class TopSectionScreen extends StatelessWidget {
                   "https://images.unsplash.com/photo-1478145787956-f6f12c59624d",
                 ),
                 const SizedBox(width: 12),
-                categoryBox(
-                  "Culture",
-                  "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05",
-                ),
+                categoryBox("Culture", ""),
               ],
             ),
           ],
