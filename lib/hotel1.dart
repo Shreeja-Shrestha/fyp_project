@@ -55,7 +55,7 @@ class HotelPageUI extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "Bar Peepal Resort",
+                    "Bar Peepal ",
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                   ),
 
