@@ -18,7 +18,7 @@ class HotelPageUI extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
                 children: [
-                  _topFilter("", Icons.calendar_today_rounded),
+                  _topFilter("Date", Icons.calendar_today_rounded),
                   const SizedBox(width: 8),
                   _topFilter("1", Icons.bed),
                   const SizedBox(width: 8),
