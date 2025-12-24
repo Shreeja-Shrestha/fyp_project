@@ -19,7 +19,7 @@ class TrekDetailPage extends StatelessWidget {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: AssetImage("image"), // CHANGE IMAGE
+                      image: AssetImage(""), // CHANGE IMAGE
                       fit: BoxFit.cover,
                     ),
                   ),
