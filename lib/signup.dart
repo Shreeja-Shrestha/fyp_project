@@ -4,7 +4,7 @@ class SignUpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(),
+      backgroundColor: const Color(0xfff5f7fb),
       body: SingleChildScrollView(
         child: Column(
           children: [
