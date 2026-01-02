@@ -1,6 +1,62 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-class SignUpScreen extends StatelessWidget {
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmController = TextEditingController();
+
+  Future<void> signup() async {
+    if (passwordController.text != confirmController.text) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Passwords do not match ❌")));
+      return;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse("http://10.0.2.2:3000/api/auth/signup"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "name": nameController.text.trim(),
+          "email": emailController.text.trim(),
+          "password": passwordController.text,
+        }),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Signup successful ✅")));
+
+        await Future.delayed(const Duration(seconds: 1));
+
+        // ✅ return email to login
+        Navigator.pop(context, emailController.text.trim());
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Signup failed ❌")));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Server not reachable ❌")));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -8,7 +64,6 @@ class SignUpScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Grey Image Placeholder
             Container(
               height: 220,
               width: double.infinity,
@@ -18,7 +73,6 @@ class SignUpScreen extends StatelessWidget {
               ),
             ),
 
-            // Curved White Section
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
@@ -30,83 +84,44 @@ class SignUpScreen extends StatelessWidget {
                 ),
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 20),
 
-                  // Name field
-                  TextField(
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.person),
-                      hintText: "enter your name",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                  _field(nameController, Icons.person, "Enter your name"),
+                  const SizedBox(height: 15),
+
+                  _field(
+                    emailController,
+                    Icons.email_outlined,
+                    "Enter your email",
                   ),
                   const SizedBox(height: 15),
 
-                  // Email field
-                  TextField(
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.email_outlined),
-                      hintText: "enter your email",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                  _field(
+                    passwordController,
+                    Icons.lock_outline,
+                    "Enter your password",
+                    true,
                   ),
                   const SizedBox(height: 15),
 
-                  // Password field
-                  TextField(
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      hintText: "enter your password",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                  _field(
+                    confirmController,
+                    Icons.lock_outline,
+                    "Confirm password",
+                    true,
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 20),
 
-                  // Confirm password
-                  TextField(
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: const Icon(Icons.visibility_off),
-                      hintText: "confirm password",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  // Remember me
-                  Row(
-                    children: [
-                      Checkbox(value: false, onChanged: (v) {}),
-                      const Text("Remember me"),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Sign Up Button
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
-                    onPressed: () {},
+                    onPressed: signup,
                     child: const Text("Sign Up"),
                   ),
                 ],
@@ -114,6 +129,23 @@ class SignUpScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _field(
+    TextEditingController controller,
+    IconData icon,
+    String hint, [
+    bool obscure = false,
+  ]) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon),
+        hintText: hint,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
