@@ -1,142 +1,186 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'signup.dart'; // 👈 IMPORTANT
 
-void main() {
-  runApp(const MyApp()); //first widgets flutter holds
-}
-
-//statelessidget ley no changing data hold garcha
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: const LoginPage(),
-    );
-  }
+  State<LoginPage> createState() => _LoginPageState();
 }
 
-class LoginPage extends StatelessWidget {
-  const LoginPage({
-    super.key,
-  }); //parent class ie;statelesswidget lai key pathauxa
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  bool isLoading = false;
+
+  Future<void> login() async {
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("All fields are required ❌")),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      final response = await http.post(
+        Uri.parse("http://10.0.2.2:3000/api/auth/login"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "email": emailController.text.trim(),
+          "password": passwordController.text,
+        }),
+      );
+
+      if (!mounted) return;
+      setState(() => isLoading = false);
+
+      Map<String, dynamic> data = {};
+      if (response.body.isNotEmpty) {
+        try {
+          data = jsonDecode(response.body);
+        } catch (_) {}
+      }
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Login successful ✅")));
+        debugPrint("JWT Token: ${data['token']}");
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? "Login failed ❌")),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => isLoading = false);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Server not reachable ❌")));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //background handle garxa,body rakhxa,basically, its a screen layout
-      // Remove backgroundColor or make it transparent if needed
       backgroundColor: const Color.fromRGBO(255, 255, 255, 0.912),
-      body: Container(
-        // actutally an empty box jasko through hamle color,size dina sakxam.
-        // This container sets the page background if you want something behind everything
-        width: double.infinity,
-        height: double.infinity,
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              //  IMAGE WITH CURVED BOTTOM
-              ClipPath(
-                // since login page ma curve image paste gardaixu tesko lagi shape define garna
-                clipper: BottomCurveClipper(),
-                child: Container(
-                  height: 260,
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage("image.jpg"), // your image here
-                      fit: BoxFit.cover,
-                    ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            ClipPath(
+              clipper: BottomCurveClipper(),
+              child: Container(
+                height: 260,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage("image.jpg"),
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
+            ),
 
-              const SizedBox(height: 10),
+            const SizedBox(height: 20),
 
-              Column(
-                children: const [
-                  Text(
-                    "Login to Access Your",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    "Travel Tickets",
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.blue,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+            const Text(
+              "Login to Access Your",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const Text(
+              "Travel Tickets",
+              style: TextStyle(
+                fontSize: 20,
+                color: Colors.blue,
+                fontWeight: FontWeight.bold,
               ),
+            ),
 
-              const SizedBox(height: 30),
+            const SizedBox(height: 30),
 
-              //  EMAIL INPUT
-              _inputField(hint: "enter your email", icon: Icons.email_outlined),
+            _inputField(
+              hint: "Enter your email",
+              icon: Icons.email_outlined,
+              controller: emailController,
+            ),
 
-              const SizedBox(height: 15),
+            const SizedBox(height: 15),
 
-              // PASSWORD INPUT
-              _inputField(
-                hint: "enter your password",
-                icon: Icons.lock_outline,
-                obscure: true,
-              ),
+            _inputField(
+              hint: "Enter your password",
+              icon: Icons.lock_outline,
+              obscure: true,
+              controller: passwordController,
+            ),
 
-              const SizedBox(height: 15),
+            const SizedBox(height: 25),
 
-              // REMEMBER and FORGOT
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 30),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Checkbox(value: false, onChanged: (v) {}),
-                        const Text("Remember me"),
-                      ],
-                    ),
-                    const Text(
-                      "Forgot password?",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 15),
-
-              //  LOGIN BUTTON
-              Container(
+            GestureDetector(
+              onTap: isLoading ? null : login,
+              child: Container(
                 width: 250,
                 height: 45,
                 decoration: BoxDecoration(
                   color: Colors.black,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Center(
-                  child: Text(
-                    "Login",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
+                child: Center(
+                  child: isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          "Login",
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
                 ),
               ),
+            ),
 
-              const SizedBox(height: 30),
-            ],
-          ),
+            const SizedBox(height: 25),
+
+            // ✅ NEW USER REGISTER LINK
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  "New user? ",
+                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SignUpScreen()),
+                    );
+                  },
+                  child: const Text(
+                    "Register",
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 40),
+          ],
         ),
       ),
     );
   }
 
-  // Reusable Input Field Widget
   Widget _inputField({
     required String hint,
     required IconData icon,
+    required TextEditingController controller,
     bool obscure = false,
   }) {
     return Padding(
@@ -148,6 +192,7 @@ class LoginPage extends StatelessWidget {
           border: Border.all(color: Colors.grey.shade400),
         ),
         child: TextField(
+          controller: controller,
           obscureText: obscure,
           decoration: InputDecoration(
             border: InputBorder.none,
@@ -160,6 +205,7 @@ class LoginPage extends StatelessWidget {
   }
 }
 
+// ✅ CURVED IMAGE CLIPPER
 class BottomCurveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
@@ -177,5 +223,5 @@ class BottomCurveClipper extends CustomClipper<Path> {
   }
 
   @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
