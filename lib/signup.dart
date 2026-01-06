@@ -48,12 +48,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
       } else {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text("Signup failed ❌")));
+        ).showSnackBar(const SnackBar(content: Text("Signup failed ")));
       }
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Server not reachable ❌")));
+      ).showSnackBar(const SnackBar(content: Text("Server not reachable ")));
     }
   }
 

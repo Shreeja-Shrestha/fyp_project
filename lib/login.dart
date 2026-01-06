@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'signup.dart'; // 👈 IMPORTANT
+import 'signup.dart'; // your signup page
+import 'home.dart'; // Home Page to navigate after login
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -18,9 +19,9 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> login() async {
     if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("All fields are required ❌")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("All fields are required")));
       return;
     }
 
@@ -49,11 +50,17 @@ class _LoginPageState extends State<LoginPage> {
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text("Login successful ✅")));
+        ).showSnackBar(const SnackBar(content: Text("Login successful")));
         debugPrint("JWT Token: ${data['token']}");
+
+        //  Navigate to Home Page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const TopSectionScreen()),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Login failed ❌")),
+          SnackBar(content: Text(data['message'] ?? "Login failed")),
         );
       }
     } catch (e) {
@@ -62,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Server not reachable ❌")));
+      ).showSnackBar(const SnackBar(content: Text("Server not reachable")));
     }
   }
 
@@ -80,7 +87,7 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage("image.jpg"),
+                    image: AssetImage("image.jpg"), // your image
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -88,7 +95,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
 
             const SizedBox(height: 20),
-
             const Text(
               "Login to Access Your",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -101,7 +107,6 @@ class _LoginPageState extends State<LoginPage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 30),
 
             _inputField(
@@ -109,16 +114,13 @@ class _LoginPageState extends State<LoginPage> {
               icon: Icons.email_outlined,
               controller: emailController,
             ),
-
             const SizedBox(height: 15),
-
             _inputField(
               hint: "Enter your password",
               icon: Icons.lock_outline,
               obscure: true,
               controller: passwordController,
             ),
-
             const SizedBox(height: 25),
 
             GestureDetector(
@@ -140,10 +142,9 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 25),
 
-            // ✅ NEW USER REGISTER LINK
+            // New user register link
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -169,7 +170,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ],
             ),
-
             const SizedBox(height: 40),
           ],
         ),
@@ -205,7 +205,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-// ✅ CURVED IMAGE CLIPPER
+// Curved image clipper
 class BottomCurveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
