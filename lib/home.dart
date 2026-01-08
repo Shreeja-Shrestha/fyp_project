@@ -15,7 +15,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      /// 🔹 APP BAR
+      /// APP BAR
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -33,13 +33,13 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
 
-      /// 🔹 BODY
+      /// BODY
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// 🔍 SEARCH BAR
+            /// SEARCH BAR
             TextField(
               decoration: InputDecoration(
                 hintText: "Places to go, things to do",
@@ -56,9 +56,9 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 28),
 
-            /// 🌄 FIND BY INTEREST
+            /// FIND BY INTEREST
             sectionTitle("Find things to do by interest"),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             SizedBox(
               height: 140,
               child: ListView(
@@ -72,11 +72,11 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
 
-            /// ❤️ WE MIGHT LIKE THESE
+            /// WE MIGHT LIKE THESE
             sectionTitle("We might like these"),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             SizedBox(
               height: 255,
               child: ListView.separated(
@@ -90,39 +90,37 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 28),
 
-            /// 🏔 EXPLORE MORE
+            /// EXPLORE MORE
             sectionTitle("Explore more of Nepal"),
-            const SizedBox(height: 14),
+            const SizedBox(height: 4),
+            const Text(
+              "Experience the trekking and Camps",
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
             SizedBox(
-              height: 280,
-              child: ListView(
+              height: 330,
+              child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                children: const [
-                  ExploreCard(
-                    title: "Shey Phoksundo Trek",
-                    image: "assets/phoksundo.jpg",
-                    price: "From Rs.1000 / adult",
-                  ),
-                  ExploreCard(
-                    title: "Manaslu Base Camp",
-                    image: "assets/manaslu.jpg",
-                    price: "From Rs.1000 / adult",
-                  ),
-                  ExploreCard(
-                    title: "Tilicho Base Camp",
-                    image: "assets/tilicho.jpg",
-                    price: "From Rs.1000 / adult",
-                  ),
-                ],
+                itemCount: exploreTours.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 16),
+                itemBuilder: (context, index) {
+                  final tour = exploreTours[index];
+                  return ExploreCard(
+                    title: tour["title"]!,
+                    image: tour["image"]!,
+                    price: tour["price"]!,
+                  );
+                },
               ),
             ),
           ],
         ),
       ),
 
-      /// 🔹 BOTTOM NAV BAR
+      /// BOTTOM NAV BAR
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: selectedIndex,
         type: BottomNavigationBarType.fixed,
@@ -160,7 +158,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// 🔹 SECTION TITLE
   Widget sectionTitle(String title) {
     return Text(
       title,
@@ -169,9 +166,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-/// =======================
-/// 🌄 INTEREST CARD
-/// =======================
+/// INTEREST CARD
 class InterestCard extends StatelessWidget {
   final String title;
   final String image;
@@ -210,9 +205,7 @@ class InterestCard extends StatelessWidget {
   }
 }
 
-/// =======================
-/// ❤️ TOUR CARD
-/// =======================
+/// TOUR CARD
 class TourCard extends StatelessWidget {
   final String title;
   final String image;
@@ -264,12 +257,11 @@ class TourCard extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
           const SizedBox(height: 4),
-          const SizedBox(height: 4),
           const Text(
             "Nepal Tour",
             style: TextStyle(
               fontSize: 12,
-              color: Color.fromARGB(255, 94, 93, 93),
+              color: Color.fromARGB(255, 105, 104, 104),
             ),
           ),
           const SizedBox(height: 2),
@@ -294,9 +286,7 @@ class TourCard extends StatelessWidget {
   }
 }
 
-/// =======================
-/// 🏔 EXPLORE CARD
-/// =======================
+/// EXPLORE CARD
 class ExploreCard extends StatelessWidget {
   final String title;
   final String image;
@@ -311,17 +301,16 @@ class ExploreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 210,
-      margin: const EdgeInsets.only(right: 18),
+    return SizedBox(
+      width: 200,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(22),
             child: Image.asset(
               image,
-              height: 170,
+              height: 220,
               width: double.infinity,
               fit: BoxFit.cover,
             ),
@@ -329,25 +318,39 @@ class ExploreCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
           const SizedBox(height: 6),
-          Text(
-            price,
-            style: const TextStyle(
-              color: Colors.green,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            children: const [
+              Text(
+                "5.0",
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+              SizedBox(width: 4),
+              Icon(Icons.circle, size: 6, color: Colors.green),
+              Icon(Icons.circle, size: 6, color: Colors.green),
+              Icon(Icons.circle, size: 6, color: Colors.green),
+              Icon(Icons.circle, size: 6, color: Colors.green),
+              Icon(Icons.circle, size: 6, color: Colors.green),
+              SizedBox(width: 6),
+              Text(
+                "Reviews(123)",
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
           ),
+          const SizedBox(height: 4),
+          Text(price, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         ],
       ),
     );
   }
 }
 
-/// =======================
-/// 📦 TOUR DATA
-/// =======================
+/// DATA
 final List<Map<String, String>> tours = [
   {"title": "Muktinath Religious Tour", "image": "assets/muktinath.jpg"},
   {"title": "Annapurna Base Camp", "image": "assets/annapurna.jpg"},
@@ -357,5 +360,38 @@ final List<Map<String, String>> tours = [
   {
     "title": "Nagarkot Sunrise Point",
     "image": "assets/nagarkotSunrisePoint.jpg",
+  },
+];
+
+final List<Map<String, String>> exploreTours = [
+  {
+    "title": "Shey Phoksundo trek",
+    "image": "assets/shey.jpg",
+    "price": "From Rs.1000/adult",
+  },
+  {
+    "title": "Manaslu Base Camp",
+    "image": "assets/manaslu.jpg",
+    "price": "From Rs.1000/adult",
+  },
+  {
+    "title": "Tilicho Base Camp",
+    "image": "assets/tilicho.jpg",
+    "price": "From Rs.1000/adult",
+  },
+  {
+    "title": "Makalu Base Camp",
+    "image": "assets/makalu.jpg",
+    "price": "From Rs.1000/adult",
+  },
+  {
+    "title": "Kanchanjunga Base Camp",
+    "image": "assets/kanchenjunga.jpg",
+    "price": "From Rs.1000/adult",
+  },
+  {
+    "title": "Dhaulagiri Base Camp",
+    "image": "assets/dhaulagiri.jpg",
+    "price": "From Rs.1000/adult",
   },
 ];
