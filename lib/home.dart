@@ -58,6 +58,11 @@ class _HomePageState extends State<HomePage> {
 
             /// FIND BY INTEREST
             sectionTitle("Find things to do by interest"),
+            const SizedBox(height: 4),
+            const Text(
+              "Whatever you're into we have got you",
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
             const SizedBox(height: 10),
             SizedBox(
               height: 140,
@@ -76,6 +81,11 @@ class _HomePageState extends State<HomePage> {
 
             /// WE MIGHT LIKE THESE
             sectionTitle("We might like these"),
+            const SizedBox(height: 4),
+            const Text(
+              "More things to do in nepal",
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
             const SizedBox(height: 10),
             SizedBox(
               height: 255,
@@ -386,7 +396,7 @@ final List<Map<String, String>> exploreTours = [
   },
   {
     "title": "Kanchanjunga Base Camp",
-    "image": "assets/kanchenjunga.jpg",
+    "image": "assets/kanchan.jpg",
     "price": "From Rs.1000/adult",
   },
   {
