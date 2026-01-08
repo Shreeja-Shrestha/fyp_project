@@ -100,7 +100,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            const SizedBox(height: 28),
+            //const SizedBox(height: 1),
 
             /// EXPLORE MORE
             sectionTitle("Explore more of Nepal"),
