@@ -57,7 +57,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 28),
 
             /// 🌄 FIND BY INTEREST
-            sectionTitle("Find Things to do by interest"),
+            sectionTitle("Find things to do by interest"),
             const SizedBox(height: 14),
             SizedBox(
               height: 140,
@@ -78,27 +78,15 @@ class _HomePageState extends State<HomePage> {
             sectionTitle("We might like these"),
             const SizedBox(height: 14),
             SizedBox(
-              height: 260,
-              child: ListView(
+              height: 255,
+              child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                children: const [
-                  TourCard(
-                    title: "Muktinath Religious Tour",
-                    image: "assets/muktinath.jpg",
-                  ),
-                  TourCard(
-                    title: "Annapurna Base Camp",
-                    image: "assets/abc.jpg",
-                  ),
-                  TourCard(
-                    title: "Mardi Himal Trek",
-                    image: "assets/mardi.jpg",
-                  ),
-                  TourCard(
-                    title: "Everest Base Camp",
-                    image: "assets/everest.jpg",
-                  ),
-                ],
+                itemCount: tours.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 16),
+                itemBuilder: (context, index) {
+                  final tour = tours[index];
+                  return TourCard(title: tour["title"]!, image: tour["image"]!);
+                },
               ),
             ),
 
@@ -134,21 +122,13 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
 
-      /// 🔹 BOTTOM NAVIGATION BAR
+      /// 🔹 BOTTOM NAV BAR
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: selectedIndex,
         type: BottomNavigationBarType.fixed,
-        elevation: 12,
-        backgroundColor: Colors.white,
         selectedItemColor: Colors.black,
         unselectedItemColor: Colors.grey.shade400,
-        selectedFontSize: 11,
-        unselectedFontSize: 11,
-        onTap: (index) {
-          setState(() {
-            selectedIndex = index;
-          });
-        },
+        onTap: (index) => setState(() => selectedIndex = index),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.explore_outlined),
@@ -208,22 +188,21 @@ class InterestCard extends StatelessWidget {
         image: DecorationImage(image: AssetImage(image), fit: BoxFit.cover),
       ),
       child: Container(
+        padding: const EdgeInsets.all(12),
+        alignment: Alignment.bottomLeft,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
           gradient: LinearGradient(
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
-            colors: [Colors.black.withOpacity(0.55), Colors.transparent],
+            colors: [Colors.black.withOpacity(0.6), Colors.transparent],
           ),
         ),
-        padding: const EdgeInsets.all(12),
-        alignment: Alignment.bottomLeft,
         child: Text(
           title,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: 14,
           ),
         ),
       ),
@@ -242,16 +221,15 @@ class TourCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 190,
-      margin: const EdgeInsets.only(right: 18),
+    return SizedBox(
+      width: 200,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Stack(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(16),
                 child: Image.asset(
                   image,
                   height: 150,
@@ -259,10 +237,22 @@ class TourCard extends StatelessWidget {
                   fit: BoxFit.cover,
                 ),
               ),
-              const Positioned(
+              Positioned(
                 top: 10,
                 right: 10,
-                child: Icon(Icons.favorite_border, color: Colors.white),
+                child: Container(
+                  height: 34,
+                  width: 34,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.45),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.favorite_border,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ],
           ),
@@ -273,10 +263,30 @@ class TourCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
+          const SizedBox(height: 4),
           const Text(
-            "Nepal Tour · 0 reviews · 5 days",
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+            "Nepal Tour",
+            style: TextStyle(
+              fontSize: 12,
+              color: Color.fromARGB(255, 94, 93, 93),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Row(
+            children: const [
+              Text(
+                "0 reviews",
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              SizedBox(width: 6),
+              Text("•", style: TextStyle(color: Colors.grey)),
+              SizedBox(width: 6),
+              Text(
+                "5 days",
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
           ),
         ],
       ),
@@ -334,3 +344,18 @@ class ExploreCard extends StatelessWidget {
     );
   }
 }
+
+/// =======================
+/// 📦 TOUR DATA
+/// =======================
+final List<Map<String, String>> tours = [
+  {"title": "Muktinath Religious Tour", "image": "assets/muktinath.jpg"},
+  {"title": "Annapurna Base Camp", "image": "assets/annapurna.jpg"},
+  {"title": "Mardi Himal Trek", "image": "assets/mardi.jpg"},
+  {"title": "Everest Base Camp", "image": "assets/everest.jpg"},
+  {"title": "Nagarkot Hike", "image": "assets/NagarkotHiking.jpg"},
+  {
+    "title": "Nagarkot Sunrise Point",
+    "image": "assets/nagarkotSunrisePoint.jpg",
+  },
+];
