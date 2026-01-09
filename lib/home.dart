@@ -34,6 +34,7 @@ class _HomePageState extends State<HomePage> {
       ),
 
       /// BODY
+      /// BODY
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
         child: Column(
@@ -54,7 +55,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            const SizedBox(height: 28),
+            //const SizedBox(height: 28),
 
             /// FIND BY INTEREST
             sectionTitle("Find things to do by interest"),
@@ -77,7 +78,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            const SizedBox(height: 20),
+            //const SizedBox(height: 20),
 
             /// WE MIGHT LIKE THESE
             sectionTitle("We might like these"),
@@ -100,7 +101,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            //const SizedBox(height: 1),
+            //const SizedBox(height: 24),
 
             /// EXPLORE MORE
             sectionTitle("Explore more of Nepal"),
@@ -125,6 +126,32 @@ class _HomePageState extends State<HomePage> {
                   );
                 },
               ),
+            ),
+
+            //const SizedBox(height: 28),
+
+            /// RELIGIOUS TEMPLES
+            sectionTitle("Religious Temples"),
+            const SizedBox(height: 4),
+            const Text(
+              "Explore the religious places of Nepal",
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+
+            ListView.builder(
+              itemCount: religiousTemples.length,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemBuilder: (context, index) {
+                final temple = religiousTemples[index];
+                return ReligiousTempleCard(
+                  title: temple["title"]!,
+                  image: temple["image"]!,
+                  price: temple["price"]!,
+                  reviews: temple["reviews"]!,
+                );
+              },
             ),
           ],
         ),
@@ -269,10 +296,7 @@ class TourCard extends StatelessWidget {
           const SizedBox(height: 4),
           const Text(
             "Nepal Tour",
-            style: TextStyle(
-              fontSize: 12,
-              color: Color.fromARGB(255, 105, 104, 104),
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
           const SizedBox(height: 2),
           Row(
@@ -360,6 +384,121 @@ class ExploreCard extends StatelessWidget {
   }
 }
 
+/// RELIGIOUS TEMPLE CARD
+class ReligiousTempleCard extends StatelessWidget {
+  final String title;
+  final String image;
+  final String price;
+  final String reviews;
+
+  const ReligiousTempleCard({
+    super.key,
+    required this.title,
+    required this.image,
+    required this.price,
+    required this.reviews,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(18),
+                ),
+                child: Image.asset(
+                  image,
+                  height: 180,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  height: 36,
+                  width: 36,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.favorite_border),
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Text(
+                      "5.0",
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 6),
+                    Row(
+                      children: List.generate(
+                        5,
+                        (index) => const Icon(
+                          Icons.circle,
+                          size: 6,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      "Reviews($reviews)",
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  price,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// DATA
 final List<Map<String, String>> tours = [
   {"title": "Muktinath Religious Tour", "image": "assets/muktinath.jpg"},
@@ -403,5 +542,38 @@ final List<Map<String, String>> exploreTours = [
     "title": "Dhaulagiri Base Camp",
     "image": "assets/dhaulagiri.jpg",
     "price": "From Rs.1000/adult",
+  },
+];
+
+final List<Map<String, String>> religiousTemples = [
+  {
+    "title": "Lumbini (Birthplace of Gautam Buddha)",
+    "image": "assets/lumbini.jpg",
+    "price": "From Rs.1000/adult",
+    "reviews": "234",
+  },
+  {
+    "title": "Bouddha Stupa",
+    "image": "assets/bouddha.jpg",
+    "price": "From Rs.1000/adult",
+    "reviews": "234",
+  },
+  {
+    "title": "Pashupatinath Temple",
+    "image": "assets/pashupati.jpg",
+    "price": "From Rs.1000/adult",
+    "reviews": "234",
+  },
+  {
+    "title": "Dharapani",
+    "image": "assets/dharapani.jpg",
+    "price": "From Rs.1000/adult",
+    "reviews": "234",
+  },
+  {
+    "title": "Janakpur",
+    "image": "assets/janakpur.jpg",
+    "price": "From Rs.1000/adult",
+    "reviews": "234",
   },
 ];
