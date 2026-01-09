@@ -19,7 +19,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (passwordController.text != confirmController.text) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Passwords do not match ❌")));
+      ).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
       return;
     }
 
@@ -39,11 +39,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text("Signup successful ✅")));
+        ).showSnackBar(const SnackBar(content: Text("Signup successful")));
 
         await Future.delayed(const Duration(seconds: 1));
 
-        // ✅ return email to login
+        // return email to login
         Navigator.pop(context, emailController.text.trim());
       } else {
         ScaffoldMessenger.of(
