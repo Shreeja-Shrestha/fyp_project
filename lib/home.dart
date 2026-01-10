@@ -34,28 +34,34 @@ class _HomePageState extends State<HomePage> {
       ),
 
       /// BODY
-      /// BODY
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// SEARCH BAR
-            TextField(
-              decoration: InputDecoration(
-                hintText: "Places to go, things to do",
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
+            /// SEARCH BAR (non-clickable)
+            /// SEARCH BAR (non-clickable, full width)
+            IgnorePointer(
+              child: SizedBox(
+                width:
+                    double.infinity, // ensures full width on all screen sizes
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: "Places to go, things to do",
+                    prefixIcon: const Icon(Icons.search),
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
                 ),
               ),
             ),
 
-            //const SizedBox(height: 28),
+            const SizedBox(height: 16),
 
             /// FIND BY INTEREST
             sectionTitle("Find things to do by interest"),
@@ -78,13 +84,13 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            //const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             /// WE MIGHT LIKE THESE
             sectionTitle("We might like these"),
             const SizedBox(height: 4),
             const Text(
-              "More things to do in nepal",
+              "More things to do in Nepal",
               style: TextStyle(fontSize: 13, color: Colors.grey),
             ),
             const SizedBox(height: 10),
@@ -101,7 +107,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            //const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             /// EXPLORE MORE
             sectionTitle("Explore more of Nepal"),
@@ -128,7 +134,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            //const SizedBox(height: 28),
+            const SizedBox(height: 20),
 
             /// RELIGIOUS TEMPLES
             sectionTitle("Religious Temples"),
@@ -171,24 +177,24 @@ class _HomePageState extends State<HomePage> {
             label: "Explore",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.search_outlined),
-            activeIcon: Icon(Icons.search),
-            label: "Search",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border),
-            activeIcon: Icon(Icons.favorite),
-            label: "Saved",
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.receipt_long_outlined),
             activeIcon: Icon(Icons.receipt_long),
             label: "Trips",
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.rate_review_outlined),
+            activeIcon: Icon(Icons.rate_review),
+            label: "Review",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history_outlined),
+            activeIcon: Icon(Icons.history),
+            label: "History",
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
-            label: "Profile",
+            label: "Account",
           ),
         ],
       ),
