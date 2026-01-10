@@ -1,156 +1,135 @@
 import 'package:flutter/material.dart';
 
-class TrekDetailPage extends StatelessWidget {
-  const TrekDetailPage({super.key});
+class PlaceDetailsPage extends StatelessWidget {
+  const PlaceDetailsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
-      body: SafeArea(
+      body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Image section
             Stack(
               children: [
-                Container(
+                Image.network(
+                  'https://images.unsplash.com/photo-1549880338-65ddcdfd017b',
                   height: 260,
                   width: double.infinity,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage(""), // CHANGE IMAGE
-                      fit: BoxFit.cover,
+                  fit: BoxFit.cover,
+                ),
+                Positioned(
+                  top: 40,
+                  left: 16,
+                  child: CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
                     ),
                   ),
                 ),
-
-                // Back & Heart Buttons
                 Positioned(
-                  left: 15,
-                  top: 15,
+                  top: 40,
+                  right: 16,
                   child: CircleAvatar(
-                    backgroundColor: Colors.white70,
-                    child: Icon(Icons.arrow_back, color: Colors.black),
-                  ),
-                ),
-                Positioned(
-                  right: 15,
-                  top: 15,
-                  child: CircleAvatar(
-                    backgroundColor: Colors.white70,
-                    child: Icon(Icons.favorite_border, color: Colors.black),
+                    backgroundColor: Colors.white,
+                    child: IconButton(
+                      icon: const Icon(Icons.favorite_border),
+                      onPressed: () {},
+                    ),
                   ),
                 ),
               ],
             ),
 
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title
-                    Text(
-                      "Mardi Himal Treks & Expedition",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+            const SizedBox(height: 16),
+
+            // Content section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  const Text(
+                    'Mardi Himal Treks & Expedition',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Rating row
+                  Row(
+                    children: [
+                      const Text(
+                        '5.0',
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                    ),
-
-                    SizedBox(height: 6),
-
-                    // Rating Row
-                    Row(
-                      children: [
-                        Text(
-                          "5.0 ",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                      const SizedBox(width: 6),
+                      Row(
+                        children: List.generate(
+                          5,
+                          (index) => const Icon(
+                            Icons.circle,
+                            size: 10,
+                            color: Colors.green,
                           ),
                         ),
-
-                        Row(
-                          children: List.generate(
-                            5,
-                            (index) => Icon(
-                              Icons.circle,
-                              color: Colors.green,
-                              size: 12,
-                            ),
-                          ),
-                        ),
-
-                        SizedBox(width: 8),
-
-                        Text(
-                          "(313 reviews)",
-                          style: TextStyle(color: Colors.black54),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: 4),
-
-                    // Write a review link
-                    Text(
-                      "Write a review",
-                      style: TextStyle(
-                        color: Colors.blue,
-                        decoration: TextDecoration.underline,
                       ),
-                    ),
-
-                    SizedBox(height: 14),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Open Now",
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              "12.00AM - 11:59PM",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        Icon(Icons.arrow_right_alt, size: 28),
-                      ],
-                    ),
-
-                    SizedBox(height: 18),
-
-                    // ------------------- DESCRIPTION -------------------
-                    Text(
-                      """Mardi Himal is one of Nepal’s newest and most popular trekking destinations, located in the Annapurna region. It is known for its peaceful trail, stunning mountain views, and short trekking duration. The route was opened officially in 2012 and quickly became famous for its scenic ridges and close-up views of Machhapuchhre (Fishtail Mountain).""",
-                      style: TextStyle(
-                        fontSize: 15,
-                        height: 1.5,
-                        color: Colors.black87,
+                      const SizedBox(width: 8),
+                      const Text(
+                        '(313 reviews)',
+                        style: TextStyle(color: Colors.grey),
                       ),
-                    ),
-                  ],
-                ),
+                      const Spacer(),
+                      const Text(
+                        'Write a review',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Open status
+                  Row(
+                    children: const [
+                      Text(
+                        'Open Now',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        '12.00AM - 11:59PM',
+                        style: TextStyle(color: Colors.black54),
+                      ),
+                      Spacer(),
+                      Icon(Icons.arrow_forward_ios, size: 16),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Description
+                  const Text(
+                    'Mardi Gras can refer to the festive season preceding Lent or '
+                    'the Mardi Himal trek in Nepal.\n\n'
+                    'The Mardi Gras festival has roots in ancient pagan and '
+                    'Christian traditions.',
+                    style: TextStyle(fontSize: 14, height: 1.5),
+                  ),
+                ],
               ),
             ),
           ],
