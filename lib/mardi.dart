@@ -10,7 +10,7 @@ class PlaceDetailsPage extends StatefulWidget {
 
 class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
   final PageController _pageController = PageController();
-  int _currentPage = 0;
+  int _currentIndex = 0;
 
   final List<String> images = [
     'assets/mardi.jpg',
@@ -25,16 +25,10 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
   @override
   void initState() {
     super.initState();
-
     _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      if (_currentPage < images.length - 1) {
-        _currentPage++;
-      } else {
-        _currentPage = 0;
-      }
-
+      _currentIndex = (_currentIndex + 1) % images.length;
       _pageController.animateToPage(
-        _currentPage,
+        _currentIndex,
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
@@ -56,57 +50,52 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔹 Image Slider
-            Stack(
-              children: [
-                SizedBox(
-                  height: 260,
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: images.length,
-                    onPageChanged: (index) {
-                      _currentPage = index;
-                    },
-                    itemBuilder: (context, index) {
-                      return Image.network(
-                        images[index],
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                      );
-                    },
+            /// IMAGE SLIDER (FIXED)
+            SafeArea(
+              bottom: false,
+              child: Stack(
+                children: [
+                  SizedBox(
+                    height: 260,
+                    width: double.infinity,
+                    child: PageView.builder(
+                      controller: _pageController,
+                      itemCount: images.length,
+                      itemBuilder: (context, index) {
+                        return Image.asset(images[index], fit: BoxFit.cover);
+                      },
+                    ),
                   ),
-                ),
 
-                // Back button
-                Positioned(
-                  top: 40,
-                  left: 16,
-                  child: CircleAvatar(
-                    backgroundColor: Colors.white,
+                  /// BACK BUTTON
+                  Positioned(
+                    top: 8,
+                    left: 8,
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back),
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
-                ),
 
-                // Favorite button
-                Positioned(
-                  top: 40,
-                  right: 16,
-                  child: CircleAvatar(
-                    backgroundColor: Colors.white,
+                  /// FAVORITE ICON
+                  Positioned(
+                    top: 8,
+                    right: 8,
                     child: IconButton(
-                      icon: const Icon(Icons.favorite_border),
+                      icon: const Icon(
+                        Icons.favorite_border,
+                        color: Colors.white,
+                      ),
                       onPressed: () {},
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
 
             const SizedBox(height: 16),
 
+            /// CONTENT
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
@@ -114,7 +103,7 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
                 children: [
                   const Text(
                     'Mardi Himal Treks & Expedition',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                   ),
 
                   const SizedBox(height: 8),
@@ -123,7 +112,7 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
                     children: [
                       const Text(
                         '5.0',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(width: 6),
                       Row(
@@ -141,12 +130,17 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
                         '(313 reviews)',
                         style: TextStyle(color: Colors.grey),
                       ),
-                      const Spacer(),
-                      const Text(
-                        'Write a review',
-                        style: TextStyle(color: Colors.blue),
-                      ),
                     ],
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  const Text(
+                    'Write a review',
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
 
                   const SizedBox(height: 12),
@@ -157,24 +151,30 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
                         'Open Now',
                         style: TextStyle(
                           color: Colors.green,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                       SizedBox(width: 8),
-                      Text('12.00AM - 11:59PM'),
+                      Text(
+                        '12.00AM - 11:59PM',
+                        style: TextStyle(color: Colors.black54),
+                      ),
                       Spacer(),
-                      Icon(Icons.arrow_forward_ios, size: 16),
+                      Icon(Icons.arrow_forward_ios, size: 14),
                     ],
                   ),
 
                   const SizedBox(height: 16),
 
                   const Text(
-                    'Mardi Gras can refer to the festive season preceding Lent or '
-                    'the Mardi Himal trek in Nepal.\n\n'
-                    'The Mardi Gras festival has roots in ancient pagan and '
-                    'Christian traditions.',
-                    style: TextStyle(fontSize: 14, height: 1.5),
+                    'Mardi Himal is one of the most scenic and less-crowded trekking '
+                    'destinations in the Annapurna region of Nepal. The trek offers '
+                    'spectacular views of Machhapuchhre, Annapurna South, and '
+                    'Hiunchuli.\n\n'
+                    'The trail passes through rhododendron forests, traditional '
+                    'villages, and alpine landscapes, making it ideal for nature '
+                    'lovers and adventure seekers.',
+                    style: TextStyle(fontSize: 14, height: 1.6),
                   ),
                 ],
               ),
