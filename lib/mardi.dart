@@ -1,7 +1,52 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
-class PlaceDetailsPage extends StatelessWidget {
+class PlaceDetailsPage extends StatefulWidget {
   const PlaceDetailsPage({super.key});
+
+  @override
+  State<PlaceDetailsPage> createState() => _PlaceDetailsPageState();
+}
+
+class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  final List<String> images = [
+    'assets/mardi.jpg',
+    'assets/mardi1.jpg',
+    'assets/mardi2.jpg',
+    'assets/mardi3.jpg',
+    'assets/mardi4.jpg',
+  ];
+
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_currentPage < images.length - 1) {
+        _currentPage++;
+      } else {
+        _currentPage = 0;
+      }
+
+      _pageController.animateToPage(
+        _currentPage,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,15 +56,28 @@ class PlaceDetailsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image section
+            // 🔹 Image Slider
             Stack(
               children: [
-                Image.network(
-                  'https://images.unsplash.com/photo-1549880338-65ddcdfd017b',
+                SizedBox(
                   height: 260,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: images.length,
+                    onPageChanged: (index) {
+                      _currentPage = index;
+                    },
+                    itemBuilder: (context, index) {
+                      return Image.network(
+                        images[index],
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                      );
+                    },
+                  ),
                 ),
+
+                // Back button
                 Positioned(
                   top: 40,
                   left: 16,
@@ -27,12 +85,12 @@ class PlaceDetailsPage extends StatelessWidget {
                     backgroundColor: Colors.white,
                     child: IconButton(
                       icon: const Icon(Icons.arrow_back),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
+                      onPressed: () => Navigator.pop(context),
                     ),
                   ),
                 ),
+
+                // Favorite button
                 Positioned(
                   top: 40,
                   right: 16,
@@ -49,13 +107,11 @@ class PlaceDetailsPage extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Content section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title
                   const Text(
                     'Mardi Himal Treks & Expedition',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -63,7 +119,6 @@ class PlaceDetailsPage extends StatelessWidget {
 
                   const SizedBox(height: 8),
 
-                  // Rating row
                   Row(
                     children: [
                       const Text(
@@ -74,7 +129,7 @@ class PlaceDetailsPage extends StatelessWidget {
                       Row(
                         children: List.generate(
                           5,
-                          (index) => const Icon(
+                          (_) => const Icon(
                             Icons.circle,
                             size: 10,
                             color: Colors.green,
@@ -89,17 +144,13 @@ class PlaceDetailsPage extends StatelessWidget {
                       const Spacer(),
                       const Text(
                         'Write a review',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: TextStyle(color: Colors.blue),
                       ),
                     ],
                   ),
 
                   const SizedBox(height: 12),
 
-                  // Open status
                   Row(
                     children: const [
                       Text(
@@ -110,10 +161,7 @@ class PlaceDetailsPage extends StatelessWidget {
                         ),
                       ),
                       SizedBox(width: 8),
-                      Text(
-                        '12.00AM - 11:59PM',
-                        style: TextStyle(color: Colors.black54),
-                      ),
+                      Text('12.00AM - 11:59PM'),
                       Spacer(),
                       Icon(Icons.arrow_forward_ios, size: 16),
                     ],
@@ -121,7 +169,6 @@ class PlaceDetailsPage extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-                  // Description
                   const Text(
                     'Mardi Gras can refer to the festive season preceding Lent or '
                     'the Mardi Himal trek in Nepal.\n\n'
