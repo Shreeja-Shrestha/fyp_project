@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'mardi.dart';
+import 'mardi.dart'; // Ensure you have this file
 
 void main() {
   runApp(const MyApp());
@@ -12,16 +12,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xFFF8F9FA),
-        fontFamily: 'Roboto',
-        useMaterial3: true,
-      ),
       home: const HomePage(),
     );
   }
 }
 
+/// HOME PAGE
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -35,11 +31,14 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
+      backgroundColor: const Color(0xFFF9F9F9), // Light grey background
+      // Using SafeArea + Column to create the Sticky Header effect
       body: SafeArea(
         child: Column(
           children: [
-            /// STICKY HEADER
+            /// --------------------------------------------------------
+            /// 1. STICKY HEADER SECTION (Fixed at Top)
+            /// --------------------------------------------------------
             Container(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
               decoration: BoxDecoration(
@@ -58,6 +57,7 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Title Row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -71,7 +71,7 @@ class _HomePageState extends State<HomePage> {
                           Text(
                             "Where to?",
                             style: TextStyle(
-                              color: Colors.black87,
+                              color: Colors.black,
                               fontWeight: FontWeight.w800,
                               fontSize: 24,
                             ),
@@ -92,6 +92,8 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                   const SizedBox(height: 20),
+
+                  // Search Bar
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -107,7 +109,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     child: TextField(
                       decoration: InputDecoration(
-                        hintText: "Places to go, things to do...",
+                        hintText: "Places to go, things to do",
                         hintStyle: TextStyle(
                           color: Colors.grey.shade400,
                           fontSize: 14,
@@ -129,20 +131,25 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            /// SCROLLABLE CONTENT
+            /// --------------------------------------------------------
+            /// 2. SCROLLABLE CONTENT (Scrolls underneath header)
+            /// --------------------------------------------------------
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 80),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     /// FIND BY INTEREST
-                    sectionHeader(
-                      "Find by Interest",
-                      "Whatever you're into, we got you",
+                    sectionTitle("Find things to do by interest"),
+                    const SizedBox(height: 4),
+                    const Text(
+                      "Whatever you're into we have got you",
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
+                    const SizedBox(height: 15),
                     SizedBox(
-                      height: 140,
+                      height: 120, // Slightly adjusted height
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         clipBehavior: Clip.none,
@@ -164,15 +171,18 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 25),
 
                     /// WE MIGHT LIKE THESE
-                    sectionHeader(
-                      "Recommended for You",
-                      "Top rated destinations in Nepal",
+                    sectionTitle("We might like these"),
+                    const SizedBox(height: 4),
+                    const Text(
+                      "More things to do in Nepal",
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
+                    const SizedBox(height: 15),
                     SizedBox(
-                      height: 260,
+                      height: 255,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         clipBehavior: Clip.none,
@@ -199,15 +209,18 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 25),
 
                     /// EXPLORE MORE
-                    sectionHeader(
-                      "Explore Nepal",
-                      "Experience trekking and camping",
+                    sectionTitle("Explore more of Nepal"),
+                    const SizedBox(height: 4),
+                    const Text(
+                      "Experience the trekking and Camps",
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
+                    const SizedBox(height: 15),
                     SizedBox(
-                      height: 320,
+                      height: 330,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         clipBehavior: Clip.none,
@@ -224,30 +237,30 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 25),
 
-                    /// RELIGIOUS TEMPLES LIST (Static List)
-                    sectionHeader(
-                      "Religious Sites",
-                      "Spiritual journeys await",
+                    /// RELIGIOUS TEMPLES
+                    sectionTitle("Religious Temples"),
+                    const SizedBox(height: 4),
+                    const Text(
+                      "Explore the religious places of Nepal",
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
+                    const SizedBox(height: 15),
                     ListView.builder(
                       itemCount: religiousTemples.length,
                       shrinkWrap: true,
-                      physics:
-                          const NeverScrollableScrollPhysics(), // Disables internal scrolling
+                      physics: const NeverScrollableScrollPhysics(),
                       itemBuilder: (context, index) {
                         final temple = religiousTemples[index];
                         return ReligiousTempleCard(
                           title: temple["title"]!,
                           image: temple["image"]!,
-                          price: temple["price"]!,
+                          // Price removed here
                           reviews: temple["reviews"]!,
                         );
                       },
                     ),
-
-                    const SizedBox(height: 80),
                   ],
                 ),
               ),
@@ -255,6 +268,8 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+
+      /// BOTTOM NAV BAR
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -298,186 +313,44 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget sectionHeader(String title, String subtitle) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-          ),
-        ],
+  Widget sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w800,
+        color: Colors.black87,
       ),
     );
   }
 }
 
-// ---------------------------------------------------------------------------
-// WIDGETS
-// ---------------------------------------------------------------------------
-
-class ReligiousTempleCard extends StatelessWidget {
-  final String title;
-  final String image;
-  final String price;
-  final String reviews;
-
-  const ReligiousTempleCard({
-    super.key,
-    required this.title,
-    required this.image,
-    required this.price,
-    required this.reviews,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
-                child: Image.asset(
-                  image,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Positioned(
-                top: 15,
-                right: 15,
-                child: const Icon(
-                  Icons.favorite_border_rounded,
-                  color: Colors.white,
-                  size: 28,
-                  shadows: [Shadow(color: Colors.black45, blurRadius: 10)],
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Text(
-                      "5.0",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Row(
-                      children: List.generate(
-                        5,
-                        (index) => const Padding(
-                          padding: EdgeInsets.only(right: 2),
-                          child: Icon(
-                            Icons.circle,
-                            size: 10,
-                            color: Color(0xFF00C853),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      "Reviews($reviews)",
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  price,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
+/// INTEREST CARD (Updated Style)
 class InterestCard extends StatelessWidget {
   final String title;
   final String image;
+
   const InterestCard({super.key, required this.title, required this.image});
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 120,
+      width: 110, // Width for the card
       margin: const EdgeInsets.only(right: 14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         image: DecorationImage(image: AssetImage(image), fit: BoxFit.cover),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
       ),
       child: Container(
-        alignment: Alignment.bottomCenter,
+        // Aligns text to Top Left
+        alignment: Alignment.topLeft,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
+          // Gradient from Top (dark) to Bottom (transparent)
           gradient: LinearGradient(
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-            colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+            begin: Alignment.topCenter,
+            end: Alignment.center,
+            colors: [Colors.black.withOpacity(0.6), Colors.transparent],
           ),
         ),
         padding: const EdgeInsets.all(12),
@@ -485,7 +358,7 @@ class InterestCard extends StatelessWidget {
           title,
           style: const TextStyle(
             color: Colors.white,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.bold,
             fontSize: 14,
           ),
         ),
@@ -494,30 +367,33 @@ class InterestCard extends StatelessWidget {
   }
 }
 
+/// TOUR CARD
 class TourCard extends StatelessWidget {
   final String title;
   final String image;
   final VoidCallback? onTap;
+
   const TourCard({
     super.key,
     required this.title,
     required this.image,
     this.onTap,
   });
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 220,
+        width: 200,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
-              offset: const Offset(0, 5),
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -532,7 +408,7 @@ class TourCard extends StatelessWidget {
                   ),
                   child: Image.asset(
                     image,
-                    height: 160,
+                    height: 150,
                     width: double.infinity,
                     fit: BoxFit.cover,
                   ),
@@ -541,15 +417,16 @@ class TourCard extends StatelessWidget {
                   top: 10,
                   right: 10,
                   child: Container(
-                    padding: const EdgeInsets.all(6),
+                    height: 34,
+                    width: 34,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withOpacity(0.5),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.favorite_border,
                       size: 18,
-                      color: Colors.black,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -570,29 +447,28 @@ class TourCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
+                  const Text(
+                    "Nepal Tour",
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 6),
                   Row(
-                    children: [
-                      Icon(
-                        Icons.location_on,
-                        size: 14,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(width: 4),
+                    children: const [
+                      Icon(Icons.star, size: 14, color: Colors.amber),
+                      SizedBox(width: 4),
                       Text(
-                        "Nepal",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
-                      const Spacer(),
-                      const Icon(Icons.star, size: 14, color: Colors.amber),
-                      const Text(
-                        " 4.8",
+                        "4.5",
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
+                      ),
+                      SizedBox(width: 10),
+                      Icon(Icons.access_time, size: 14, color: Colors.grey),
+                      SizedBox(width: 4),
+                      Text(
+                        "5 days",
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
                   ),
@@ -606,20 +482,23 @@ class TourCard extends StatelessWidget {
   }
 }
 
+/// EXPLORE CARD
 class ExploreCard extends StatelessWidget {
   final String title;
   final String image;
   final String price;
+
   const ExploreCard({
     super.key,
     required this.title,
     required this.image,
     required this.price,
   });
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 240,
+      width: 200,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -635,10 +514,10 @@ class ExploreCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             child: Image.asset(
               image,
-              height: 220,
+              height: 200,
               width: double.infinity,
               fit: BoxFit.cover,
             ),
@@ -650,16 +529,18 @@ class ExploreCard extends StatelessWidget {
               children: [
                 Text(
                   title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
-                    fontSize: 16,
+                    fontSize: 15,
                   ),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 6),
                 Text(
                   price,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     color: Colors.blue,
                     fontWeight: FontWeight.bold,
                   ),
@@ -673,43 +554,113 @@ class ExploreCard extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// DATA
-// ---------------------------------------------------------------------------
+/// RELIGIOUS TEMPLE CARD (Updated: Price Removed)
+class ReligiousTempleCard extends StatelessWidget {
+  final String title;
+  final String image;
+  final String reviews;
 
-final List<Map<String, String>> religiousTemples = [
-  {
-    "title": "Lumbini (Birthplace of Gautam Buddha)",
-    "image": "assets/lumbini.jpg",
-    "price": "From Rs.1000/adult",
-    "reviews": "234",
-  },
-  {
-    "title": "Bouddha Stupa",
-    "image": "assets/bouddha.jpg",
-    "price": "From Rs.1000/adult",
-    "reviews": "234",
-  },
-  {
-    "title": "Pashupatinath Temple",
-    "image": "assets/pashupati.jpg",
-    "price": "From Rs.1000/adult",
-    "reviews": "234",
-  },
-  {
-    "title": "Dharapani",
-    "image": "assets/dharapani.jpg",
-    "price": "From Rs.1000/adult",
-    "reviews": "234",
-  },
-  {
-    "title": "Janakpur",
-    "image": "assets/janakpur.jpg",
-    "price": "From Rs.1000/adult",
-    "reviews": "234",
-  },
-];
+  const ReligiousTempleCard({
+    super.key,
+    required this.title,
+    required this.image,
+    required this.reviews,
+  });
 
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(18),
+                ),
+                child: Image.asset(
+                  image,
+                  height: 180,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  height: 36,
+                  width: 36,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.favorite_border, size: 20),
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Text(
+                      "5.0",
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 6),
+                    Row(
+                      children: List.generate(
+                        5,
+                        (index) => const Icon(
+                          Icons.circle,
+                          size: 8,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      "Reviews($reviews)",
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+                // Price Widget Removed
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// DATA (Price removed from Religious Temples)
 final List<Map<String, String>> tours = [
   {"title": "Muktinath Religious Tour", "image": "assets/muktinath.jpg"},
   {"title": "Annapurna Base Camp", "image": "assets/annapurna.jpg"},
@@ -753,4 +704,20 @@ final List<Map<String, String>> exploreTours = [
     "image": "assets/dhaulagiri.jpg",
     "price": "From Rs.1000/adult",
   },
+];
+
+final List<Map<String, String>> religiousTemples = [
+  {
+    "title": "Lumbini (Birthplace of Gautam Buddha)",
+    "image": "assets/lumbini.jpg",
+    "reviews": "234",
+  },
+  {"title": "Bouddha Stupa", "image": "assets/bouddha.jpg", "reviews": "234"},
+  {
+    "title": "Pashupatinath Temple",
+    "image": "assets/pashupati.jpg",
+    "reviews": "234",
+  },
+  {"title": "Dharapani", "image": "assets/dharapani.jpg", "reviews": "234"},
+  {"title": "Janakpur", "image": "assets/janakpur.jpg", "reviews": "234"},
 ];
