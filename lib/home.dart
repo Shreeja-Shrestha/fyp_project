@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'mardi.dart'; // Ensure you have this file
+import 'package:fyp_project/mardi.dart';
+import 'mardi.dart'; // Import the new page
 
 void main() {
   runApp(const MyApp());
@@ -31,284 +32,201 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9), // Light grey background
-      // Using SafeArea + Column to create the Sticky Header effect
-      body: SafeArea(
+      backgroundColor: Colors.white,
+
+      /// APP BAR
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          "Where to?",
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+          ),
+        ),
+        actions: const [
+          Icon(Icons.notifications_none, color: Colors.black),
+          SizedBox(width: 16),
+        ],
+      ),
+
+      /// BODY
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// --------------------------------------------------------
-            /// 1. STICKY HEADER SECTION (Fixed at Top)
-            /// --------------------------------------------------------
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
+            /// SEARCH BAR
+            IgnorePointer(
+              child: SizedBox(
+                width: double.infinity,
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: "Places to go, things to do",
+                    prefixIcon: const Icon(Icons.search),
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
-                ],
-                borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(20),
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Good Morning,",
-                            style: TextStyle(color: Colors.grey, fontSize: 14),
-                          ),
-                          Text(
-                            "Where to?",
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 24,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.notifications_none,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+            ),
 
-                  // Search Bar
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                      border: Border.all(color: Colors.grey.shade100),
-                    ),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: "Places to go, things to do",
-                        hintStyle: TextStyle(
-                          color: Colors.grey.shade400,
-                          fontSize: 14,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.search,
-                          color: Colors.black54,
-                        ),
-                        filled: true,
-                        fillColor: Colors.transparent,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                        ),
-                        border: InputBorder.none,
-                      ),
-                    ),
-                  ),
+            const SizedBox(height: 16),
+
+            /// FIND BY INTEREST
+            sectionTitle("Find things to do by interest"),
+            const SizedBox(height: 4),
+            const Text(
+              "Whatever you're into we have got you",
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 140,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: const [
+                  InterestCard(title: "Outdoors", image: "assets/outdoor.jpg"),
+                  InterestCard(title: "Food", image: "assets/food.jpg"),
+                  InterestCard(title: "Culture", image: "assets/culture.jpg"),
+                  InterestCard(title: "Water", image: "assets/water.jpg"),
                 ],
               ),
             ),
 
-            /// --------------------------------------------------------
-            /// 2. SCROLLABLE CONTENT (Scrolls underneath header)
-            /// --------------------------------------------------------
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 80),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    /// FIND BY INTEREST
-                    sectionTitle("Find things to do by interest"),
-                    const SizedBox(height: 4),
-                    const Text(
-                      "Whatever you're into we have got you",
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 15),
-                    SizedBox(
-                      height: 120, // Slightly adjusted height
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        clipBehavior: Clip.none,
-                        children: const [
-                          InterestCard(
-                            title: "Outdoors",
-                            image: "assets/outdoor.jpg",
+            const SizedBox(height: 20),
+
+            /// WE MIGHT LIKE THESE
+            sectionTitle("We might like these"),
+            const SizedBox(height: 4),
+            const Text(
+              "More things to do in Nepal",
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 255,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: tours.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 16),
+                itemBuilder: (context, index) {
+                  final tour = tours[index];
+                  return TourCard(
+                    title: tour["title"]!,
+                    image: tour["image"]!,
+                    onTap: () {
+                      // Redirect only for Mardi Himal
+                      if (tour["title"] == "Mardi Himal Trek") {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PlaceDetailsPage(),
                           ),
-                          InterestCard(title: "Food", image: "assets/food.jpg"),
-                          InterestCard(
-                            title: "Culture",
-                            image: "assets/culture.jpg",
-                          ),
-                          InterestCard(
-                            title: "Water",
-                            image: "assets/water.jpg",
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    /// WE MIGHT LIKE THESE
-                    sectionTitle("We might like these"),
-                    const SizedBox(height: 4),
-                    const Text(
-                      "More things to do in Nepal",
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 15),
-                    SizedBox(
-                      height: 255,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        clipBehavior: Clip.none,
-                        itemCount: tours.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 16),
-                        itemBuilder: (context, index) {
-                          final tour = tours[index];
-                          return TourCard(
-                            title: tour["title"]!,
-                            image: tour["image"]!,
-                            onTap: () {
-                              if (tour["title"] == "Mardi Himal Trek") {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const PlaceDetailsPage(),
-                                  ),
-                                );
-                              }
-                            },
-                          );
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    /// EXPLORE MORE
-                    sectionTitle("Explore more of Nepal"),
-                    const SizedBox(height: 4),
-                    const Text(
-                      "Experience the trekking and Camps",
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 15),
-                    SizedBox(
-                      height: 330,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        clipBehavior: Clip.none,
-                        itemCount: exploreTours.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 16),
-                        itemBuilder: (context, index) {
-                          final tour = exploreTours[index];
-                          return ExploreCard(
-                            title: tour["title"]!,
-                            image: tour["image"]!,
-                            price: tour["price"]!,
-                          );
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    /// RELIGIOUS TEMPLES
-                    sectionTitle("Religious Temples"),
-                    const SizedBox(height: 4),
-                    const Text(
-                      "Explore the religious places of Nepal",
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 15),
-                    ListView.builder(
-                      itemCount: religiousTemples.length,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemBuilder: (context, index) {
-                        final temple = religiousTemples[index];
-                        return ReligiousTempleCard(
-                          title: temple["title"]!,
-                          image: temple["image"]!,
-                          // Price removed here
-                          reviews: temple["reviews"]!,
                         );
-                      },
-                    ),
-                  ],
-                ),
+                      }
+                    },
+                  );
+                },
               ),
+            ),
+
+            const SizedBox(height: 20),
+
+            /// EXPLORE MORE
+            sectionTitle("Explore more of Nepal"),
+            const SizedBox(height: 4),
+            const Text(
+              "Experience the trekking and Camps",
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 330,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: exploreTours.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 16),
+                itemBuilder: (context, index) {
+                  final tour = exploreTours[index];
+                  return ExploreCard(
+                    title: tour["title"]!,
+                    image: tour["image"]!,
+                    price: tour["price"]!,
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            /// RELIGIOUS TEMPLES
+            sectionTitle("Religious Temples"),
+            const SizedBox(height: 4),
+            const Text(
+              "Explore the religious places of Nepal",
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            ListView.builder(
+              itemCount: religiousTemples.length,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemBuilder: (context, index) {
+                final temple = religiousTemples[index];
+                return ReligiousTempleCard(
+                  title: temple["title"]!,
+                  image: temple["image"]!,
+                  price: temple["price"]!,
+                  reviews: temple["reviews"]!,
+                );
+              },
             ),
           ],
         ),
       ),
 
       /// BOTTOM NAV BAR
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: selectedIndex,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: Colors.black,
-          unselectedItemColor: Colors.grey.shade400,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          elevation: 0,
-          onTap: (index) => setState(() => selectedIndex = index),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.explore_rounded),
-              label: "Explore",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.confirmation_number_outlined),
-              label: "Trips",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.rate_review_outlined),
-              label: "Review",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.history_rounded),
-              label: "History",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline_rounded),
-              label: "Account",
-            ),
-          ],
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: selectedIndex,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.black,
+        unselectedItemColor: Colors.grey.shade400,
+        onTap: (index) => setState(() => selectedIndex = index),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.explore_outlined),
+            activeIcon: Icon(Icons.explore),
+            label: "Explore",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long_outlined),
+            activeIcon: Icon(Icons.receipt_long),
+            label: "Trips",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.rate_review_outlined),
+            activeIcon: Icon(Icons.rate_review),
+            label: "Review",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history_outlined),
+            activeIcon: Icon(Icons.history),
+            label: "History",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: "Account",
+          ),
+        ],
       ),
     );
   }
@@ -316,16 +234,12 @@ class _HomePageState extends State<HomePage> {
   Widget sectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w800,
-        color: Colors.black87,
-      ),
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
     );
   }
 }
 
-/// INTEREST CARD (Updated Style)
+/// INTEREST CARD
 class InterestCard extends StatelessWidget {
   final String title;
   final String image;
@@ -335,31 +249,28 @@ class InterestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 110, // Width for the card
+      width: 130,
       margin: const EdgeInsets.only(right: 14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         image: DecorationImage(image: AssetImage(image), fit: BoxFit.cover),
       ),
       child: Container(
-        // Aligns text to Top Left
-        alignment: Alignment.topLeft,
+        padding: const EdgeInsets.all(12),
+        alignment: Alignment.bottomLeft,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          // Gradient from Top (dark) to Bottom (transparent)
+          borderRadius: BorderRadius.circular(18),
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.center,
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
             colors: [Colors.black.withOpacity(0.6), Colors.transparent],
           ),
         ),
-        padding: const EdgeInsets.all(12),
         child: Text(
           title,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: 14,
           ),
         ),
       ),
@@ -371,7 +282,7 @@ class InterestCard extends StatelessWidget {
 class TourCard extends StatelessWidget {
   final String title;
   final String image;
-  final VoidCallback? onTap;
+  final VoidCallback? onTap; // optional callback
 
   const TourCard({
     super.key,
@@ -383,29 +294,16 @@ class TourCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
+      onTap: onTap, // trigger navigation
+      child: SizedBox(
         width: 200,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(20),
-                  ),
+                  borderRadius: BorderRadius.circular(16),
                   child: Image.asset(
                     image,
                     height: 150,
@@ -420,7 +318,7 @@ class TourCard extends StatelessWidget {
                     height: 34,
                     width: 34,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.5),
+                      color: Colors.black.withOpacity(0.45),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -432,48 +330,33 @@ class TourCard extends StatelessWidget {
                 ),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    "Nepal Tour",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: const [
-                      Icon(Icons.star, size: 14, color: Colors.amber),
-                      SizedBox(width: 4),
-                      Text(
-                        "4.5",
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(width: 10),
-                      Icon(Icons.access_time, size: 14, color: Colors.grey),
-                      SizedBox(width: 4),
-                      Text(
-                        "5 days",
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              "Nepal Tour",
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 2),
+            Row(
+              children: const [
+                Text(
+                  "0 reviews",
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                SizedBox(width: 6),
+                Text("•", style: TextStyle(color: Colors.grey)),
+                SizedBox(width: 6),
+                Text(
+                  "5 days",
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
             ),
           ],
         ),
@@ -497,73 +380,67 @@ class ExploreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: 200,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: BorderRadius.circular(22),
             child: Image.asset(
               image,
-              height: 200,
+              height: 220,
               width: double.infinity,
               fit: BoxFit.cover,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  price,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.blue,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
+          const SizedBox(height: 6),
+          Row(
+            children: const [
+              Text(
+                "5.0",
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+              SizedBox(width: 4),
+              Icon(Icons.circle, size: 6, color: Colors.green),
+              Icon(Icons.circle, size: 6, color: Colors.green),
+              Icon(Icons.circle, size: 6, color: Colors.green),
+              Icon(Icons.circle, size: 6, color: Colors.green),
+              Icon(Icons.circle, size: 6, color: Colors.green),
+              SizedBox(width: 6),
+              Text(
+                "Reviews(123)",
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(price, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         ],
       ),
     );
   }
 }
 
-/// RELIGIOUS TEMPLE CARD (Updated: Price Removed)
+/// RELIGIOUS TEMPLE CARD
 class ReligiousTempleCard extends StatelessWidget {
   final String title;
   final String image;
+  final String price;
   final String reviews;
 
   const ReligiousTempleCard({
     super.key,
     required this.title,
     required this.image,
+    required this.price,
     required this.reviews,
   });
 
@@ -576,8 +453,8 @@ class ReligiousTempleCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
             offset: const Offset(0, 4),
           ),
         ],
@@ -608,13 +485,13 @@ class ReligiousTempleCard extends StatelessWidget {
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.favorite_border, size: 20),
+                  child: const Icon(Icons.favorite_border),
                 ),
               ),
             ],
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -622,10 +499,10 @@ class ReligiousTempleCard extends StatelessWidget {
                   title,
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
-                    fontSize: 16,
+                    fontSize: 15,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Row(
                   children: [
                     const Text(
@@ -638,7 +515,7 @@ class ReligiousTempleCard extends StatelessWidget {
                         5,
                         (index) => const Icon(
                           Icons.circle,
-                          size: 8,
+                          size: 6,
                           color: Colors.green,
                         ),
                       ),
@@ -650,7 +527,14 @@ class ReligiousTempleCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                // Price Widget Removed
+                const SizedBox(height: 6),
+                Text(
+                  price,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ),
@@ -660,7 +544,7 @@ class ReligiousTempleCard extends StatelessWidget {
   }
 }
 
-/// DATA (Price removed from Religious Temples)
+/// DATA
 final List<Map<String, String>> tours = [
   {"title": "Muktinath Religious Tour", "image": "assets/muktinath.jpg"},
   {"title": "Annapurna Base Camp", "image": "assets/annapurna.jpg"},
@@ -710,14 +594,31 @@ final List<Map<String, String>> religiousTemples = [
   {
     "title": "Lumbini (Birthplace of Gautam Buddha)",
     "image": "assets/lumbini.jpg",
+    "price": "From Rs.1000/adult",
     "reviews": "234",
   },
-  {"title": "Bouddha Stupa", "image": "assets/bouddha.jpg", "reviews": "234"},
   {
-    "title": "Pashupatinath Temple",
-    "image": "assets/pashupati.jpg",
+    "title": "Bouddha Stupa(peace and enlightment)",
+    "image": "assets/bouddha.jpg",
+    "price": "From Rs.1000/adult",
     "reviews": "234",
   },
-  {"title": "Dharapani", "image": "assets/dharapani.jpg", "reviews": "234"},
-  {"title": "Janakpur", "image": "assets/janakpur.jpg", "reviews": "234"},
+  {
+    "title": "Pashupatinath Temple(religious hindu temple)",
+    "image": "assets/pashupati.jpg",
+    "price": "From Rs.1000/adult",
+    "reviews": "234",
+  },
+  {
+    "title": "Dharapani(world largest trishul)",
+    "image": "assets/dharapani.jpg",
+    "price": "From Rs.1000/adult",
+    "reviews": "234",
+  },
+  {
+    "title": "Janakpur(birthplace of goddess sita)",
+    "image": "assets/janakpur.jpg",
+    "price": "From Rs.1000/adult",
+    "reviews": "234",
+  },
 ];

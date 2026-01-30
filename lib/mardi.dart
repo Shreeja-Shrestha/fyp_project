@@ -13,7 +13,7 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
   int _currentIndex = 0;
 
   final List<String> images = [
-    'assets/mardi.jpg',
+    'assets/mardi5.jpg',
     'assets/mardi1.jpg',
     'assets/mardi2.jpg',
     'assets/mardi3.jpg',
@@ -25,7 +25,7 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 3), (_) {
       _currentIndex = (_currentIndex + 1) % images.length;
       _pageController.animateToPage(
         _currentIndex,
@@ -46,58 +46,48 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// IMAGE SLIDER (FIXED)
-            SafeArea(
-              bottom: false,
-              child: Stack(
-                children: [
-                  SizedBox(
-                    height: 260,
-                    width: double.infinity,
-                    child: PageView.builder(
-                      controller: _pageController,
-                      itemCount: images.length,
-                      itemBuilder: (context, index) {
-                        return Image.asset(images[index], fit: BoxFit.cover);
-                      },
-                    ),
-                  ),
-
-                  /// BACK BUTTON
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-
-                  /// FAVORITE ICON
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.favorite_border,
-                        color: Colors.white,
-                      ),
-                      onPressed: () {},
-                    ),
-                  ),
-                ],
-              ),
+      body: Column(
+        children: [
+          /// TOP BAR
+          Container(
+            height: MediaQuery.of(context).padding.top + 48,
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top,
+              left: 8,
+              right: 8,
             ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.favorite_border),
+                  onPressed: () {},
+                ),
+              ],
+            ),
+          ),
 
-            const SizedBox(height: 16),
+          /// IMAGE SLIDER
+          SizedBox(
+            height: 380,
+            width: double.infinity,
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: images.length,
+              itemBuilder: (context, index) {
+                return Image.asset(images[index], fit: BoxFit.cover);
+              },
+            ),
+          ),
 
-            /// CONTENT
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+          /// CONTENT
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -105,9 +95,7 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
                     'Mardi Himal Treks & Expedition',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                   ),
-
                   const SizedBox(height: 8),
-
                   Row(
                     children: [
                       const Text(
@@ -132,9 +120,7 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 6),
-
                   const Text(
                     'Write a review',
                     style: TextStyle(
@@ -142,45 +128,57 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-
                   const SizedBox(height: 12),
 
+                  /// OPEN TIME + NON-CLICKABLE CALENDAR ICON
                   Row(
-                    children: const [
-                      Text(
+                    children: [
+                      const Text(
                         'Open Now',
                         style: TextStyle(
                           color: Colors.green,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      SizedBox(width: 8),
-                      Text(
+                      const SizedBox(width: 8),
+                      const Text(
                         '12.00AM - 11:59PM',
                         style: TextStyle(color: Colors.black54),
                       ),
-                      Spacer(),
-                      Icon(Icons.arrow_forward_ios, size: 14),
+                      const Spacer(),
+
+                      /// 📅 NON-CLICKABLE CALENDAR ICON
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.calendar_today,
+                          size: 24,
+                          color: Colors.blue,
+                        ),
+                      ),
                     ],
                   ),
-
                   const SizedBox(height: 16),
-
                   const Text(
                     'Mardi Himal is one of the most scenic and less-crowded trekking '
                     'destinations in the Annapurna region of Nepal. The trek offers '
-                    'spectacular views of Machhapuchhre, Annapurna South, and '
-                    'Hiunchuli.\n\n'
-                    'The trail passes through rhododendron forests, traditional '
-                    'villages, and alpine landscapes, making it ideal for nature '
-                    'lovers and adventure seekers.',
-                    style: TextStyle(fontSize: 14, height: 1.6),
+                    'spectacular views of Machhapuchhre (Fishtail), Annapurna South, '
+                    'and Hiunchuli. The trail passes through lush rhododendron forests, '
+                    'traditional Gurung villages, and alpine landscapes. With its '
+                    'moderate difficulty and shorter duration, Mardi Himal Trek is '
+                    'ideal for both beginner and experienced trekkers seeking a '
+                    'peaceful and authentic Himalayan experience.',
+                    style: TextStyle(fontSize: 15, height: 1.6),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

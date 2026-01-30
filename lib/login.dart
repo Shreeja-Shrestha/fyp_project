@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:fyp_project/forgotpassword.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'signup.dart'; // your signup page
-import 'home.dart'; // Home Page to navigate after login
+import 'signup.dart'; // Make sure this matches your file name
+import 'home.dart'; // Make sure this matches your file name
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,12 +17,11 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
 
   bool isLoading = false;
+  bool rememberMe = false;
 
   Future<void> login() async {
     if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("All fields are required")));
+      _showSnackBar("All fields are required");
       return;
     }
 
@@ -40,54 +40,45 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       setState(() => isLoading = false);
 
-      Map<String, dynamic> data = {};
-      if (response.body.isNotEmpty) {
-        try {
-          data = jsonDecode(response.body);
-        } catch (_) {}
-      }
-
       if (response.statusCode == 200) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Login successful")));
-        debugPrint("JWT Token: ${data['token']}");
-
-        //  Navigate to Home Page
+        _showSnackBar("Login successful");
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const HomePage()),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Login failed")),
-        );
+        final data = jsonDecode(response.body);
+        _showSnackBar(data['message'] ?? "Login failed");
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => isLoading = false);
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Server not reachable")));
+      _showSnackBar("Server not reachable");
     }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(255, 255, 255, 0.912),
+      backgroundColor: const Color(0xfff8f9fd),
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // --- CURVED HEADER WITH IMAGE ---
             ClipPath(
               clipper: BottomCurveClipper(),
               child: Container(
-                height: 260,
+                height: MediaQuery.of(context).size.height * 0.35,
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage("image.jpg"), // your image
+                    image: AssetImage("assets/image.jpg"), // CHECK PATH
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -95,62 +86,121 @@ class _LoginPageState extends State<LoginPage> {
             ),
 
             const SizedBox(height: 20),
+
+            // --- TITLE SECTION ---
             const Text(
               "Login to Access Your",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: Colors.black,
+              ),
             ),
             const Text(
               "Travel Tickets",
               style: TextStyle(
-                fontSize: 20,
-                color: Colors.blue,
-                fontWeight: FontWeight.bold,
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+                color: Color(0xff1a73e8),
               ),
             ),
+
             const SizedBox(height: 30),
 
+            // --- INPUT FIELDS ---
             _inputField(
-              hint: "Enter your email",
+              hint: "enter your email",
               icon: Icons.email_outlined,
               controller: emailController,
             ),
             const SizedBox(height: 15),
             _inputField(
-              hint: "Enter your password",
+              hint: "enter your password",
               icon: Icons.lock_outline,
               obscure: true,
               controller: passwordController,
             ),
-            const SizedBox(height: 25),
 
-            GestureDetector(
-              onTap: isLoading ? null : login,
-              child: Container(
-                width: 250,
-                height: 45,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Center(
+            // --- REMEMBER ME & FORGOT PASSWORD ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: rememberMe,
+                        activeColor: Colors.black,
+                        onChanged: (val) => setState(() => rememberMe = val!),
+                      ),
+                      const Text(
+                        "Remember me",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                  // NEW CODE
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ForgotPasswordScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      "Forgot password?",
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // --- LOGIN BUTTON ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30),
+              child: SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  onPressed: isLoading ? null : login,
                   child: isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
                           "Login",
-                          style: TextStyle(color: Colors.white, fontSize: 16),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                 ),
               ),
             ),
+
             const SizedBox(height: 25),
 
-            // New user register link
+            // --- FOOTER ---
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
-                  "New user? ",
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                  "Don't have an account? ",
+                  style: TextStyle(color: Colors.grey),
                 ),
                 GestureDetector(
                   onTap: () {
@@ -160,10 +210,9 @@ class _LoginPageState extends State<LoginPage> {
                     );
                   },
                   child: const Text(
-                    "Register",
+                    "Sign Up",
                     style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.blue,
+                      color: Color(0xff1a73e8),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -185,19 +234,21 @@ class _LoginPageState extends State<LoginPage> {
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 30),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 15),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.shade400),
-        ),
-        child: TextField(
-          controller: controller,
-          obscureText: obscure,
-          decoration: InputDecoration(
-            border: InputBorder.none,
-            prefixIcon: Icon(icon),
-            hintText: hint,
+      child: TextField(
+        controller: controller,
+        obscureText: obscure,
+        decoration: InputDecoration(
+          prefixIcon: Icon(icon, color: Colors.grey.shade600),
+          hintText: hint,
+          filled: true,
+          fillColor: Colors.white,
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(30),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(30),
+            borderSide: const BorderSide(color: Colors.black, width: 1.5),
           ),
         ),
       ),
@@ -205,17 +256,17 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-// Curved image clipper
+// --- CLIPPER FOR THE SMOOTH BOTTOM CURVE ---
 class BottomCurveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(0, size.height - 40);
+    Path path = Path();
+    path.lineTo(0, size.height - 60); // Start point
     path.quadraticBezierTo(
       size.width / 2,
-      size.height,
+      size.height + 20, // This creates the outward "bulge"
       size.width,
-      size.height - 40,
+      size.height - 60,
     );
     path.lineTo(size.width, 0);
     path.close();
