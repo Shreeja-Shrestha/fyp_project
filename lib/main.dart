@@ -8,8 +8,9 @@ import 'package:fyp_project/login.dart';
 import 'package:fyp_project/mardi.dart';
 import 'package:fyp_project/home.dart';
 import 'package:fyp_project/signup.dart';
-import 'package:fyp_project/tour_booking.dart';
 import 'package:fyp_project/tour_detail_page.dart';
+import 'package:fyp_project/tour_detail_page.dart';
+
 import 'admin_manage_packages_page.dart';
 
 //import 'signup.dart';
