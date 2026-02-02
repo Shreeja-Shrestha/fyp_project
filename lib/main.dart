@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fyp_project/add_package_page.dart';
 import 'package:fyp_project/admin_manage_packages_page.dart';
+import 'package:fyp_project/booking_options_page.dart';
 import 'package:fyp_project/getstarted.dart';
 import 'package:fyp_project/hotel1.dart';
 import 'package:fyp_project/hotel2.dart';

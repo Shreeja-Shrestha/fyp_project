@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'booking_options_page.dart';
+import 'services/review_service.dart'; // add this
 
 class TourDetailPage extends StatefulWidget {
   const TourDetailPage({super.key});
@@ -224,11 +225,14 @@ class _TourDetailPageState extends State<TourDetailPage> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) =>
-                                        const BookingOptionsPage(
-                                          packageId: 1,
-                                          userId: 1,
-                                        ),
+                                    builder: (context) => const BookingOptionsPage(
+                                      packageId: 1,
+                                      userId: 1,
+                                      token:
+                                          "user_jwt_token", // replace with actual logged-in token
+                                      role:
+                                          "user", // replace with actual logged-in role
+                                    ),
                                   ),
                                 );
                               },
@@ -370,6 +374,8 @@ class _TourDetailPageState extends State<TourDetailPage> {
   }
 
   void _showReviewDialog(BuildContext context) {
+    final TextEditingController reviewController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) {
@@ -388,6 +394,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
+                controller: reviewController,
                 decoration: InputDecoration(
                   hintText: "Your thoughts...",
                   hintStyle: TextStyle(color: Colors.grey[400]),
@@ -408,7 +415,28 @@ class _TourDetailPageState extends State<TourDetailPage> {
               child: Text("Cancel", style: TextStyle(color: Colors.grey[600])),
             ),
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () async {
+                if (reviewController.text.isEmpty) return;
+
+                bool success = await ReviewService.postReview(
+                  userId: 1, // replace with actual logged-in user later
+                  packageId: 1, // replace with current package ID
+                  reviewText: reviewController.text,
+                  rating: "5.0", // optional: you can add rating picker later
+                );
+
+                Navigator.pop(context);
+
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Review posted successfully")),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Failed to post review")),
+                  );
+                }
+              },
               child: const Text(
                 "Post",
                 style: TextStyle(

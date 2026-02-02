@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fyp_project/admin_dashboard.dart';
 import 'package:fyp_project/forgotpassword.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -41,11 +42,23 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => isLoading = false);
 
       if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final userRole =
+            data['user']['role']; // make sure backend sends role field
+
         _showSnackBar("Login successful");
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
-        );
+
+        if (userRole == 'admin') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const HomePage()),
+          );
+        }
       } else {
         final data = jsonDecode(response.body);
         _showSnackBar(data['message'] ?? "Login failed");
@@ -78,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage("assets/image.jpg"), // CHECK PATH
+                    image: AssetImage("assets/mardi.jpg"), // CHECK PATH
                     fit: BoxFit.cover,
                   ),
                 ),
