@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
-import '../services/booking_service.dart'; // Make sure this file exists
+import '../services/booking_service.dart'; // Make sure this exists
 
 class BookingOptionsPage extends StatefulWidget {
-  final int packageId; // Pass selected package ID here
+  final int packageId;
+  final int userId;
+  final String token; // ✅ add token here
+  final String role;
 
-  const BookingOptionsPage({super.key, required this.packageId});
+  const BookingOptionsPage({
+    super.key,
+    required this.packageId,
+    required this.userId,
+    required this.token,
+    required this.role, // ✅ require token
+  });
 
   @override
   State<BookingOptionsPage> createState() => _BookingOptionsPageState();
@@ -25,6 +34,21 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     {"type": "Car", "path": "assets/car.png"},
     {"type": "Flight", "path": "assets/aero.png"},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Block admins from accessing this page
+    if (widget.role == "admin") {
+      Future.delayed(Duration.zero, () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Admins cannot create bookings")),
+        );
+        Navigator.pop(context);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -252,7 +276,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     );
   }
 
-  // --- CONFIRM BUTTON WITH BACKEND ---
   Widget _confirmButton() {
     return Container(
       width: double.infinity,
@@ -283,8 +306,8 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
           }
 
           bool success = await BookingService.createBooking(
-            userId: 1, // TODO: replace with actual logged-in user ID
-            packageId: widget.packageId, // ✅ dynamic packageId
+            token: widget.token, // ✅ send JWT token
+            packageId: widget.packageId,
             travelDate: selectedDate!.toIso8601String().split("T")[0],
             persons: int.parse(personsController.text),
             transportType: selectedTransport,
