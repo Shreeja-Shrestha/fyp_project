@@ -225,7 +225,10 @@ class _TourDetailPageState extends State<TourDetailPage> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>
-                                        const BookingOptionsPage(),
+                                        const BookingOptionsPage(
+                                          packageId: 1,
+                                          userId: 1,
+                                        ),
                                   ),
                                 );
                               },
