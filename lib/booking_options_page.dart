@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../services/booking_service.dart'; // Make sure this file exists
 
 class BookingOptionsPage extends StatefulWidget {
-  const BookingOptionsPage({super.key});
+  final int packageId; // Pass selected package ID here
+
+  const BookingOptionsPage({super.key, required this.packageId});
 
   @override
   State<BookingOptionsPage> createState() => _BookingOptionsPageState();
@@ -17,7 +20,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   final Color primaryBlue = const Color(0xFF3D5BF6);
   final Color bgCanvas = const Color(0xFFFBFBFE);
 
-  // Updated transport list to use your asset paths
   final List<Map<String, String>> transportOptions = [
     {"type": "Bus", "path": "assets/bus.png"},
     {"type": "Car", "path": "assets/car.png"},
@@ -46,11 +48,9 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
                     onTap: _pickDate,
                   ),
                   const SizedBox(height: 25),
-
                   _label("Number of Persons"),
                   _buildPersonsInput(),
                   const SizedBox(height: 30),
-
                   _label("Choose Transportation"),
                   const SizedBox(height: 12),
                   Row(
@@ -63,11 +63,9 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
                         .toList(),
                   ),
                   const SizedBox(height: 30),
-
                   _label("Nearby Hotels (via Google Maps)"),
                   _mapPreview(),
                   const SizedBox(height: 40),
-
                   _confirmButton(),
                   const SizedBox(height: 30),
                 ],
@@ -79,8 +77,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     );
   }
 
-  // --- PRETTY WIDGETS ---
-
+  // --- WIDGETS ---
   Widget _transportCard(String type, String imagePath) {
     bool isSelected = selectedTransport == type;
     return GestureDetector(
@@ -108,11 +105,9 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         ),
         child: Column(
           children: [
-            // Using your image assets here
             Image.asset(
               imagePath,
               height: 50,
-              // Subtle trick: Greyscale the image when not selected
               color: isSelected ? null : Colors.grey.withOpacity(0.5),
               colorBlendMode: isSelected ? null : BlendMode.modulate,
             ),
@@ -230,7 +225,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         color: Colors.grey.shade200,
         child: Stack(
           children: [
-            // Placeholder for the Google Map
             const Center(
               child: Icon(Icons.map_outlined, size: 50, color: Colors.grey),
             ),
@@ -258,6 +252,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     );
   }
 
+  // --- CONFIRM BUTTON WITH BACKEND ---
   Widget _confirmButton() {
     return Container(
       width: double.infinity,
@@ -279,8 +274,41 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
           ),
           elevation: 0,
         ),
-        onPressed: () {
-          // Here is where your Backend logic for Google Calendar would trigger
+        onPressed: () async {
+          if (selectedDate == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Please select travel date")),
+            );
+            return;
+          }
+
+          bool success = await BookingService.createBooking(
+            userId: 1, // TODO: replace with actual logged-in user ID
+            packageId: widget.packageId, // ✅ dynamic packageId
+            travelDate: selectedDate!.toIso8601String().split("T")[0],
+            persons: int.parse(personsController.text),
+            transportType: selectedTransport,
+          );
+
+          if (success) {
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text("Success"),
+                content: const Text("Booking placed successfully"),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("OK"),
+                  ),
+                ],
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text("Booking failed")));
+          }
         },
         child: const Text(
           "Confirm Booking",
