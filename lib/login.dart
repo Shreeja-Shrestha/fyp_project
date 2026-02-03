@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:fyp_project/admin_dashboard.dart';
-import 'package:fyp_project/forgotpassword.dart';
 import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import 'signup.dart'; // Make sure this matches your file name
-import 'home.dart'; // Make sure this matches your file name
+import 'home.dart';
+import 'signup.dart';
+import 'forgotpassword.dart';
+import 'admin_dashboard.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,6 +20,15 @@ class _LoginPageState extends State<LoginPage> {
 
   bool isLoading = false;
   bool rememberMe = false;
+
+  // SAVE USER SESSION LOCALLY
+  Future<void> saveUserSession(Map<String, dynamic> user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt("user_id", user["id"]);
+    await prefs.setString("user_name", user["name"]);
+    await prefs.setString("user_email", user["email"]);
+    await prefs.setString("user_role", user["role"]);
+  }
 
   Future<void> login() async {
     if (emailController.text.isEmpty || passwordController.text.isEmpty) {
@@ -43,12 +53,13 @@ class _LoginPageState extends State<LoginPage> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final userRole =
-            data['user']['role']; // make sure backend sends role field
+        final user = data["user"];
+        final role = user["role"];
 
+        await saveUserSession(user);
         _showSnackBar("Login successful");
 
-        if (userRole == 'admin') {
+        if (role == "admin") {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
@@ -83,7 +94,6 @@ class _LoginPageState extends State<LoginPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // --- CURVED HEADER WITH IMAGE ---
             ClipPath(
               clipper: BottomCurveClipper(),
               child: Container(
@@ -91,16 +101,13 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage("assets/mardi.jpg"), // CHECK PATH
+                    image: AssetImage("assets/mardi.jpg"),
                     fit: BoxFit.cover,
                   ),
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
-            // --- TITLE SECTION ---
             const Text(
               "Login to Access Your",
               style: TextStyle(
@@ -117,24 +124,19 @@ class _LoginPageState extends State<LoginPage> {
                 color: Color(0xff1a73e8),
               ),
             ),
-
             const SizedBox(height: 30),
-
-            // --- INPUT FIELDS ---
             _inputField(
-              hint: "enter your email",
-              icon: Icons.email_outlined,
-              controller: emailController,
+              "enter your email",
+              Icons.email_outlined,
+              emailController,
             ),
             const SizedBox(height: 15),
             _inputField(
-              hint: "enter your password",
-              icon: Icons.lock_outline,
+              "enter your password",
+              Icons.lock_outline,
+              passwordController,
               obscure: true,
-              controller: passwordController,
             ),
-
-            // --- REMEMBER ME & FORGOT PASSWORD ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25),
               child: Row(
@@ -153,13 +155,12 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ],
                   ),
-                  // NEW CODE
                   TextButton(
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const ForgotPasswordScreen(),
+                          builder: (_) => const ForgotPasswordScreen(),
                         ),
                       );
                     },
@@ -174,10 +175,7 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),
             ),
-
             const SizedBox(height: 20),
-
-            // --- LOGIN BUTTON ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 30),
               child: SizedBox(
@@ -204,10 +202,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 25),
-
-            // --- FOOTER ---
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -216,12 +211,10 @@ class _LoginPageState extends State<LoginPage> {
                   style: TextStyle(color: Colors.grey),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SignUpScreen()),
-                    );
-                  },
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SignUpScreen()),
+                  ),
                   child: const Text(
                     "Sign Up",
                     style: TextStyle(
@@ -239,10 +232,10 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _inputField({
-    required String hint,
-    required IconData icon,
-    required TextEditingController controller,
+  Widget _inputField(
+    String hint,
+    IconData icon,
+    TextEditingController controller, {
     bool obscure = false,
   }) {
     return Padding(
@@ -269,15 +262,14 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-// --- CLIPPER FOR THE SMOOTH BOTTOM CURVE ---
 class BottomCurveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     Path path = Path();
-    path.lineTo(0, size.height - 60); // Start point
+    path.lineTo(0, size.height - 60);
     path.quadraticBezierTo(
       size.width / 2,
-      size.height + 20, // This creates the outward "bulge"
+      size.height + 20,
       size.width,
       size.height - 60,
     );
