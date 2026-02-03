@@ -1,22 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fyp_project/mardi.dart';
-import 'mardi.dart'; // Import the new page
-
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: const HomePage(),
-    );
-  }
-}
+import 'package:fyp_project/user_profile_page.dart';
+import 'mardi.dart'; // PlaceDetailsPage
+import 'user_profile_page.dart'; // Account page
 
 /// HOME PAGE
 class HomePage extends StatefulWidget {
@@ -53,145 +39,7 @@ class _HomePageState extends State<HomePage> {
       ),
 
       /// BODY
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// SEARCH BAR
-            IgnorePointer(
-              child: SizedBox(
-                width: double.infinity,
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: "Places to go, things to do",
-                    prefixIcon: const Icon(Icons.search),
-                    filled: true,
-                    fillColor: Colors.grey.shade100,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            /// FIND BY INTEREST
-            sectionTitle("Find things to do by interest"),
-            const SizedBox(height: 4),
-            const Text(
-              "Whatever you're into we have got you",
-              style: TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 140,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: const [
-                  InterestCard(title: "Outdoors", image: "assets/outdoor.jpg"),
-                  InterestCard(title: "Food", image: "assets/food.jpg"),
-                  InterestCard(title: "Culture", image: "assets/culture.jpg"),
-                  InterestCard(title: "Water", image: "assets/water.jpg"),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            /// WE MIGHT LIKE THESE
-            sectionTitle("We might like these"),
-            const SizedBox(height: 4),
-            const Text(
-              "More things to do in Nepal",
-              style: TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 255,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: tours.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 16),
-                itemBuilder: (context, index) {
-                  final tour = tours[index];
-                  return TourCard(
-                    title: tour["title"]!,
-                    image: tour["image"]!,
-                    onTap: () {
-                      // Redirect only for Mardi Himal
-                      if (tour["title"] == "Mardi Himal Trek") {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PlaceDetailsPage(),
-                          ),
-                        );
-                      }
-                    },
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            /// EXPLORE MORE
-            sectionTitle("Explore more of Nepal"),
-            const SizedBox(height: 4),
-            const Text(
-              "Experience the trekking and Camps",
-              style: TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 330,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: exploreTours.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 16),
-                itemBuilder: (context, index) {
-                  final tour = exploreTours[index];
-                  return ExploreCard(
-                    title: tour["title"]!,
-                    image: tour["image"]!,
-                    price: tour["price"]!,
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            /// RELIGIOUS TEMPLES
-            sectionTitle("Religious Temples"),
-            const SizedBox(height: 4),
-            const Text(
-              "Explore the religious places of Nepal",
-              style: TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-            const SizedBox(height: 12),
-            ListView.builder(
-              itemCount: religiousTemples.length,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemBuilder: (context, index) {
-                final temple = religiousTemples[index];
-                return ReligiousTempleCard(
-                  title: temple["title"]!,
-                  image: temple["image"]!,
-                  price: temple["price"]!,
-                  reviews: temple["reviews"]!,
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+      body: buildBody(),
 
       /// BOTTOM NAV BAR
       bottomNavigationBar: BottomNavigationBar(
@@ -199,7 +47,17 @@ class _HomePageState extends State<HomePage> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.black,
         unselectedItemColor: Colors.grey.shade400,
-        onTap: (index) => setState(() => selectedIndex = index),
+        onTap: (index) {
+          if (index == 4) {
+            // Navigate to Account/UserProfilePage
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const UserProfilePage()),
+            );
+          } else {
+            setState(() => selectedIndex = index);
+          }
+        },
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.explore_outlined),
@@ -231,6 +89,160 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Build the body based on selected tab
+  Widget buildBody() {
+    switch (selectedIndex) {
+      case 0:
+        return exploreBody(); // Your current home page
+      case 1:
+        return const Center(child: Text("Trips page")); // placeholder
+      case 2:
+        return const Center(child: Text("Review page")); // placeholder
+      case 3:
+        return const Center(child: Text("History page")); // placeholder
+      default:
+        return exploreBody();
+    }
+  }
+
+  /// Explore/Home content
+  Widget exploreBody() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// SEARCH BAR
+          IgnorePointer(
+            child: SizedBox(
+              width: double.infinity,
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: "Places to go, things to do",
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          /// FIND BY INTEREST
+          sectionTitle("Find things to do by interest"),
+          const SizedBox(height: 4),
+          const Text(
+            "Whatever you're into we have got you",
+            style: TextStyle(fontSize: 13, color: Colors.grey),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 140,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: const [
+                InterestCard(title: "Outdoors", image: "assets/outdoor.jpg"),
+                InterestCard(title: "Food", image: "assets/food.jpg"),
+                InterestCard(title: "Culture", image: "assets/culture.jpg"),
+                InterestCard(title: "Water", image: "assets/water.jpg"),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          /// WE MIGHT LIKE THESE
+          sectionTitle("We might like these"),
+          const SizedBox(height: 4),
+          const Text(
+            "More things to do in Nepal",
+            style: TextStyle(fontSize: 13, color: Colors.grey),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 255,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: tours.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 16),
+              itemBuilder: (context, index) {
+                final tour = tours[index];
+                return TourCard(
+                  title: tour["title"]!,
+                  image: tour["image"]!,
+                  onTap: () {
+                    if (tour["title"] == "Mardi Himal Trek") {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PlaceDetailsPage(),
+                        ),
+                      );
+                    }
+                  },
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          /// EXPLORE MORE
+          sectionTitle("Explore more of Nepal"),
+          const SizedBox(height: 4),
+          const Text(
+            "Experience the trekking and Camps",
+            style: TextStyle(fontSize: 13, color: Colors.grey),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 330,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: exploreTours.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 16),
+              itemBuilder: (context, index) {
+                final tour = exploreTours[index];
+                return ExploreCard(
+                  title: tour["title"]!,
+                  image: tour["image"]!,
+                  price: tour["price"]!,
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          /// RELIGIOUS TEMPLES
+          sectionTitle("Religious Temples"),
+          const SizedBox(height: 4),
+          const Text(
+            "Explore the religious places of Nepal",
+            style: TextStyle(fontSize: 13, color: Colors.grey),
+          ),
+          const SizedBox(height: 12),
+          ListView.builder(
+            itemCount: religiousTemples.length,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemBuilder: (context, index) {
+              final temple = religiousTemples[index];
+              return ReligiousTempleCard(
+                title: temple["title"]!,
+                image: temple["image"]!,
+                price: temple["price"]!,
+                reviews: temple["reviews"]!,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget sectionTitle(String title) {
     return Text(
       title,
@@ -238,6 +250,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
+// ----------------------------
+// INTEREST CARD, TOUR CARD, EXPLORE CARD, RELIGIOUS CARD remain same
+// ----------------------------
 
 /// INTEREST CARD
 class InterestCard extends StatelessWidget {
@@ -282,7 +298,7 @@ class InterestCard extends StatelessWidget {
 class TourCard extends StatelessWidget {
   final String title;
   final String image;
-  final VoidCallback? onTap; // optional callback
+  final VoidCallback? onTap;
 
   const TourCard({
     super.key,
@@ -294,7 +310,7 @@ class TourCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap, // trigger navigation
+      onTap: onTap,
       child: SizedBox(
         width: 200,
         child: Column(
