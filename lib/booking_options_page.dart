@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
-import '../services/booking_service.dart'; // Make sure this exists
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/booking_service.dart';
 
 class BookingOptionsPage extends StatefulWidget {
   final int packageId;
   final int userId;
-  final String token; // ✅ add token here
   final String role;
+  final int tourId; // ✅ REQUIRED
 
   const BookingOptionsPage({
     super.key,
     required this.packageId,
     required this.userId,
-    required this.token,
-    required this.role, // ✅ require token
+    required this.role,
+    required this.tourId, // ✅ REQUIRED
   });
 
   @override
@@ -38,9 +39,8 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   @override
   void initState() {
     super.initState();
-
     // Block admins from accessing this page
-    if (widget.role == "admin") {
+    if (widget.role.toLowerCase() == "admin") {
       Future.delayed(Duration.zero, () {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Admins cannot create bookings")),
@@ -101,7 +101,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     );
   }
 
-  // --- WIDGETS ---
   Widget _transportCard(String type, String imagePath) {
     bool isSelected = selectedTransport == type;
     return GestureDetector(
@@ -172,19 +171,17 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     );
   }
 
-  Widget _label(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10, left: 4),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          color: Colors.blueGrey.shade700,
-        ),
+  Widget _label(String text) => Padding(
+    padding: const EdgeInsets.only(bottom: 10, left: 4),
+    child: Text(
+      text,
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w700,
+        color: Colors.blueGrey.shade700,
       ),
-    );
-  }
+    ),
+  );
 
   Widget _selectionTile({
     required IconData icon,
@@ -297,42 +294,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
           ),
           elevation: 0,
         ),
-        onPressed: () async {
-          if (selectedDate == null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Please select travel date")),
-            );
-            return;
-          }
-
-          bool success = await BookingService.createBooking(
-            token: widget.token, // ✅ send JWT token
-            packageId: widget.packageId,
-            travelDate: selectedDate!.toIso8601String().split("T")[0],
-            persons: int.parse(personsController.text),
-            transportType: selectedTransport,
-          );
-
-          if (success) {
-            showDialog(
-              context: context,
-              builder: (_) => AlertDialog(
-                title: const Text("Success"),
-                content: const Text("Booking placed successfully"),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text("OK"),
-                  ),
-                ],
-              ),
-            );
-          } else {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text("Booking failed")));
-          }
-        },
+        onPressed: _onConfirmBooking,
         child: const Text(
           "Confirm Booking",
           style: TextStyle(
@@ -343,6 +305,44 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _onConfirmBooking() async {
+    if (selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select travel date")),
+      );
+      return;
+    }
+
+    final int persons = int.tryParse(personsController.text) ?? 1;
+
+    bool success = await BookingService.createBooking(
+      packageId: widget.packageId,
+      travelDate: selectedDate!.toIso8601String().split("T")[0],
+      persons: persons,
+      transportType: selectedTransport,
+    );
+
+    if (success) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("Success"),
+          content: const Text("Booking placed successfully"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Booking failed")));
+    }
   }
 
   Future<void> _pickDate() async {

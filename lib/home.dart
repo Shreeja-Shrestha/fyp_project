@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fyp_project/mardi.dart';
+import 'package:fyp_project/tour_detail_page.dart';
 import 'package:fyp_project/user_profile_page.dart';
 import 'mardi.dart'; // PlaceDetailsPage
 import 'user_profile_page.dart'; // Account page
@@ -179,7 +180,7 @@ class _HomePageState extends State<HomePage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const PlaceDetailsPage(),
+                          builder: (_) => const TourDetailPage(tourId: 1),
                         ),
                       );
                     }
