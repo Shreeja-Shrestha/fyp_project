@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fyp_project/package_service.dart';
+import 'package:fyp_project/services/package_service.dart';
 
 class AddPackagePage extends StatefulWidget {
   final Map<String, dynamic>? package; // optional for editing

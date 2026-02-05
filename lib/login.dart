@@ -56,8 +56,15 @@ class _LoginPageState extends State<LoginPage> {
         final user = data["user"];
         final role = user["role"];
 
+        // ✅ Save user info as you already did
         await saveUserSession(user);
+
         _showSnackBar("Login successful");
+        // Save JWT token to SharedPreferences
+        // Save JWT token to SharedPreferences
+        final token = data["token"];
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString("token", token);
 
         if (role == "admin") {
           Navigator.pushReplacement(
