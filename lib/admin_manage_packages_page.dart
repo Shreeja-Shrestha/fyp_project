@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:fyp_project/package_service.dart';
+import 'package:fyp_project/admin_profile_page.dart';
+import 'package:fyp_project/services/package_service.dart';
 import 'add_package_page.dart';
 
 class AdminManagePackagesPage extends StatefulWidget {
@@ -60,6 +61,15 @@ class _AdminManagePackagesPageState extends State<AdminManagePackagesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminProfilePage()),
+            );
+          },
+        ),
         title: const Text("Manage Tour Packages"),
         centerTitle: true,
       ),
