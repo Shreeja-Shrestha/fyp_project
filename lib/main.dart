@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fyp_project/add_package_page.dart';
 import 'package:fyp_project/admin_manage_packages_page.dart';
+import 'package:fyp_project/admin_profile_page.dart';
 import 'package:fyp_project/booking_options_page.dart';
 import 'package:fyp_project/getstarted.dart';
 import 'package:fyp_project/hotel1.dart';
@@ -10,13 +11,7 @@ import 'package:fyp_project/mardi.dart';
 import 'package:fyp_project/home.dart';
 import 'package:fyp_project/signup.dart';
 import 'package:fyp_project/tour_detail_page.dart';
-import 'package:fyp_project/tour_detail_page.dart';
 import 'package:fyp_project/user_profile_page.dart';
-
-import 'admin_manage_packages_page.dart';
-
-//import 'signup.dart';
-//import 'signup.dart';
 
 void main() {
   runApp(const MyApp());
