@@ -1,12 +1,12 @@
+// UPDATED UI — CLEAN LAYOUT WITH INTEGRATED BOOKING NAVIGATION
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
+// Ensure this import matches your actual project structure
 import 'package:fyp_project/booking_options_page.dart';
-import 'package:fyp_project/services/review_service.dart';
-import '../services/tour_service.dart';
 
 class TourDetailPage extends StatefulWidget {
   final int tourId;
-
   const TourDetailPage({super.key, required this.tourId});
 
   @override
@@ -14,365 +14,360 @@ class TourDetailPage extends StatefulWidget {
 }
 
 class _TourDetailPageState extends State<TourDetailPage> {
-  List reviews = [];
-  bool reviewLoading = true;
+  final TextEditingController _reviewController = TextEditingController();
 
-  bool isLoading = true;
+  final String title = "Mardi Himal Trek";
+  final String location = "Gandaki Province, Nepal";
+  final String description =
+      "Experience the breathtaking beauty of the Annapurna region. This trek offers stunning views of Machhapuchhre (Fishtail) and the Annapurna massif. Perfect for those looking for a shorter, quieter alternative to the more crowded Everest routes.";
 
-  String title = "";
-  String location = "";
-  String description = "";
-  double price = 0;
-  double rating = 0;
-  int reviewCount = 0;
+  final double price = 25000;
+  final double rating = 4.9;
+
+  final List<Map<String, dynamic>> reviews = [
+    {
+      "username": "Anish Giri",
+      "rating": 5,
+      "comment": "Absolutely stunning views!",
+    },
+    {
+      "username": "Sita Thapa",
+      "rating": 4,
+      "comment": "A bit challenging but worth every step!",
+    },
+  ];
 
   final List<String> images = [
     "assets/mardi1.jpg",
     "assets/mardi2.jpg",
     "assets/mardi3.jpg",
-    "assets/mardi4.jpg",
   ];
 
   final PageController _pageController = PageController();
-  Timer? _timer;
   int _currentPage = 0;
+  int _userSelectedRating = 5;
+  Timer? _timer;
+
+  final Color primarySkyBlue = const Color(0xFF00B4D8);
+  final Color softSkyBlue = const Color(0xFFCAF0F8);
 
   @override
   void initState() {
     super.initState();
-    loadTour();
-    loadReviews();
-
-    _timer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (_pageController.hasClients) {
-        _currentPage = (_currentPage + 1) % images.length;
-        _pageController.animateToPage(
-          _currentPage,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
-      }
-    });
+    _startImageTimer();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
     _pageController.dispose();
+    _reviewController.dispose();
     super.dispose();
   }
 
-  // ================= API =================
-  Future<void> loadTour() async {
-    try {
-      var tour = await TourService.getTour(widget.tourId);
+  void _startImageTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
+      if (_pageController.hasClients) {
+        int nextPage = (_currentPage + 1) % images.length;
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 900),
+          curve: Curves.decelerate,
+        );
+      }
+    });
+  }
 
-      if (!mounted) return;
-
-      setState(() {
-        tour = tour["title"] ?? "";
-        location = tour["location"] ?? "";
-        description = tour["description"] ?? "";
-        price = double.tryParse(tour["price"].toString()) ?? 0;
-        isLoading = false; // ✅ STOP LOADING
-      });
-    } catch (e) {
-      debugPrint("Load tour error: $e");
-
-      if (!mounted) return;
-
-      setState(() {
-        isLoading = false; // ✅ MUST STOP EVEN ON ERROR
-      });
-    }
+  // Helper function to handle navigation
+  void _navigateToBooking() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BookingOptionsPage(
+          packageId: widget.tourId,
+          userId: 1, // Replace with dynamic user ID if available
+          role: 'user',
+          tourId: widget.tourId,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    Expanded(child: _reviewList());
-
-    if (isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
     return Scaffold(
-      body: Stack(children: [_imageSlider(), _topButtons(), _content()]),
-    );
-  }
-
-  // ================= IMAGE =================
-  Widget _imageSlider() {
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.48,
-      child: PageView.builder(
-        controller: _pageController,
-        itemCount: images.length,
-        onPageChanged: (i) => setState(() => _currentPage = i),
-        itemBuilder: (_, i) =>
-            Image.asset(images[i], fit: BoxFit.cover, width: double.infinity),
-      ),
-    );
-  }
-
-  // ================= TOP BAR =================
-  Widget _topButtons() {
-    return Positioned(
-      top: MediaQuery.of(context).padding.top + 10,
-      left: 16,
-      right: 16,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: Colors.white,
+      body: Stack(
         children: [
-          _circleBtn(Icons.arrow_back, () => Navigator.pop(context)),
-          _circleBtn(Icons.favorite_border, () {}),
-        ],
-      ),
-    );
-  }
-
-  Widget _circleBtn(IconData icon, VoidCallback onTap) {
-    return CircleAvatar(
-      backgroundColor: Colors.black45,
-      child: IconButton(
-        icon: Icon(icon, color: Colors.white),
-        onPressed: onTap,
-      ),
-    );
-  }
-
-  // ================= CONTENT =================
-  Widget _content() {
-    return Positioned(
-      top: MediaQuery.of(context).size.height * 0.42,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _titleRow(),
-            const SizedBox(height: 6),
-            _locationRow(),
-            const SizedBox(height: 18),
-            const Text(
-              "Description",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              description,
-              style: const TextStyle(color: Colors.grey, height: 1.4),
-            ),
-            const SizedBox(height: 18),
-            _reviewHeader(),
-            const SizedBox(height: 10),
-            Expanded(child: _reviewList()),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _titleRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => BookingOptionsPage(
-                  packageId: widget.tourId,
-                  userId: 0,
-                  role: "user",
-                  tourId: widget.tourId,
+          // STICKY IMAGE SLIDESHOW
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: Stack(
+              alignment: Alignment.bottomCenter,
+              children: [
+                PageView.builder(
+                  controller: _pageController,
+                  itemCount: images.length,
+                  onPageChanged: (i) => setState(() => _currentPage = i),
+                  itemBuilder: (context, index) =>
+                      Image.asset(images[index], fit: BoxFit.cover),
                 ),
-              ),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-          ),
-          child: const Text("Book Now"),
-        ),
-      ],
-    );
-  }
-
-  Widget _locationRow() {
-    return Row(
-      children: [
-        const Icon(Icons.location_on, size: 16, color: Colors.grey),
-        const SizedBox(width: 4),
-        Text(location, style: const TextStyle(color: Colors.grey)),
-        const SizedBox(width: 12),
-        const Icon(Icons.star, size: 16, color: Colors.orange),
-        Text(" $rating"),
-        Text(" ($reviewCount)", style: const TextStyle(color: Colors.grey)),
-      ],
-    );
-  }
-
-  Widget _reviewHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Text(
-          "Recent Reviews",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        GestureDetector(
-          onTap: _openReviewDialog,
-          child: const Text(
-            "Write Review",
-            style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> loadReviews() async {
-    try {
-      setState(() {
-        reviewLoading = true;
-      });
-
-      final fetchedReviews = await ReviewService.getReviews(widget.tourId);
-
-      setState(() {
-        reviews = fetchedReviews;
-        reviewLoading = false;
-      });
-    } catch (e) {
-      // 🔴 VERY IMPORTANT: stop loading even on error
-      setState(() {
-        reviews = [];
-        reviewLoading = false;
-      });
-
-      debugPrint("Load reviews error: $e");
-    }
-  }
-
-  Widget _reviewList() {
-    if (reviewLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (reviews.isEmpty) {
-      return const Center(child: Text("No reviews yet"));
-    }
-
-    return ListView.builder(
-      itemCount: reviews.length,
-      itemBuilder: (_, i) {
-        final r = reviews[i];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    r["username"],
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Row(
+                // SLIDESHOW INDICATOR
+                Positioned(
+                  bottom: 60,
+                  child: Row(
                     children: List.generate(
-                      r["rating"],
-                      (_) => const Icon(
-                        Icons.star,
-                        size: 16,
-                        color: Colors.orange,
+                      images.length,
+                      (index) => AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        height: 8,
+                        width: _currentPage == index ? 20 : 8,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(
+                            _currentPage == index ? 1 : 0.5,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     ),
                   ),
-                ],
+                ),
+              ],
+            ),
+          ),
+
+          CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.43,
+                ),
               ),
-              const SizedBox(height: 6),
-              Text(r["comment"]),
+              SliverToBoxAdapter(child: _buildTourContent()),
+              const SliverToBoxAdapter(child: SizedBox(height: 50)),
             ],
           ),
-        );
-      },
+          _buildTopOverlay(),
+        ],
+      ),
     );
   }
 
-  void _openReviewDialog() {
-    double selectedRating = 5;
-    final TextEditingController commentController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Write Review"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButton<double>(
-              value: selectedRating,
-              items: [1, 2, 3, 4, 5]
-                  .map(
-                    (e) => DropdownMenuItem(
-                      value: e.toDouble(),
-                      child: Text("$e Stars"),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) => selectedRating = v!,
-            ),
-            TextField(
-              controller: commentController,
-              decoration: const InputDecoration(
-                hintText: "Write your review...",
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final success = await ReviewService.postReview(
-                tourId: widget.tourId,
-                rating: selectedRating,
-                comment: commentController.text,
-              );
-
-              Navigator.pop(context);
-
-              if (success) {
-                loadReviews(); // 🔥 refresh list
-              }
-            },
-            child: const Text("Submit"),
+  Widget _buildTourContent() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 15,
+            offset: Offset(0, -5),
           ),
         ],
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 30, 24, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 50,
+              height: 5,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+          const SizedBox(height: 25),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.location_on, color: primarySkyBlue, size: 18),
+              const SizedBox(width: 4),
+              Text(
+                location,
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+              ),
+            ],
+          ),
+          const SizedBox(height: 25),
+
+          // QUICK INFO TILES
+          Row(
+            children: [
+              _infoTile(Icons.timer_outlined, "5 Days", "Duration"),
+              const SizedBox(width: 15),
+              _infoTile(Icons.star_rounded, "4.9", "Rating"),
+            ],
+          ),
+
+          const SizedBox(height: 35),
+
+          // DESCRIPTION HEADER WITH REDIRECT BUTTON
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Description",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              ElevatedButton.icon(
+                onPressed: _navigateToBooking,
+                icon: const Icon(
+                  Icons.calendar_month,
+                  size: 18,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  "Book Now",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primarySkyBlue,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            description,
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontSize: 16,
+              height: 1.6,
+            ),
+          ),
+
+          const SizedBox(height: 40),
+
+          // REVIEWS SECTION
+          const Text(
+            "Reviews",
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 15),
+          ...reviews.map((r) => _reviewCard(r)).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoTile(IconData icon, String value, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+      decoration: BoxDecoration(
+        color: softSkyBlue.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: softSkyBlue),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: primarySkyBlue, size: 20),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                label,
+                style: const TextStyle(color: Colors.blueGrey, fontSize: 10),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _reviewCard(Map<String, dynamic> r) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: softSkyBlue,
+                child: Icon(Icons.person, color: primarySkyBlue),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                r["username"],
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
+              Text(" ${r["rating"]}"),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            r["comment"],
+            style: TextStyle(color: Colors.grey.shade700, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopOverlay() {
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 10,
+      left: 20,
+      right: 20,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _blurButton(Icons.arrow_back_ios_new, () => Navigator.pop(context)),
+          _blurButton(Icons.favorite_border, () {}),
+        ],
+      ),
+    );
+  }
+
+  Widget _blurButton(IconData icon, VoidCallback onTap) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          height: 45,
+          width: 45,
+          color: Colors.white.withOpacity(0.2),
+          child: IconButton(
+            padding: EdgeInsets.zero,
+            icon: Icon(icon, color: Colors.white, size: 20),
+            onPressed: onTap,
+          ),
+        ),
       ),
     );
   }
