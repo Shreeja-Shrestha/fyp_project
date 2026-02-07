@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 class BookingService {
+  // Ensure this IP is correct for your current network!
   static const String baseUrl = "http://192.168.18.11:3000/api/bookings";
 
   // ===== CREATE BOOKING =====
@@ -13,19 +13,9 @@ class BookingService {
     required String transportType,
   }) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString("token");
-      if (token == null || token.isEmpty) {
-        print("Error: User not logged in or token missing.");
-        return false;
-      }
-
       final response = await http.post(
         Uri.parse("$baseUrl/create"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
+        headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "package_id": packageId,
           "travel_date": travelDate,
@@ -33,74 +23,54 @@ class BookingService {
           "transport_type": transportType,
         }),
       );
-
-      if (response.statusCode == 200) {
-        print("Booking successful: ${response.body}");
-        return true;
-      } else {
-        print("Booking failed (${response.statusCode}): ${response.body}");
-        return false;
-      }
+      return response.statusCode == 201;
     } catch (e) {
-      print("Booking error: $e");
+      print("Error: $e");
       return false;
     }
   }
 
   // ===== FETCH USER BOOKINGS =====
-  static Future<List> fetchUserBookings() async {
+  static Future<List> fetchUserBookings(int userId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString("token");
-      final userId = prefs.getInt("user_id");
-
-      if (token == null || token.isEmpty || userId == null) return [];
-
       final response = await http.get(
         Uri.parse("$baseUrl/user/$userId"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
+        headers: {"Content-Type": "application/json"},
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        // If your backend sends [ {...}, {...} ], return data directly.
+        // If your backend sends { "bookings": [...] }, return data["bookings"].
+        if (data is List) return data;
         return data["bookings"] ?? [];
-      } else {
-        print(
-          "Fetch bookings failed (${response.statusCode}): ${response.body}",
-        );
-        return [];
       }
+      return [];
     } catch (e) {
-      print("Fetch bookings error: $e");
+      print("Fetch error: $e");
       return [];
     }
   }
 
-  // ===== CANCEL BOOKING =====
-  static Future<bool> cancelBooking(int bookingId) async {
+  // ===== CANCEL BOOKING (The Missing Piece) =====
+  static Future<bool> cancelBooking(int id) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString("token");
-
-      if (token == null || token.isEmpty) return false;
-
+      // This matches your Node.js route: router.delete('/cancel/:id', ...)
       final response = await http.delete(
-        Uri.parse("$baseUrl/cancel/$bookingId"),
-        headers: {
-          "Authorization": "Bearer $token",
-          "Content-Type": "application/json",
-        },
+        Uri.parse("$baseUrl/cancel/$id"),
+        headers: {"Content-Type": "application/json"},
       );
 
-      if (response.statusCode == 200) return true;
+      print("Cancel Status: ${response.statusCode}");
 
-      print("Cancel booking failed (${response.statusCode}): ${response.body}");
-      return false;
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print("Cancel failed: ${response.body}");
+        return false;
+      }
     } catch (e) {
-      print("Cancel booking error: $e");
+      print("Cancel Service Error: $e");
       return false;
     }
   }
