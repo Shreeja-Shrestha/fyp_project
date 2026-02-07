@@ -1,19 +1,19 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/booking_service.dart';
 
 class BookingOptionsPage extends StatefulWidget {
   final int packageId;
   final int userId;
   final String role;
-  final int tourId; // ✅ REQUIRED
+  final int tourId;
 
   const BookingOptionsPage({
     super.key,
     required this.packageId,
     required this.userId,
     required this.role,
-    required this.tourId, // ✅ REQUIRED
+    required this.tourId,
   });
 
   @override
@@ -27,19 +27,18 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     text: "1",
   );
 
-  final Color primaryBlue = const Color(0xFF3D5BF6);
-  final Color bgCanvas = const Color(0xFFFBFBFE);
+  // ✅ Price Logic
+  final double basePrice = 25000.0;
+  double totalPrice = 25000.0;
 
-  final List<Map<String, String>> transportOptions = [
-    {"type": "Bus", "path": "assets/bus.png"},
-    {"type": "Car", "path": "assets/car.png"},
-    {"type": "Flight", "path": "assets/aero.png"},
-  ];
+  final Color primarySkyBlue = const Color(0xFF00B4D8);
+  final Color bgCanvas = const Color(0xFFF8FDFF);
 
   @override
   void initState() {
     super.initState();
-    // Block admins from accessing this page
+    personsController.addListener(_updateTotalPrice);
+
     if (widget.role.toLowerCase() == "admin") {
       Future.delayed(Duration.zero, () {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -50,115 +49,100 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     }
   }
 
+  void _updateTotalPrice() {
+    final int count = int.tryParse(personsController.text) ?? 0;
+    setState(() {
+      totalPrice = count * basePrice;
+    });
+  }
+
+  @override
+  void dispose() {
+    personsController.removeListener(_updateTotalPrice);
+    personsController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bgCanvas,
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _label("Travel Date"),
-                  _selectionTile(
-                    icon: Icons.calendar_today_rounded,
-                    title: selectedDate == null
-                        ? "Select Travel Date"
-                        : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
-                    onTap: _pickDate,
+      body: Stack(
+        children: [
+          CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              _buildAppBar(),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    24,
+                    10,
+                    24,
+                    160,
+                  ), // Space for bottom bar
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _sectionHeader(
+                        "Travel Schedule",
+                        "Pick your preferred date",
+                      ),
+                      const SizedBox(height: 15),
+                      _selectionTile(
+                        icon: Icons.calendar_month_rounded,
+                        title: selectedDate == null
+                            ? "Select Travel Date"
+                            : "${selectedDate!.day} / ${selectedDate!.month} / ${selectedDate!.year}",
+                        subtitle: selectedDate == null
+                            ? "Tap to open calendar"
+                            : "Date confirmed",
+                        onTap: _pickDate,
+                      ),
+                      const SizedBox(height: 30),
+                      _sectionHeader("Group Size", "How many travelers?"),
+                      const SizedBox(height: 15),
+                      _buildPersonsInput(),
+                      const SizedBox(height: 30),
+                      _sectionHeader("Transportation", "Select mode of travel"),
+                      const SizedBox(height: 15),
+                      _buildTransportRow(),
+                      const SizedBox(height: 30),
+                      _sectionHeader(
+                        "Accommodation",
+                        "Explore local stay options",
+                      ),
+                      const SizedBox(height: 15),
+                      _mapPreview(),
+                    ],
                   ),
-                  const SizedBox(height: 25),
-                  _label("Number of Persons"),
-                  _buildPersonsInput(),
-                  const SizedBox(height: 30),
-                  _label("Choose Transportation"),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: transportOptions
-                        .map(
-                          (item) =>
-                              _transportCard(item['type']!, item['path']!),
-                        )
-                        .toList(),
-                  ),
-                  const SizedBox(height: 30),
-                  _label("Nearby Hotels (via Google Maps)"),
-                  _mapPreview(),
-                  const SizedBox(height: 40),
-                  _confirmButton(),
-                  const SizedBox(height: 30),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
+          _buildBottomCheckoutBar(),
         ],
       ),
     );
   }
 
-  Widget _transportCard(String type, String imagePath) {
-    bool isSelected = selectedTransport == type;
-    return GestureDetector(
-      onTap: () => setState(() => selectedTransport = type),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        width: 105,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isSelected ? primaryBlue : Colors.grey.withOpacity(0.2),
-            width: 2,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: primaryBlue.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
-        ),
-        child: Column(
-          children: [
-            Image.asset(
-              imagePath,
-              height: 50,
-              color: isSelected ? null : Colors.grey.withOpacity(0.5),
-              colorBlendMode: isSelected ? null : BlendMode.modulate,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              type,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isSelected ? primaryBlue : Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // --- UI WIDGETS ---
 
   Widget _buildAppBar() {
     return SliverAppBar(
       expandedHeight: 90,
-      backgroundColor: bgCanvas,
+      backgroundColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+        icon: const Icon(
+          Icons.arrow_back_ios_new,
+          color: Colors.black,
+          size: 20,
+        ),
         onPressed: () => Navigator.pop(context),
       ),
       flexibleSpace: const FlexibleSpaceBar(
-        titlePadding: EdgeInsets.only(left: 20, bottom: 10),
+        titlePadding: EdgeInsets.only(left: 24, bottom: 10),
         title: Text(
           "Booking Details",
           style: TextStyle(
@@ -171,44 +155,79 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     );
   }
 
-  Widget _label(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 10, left: 4),
-    child: Text(
-      text,
-      style: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-        color: Colors.blueGrey.shade700,
-      ),
-    ),
-  );
+  Widget _sectionHeader(String title, String sub) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2D3142),
+          ),
+        ),
+        Text(sub, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+      ],
+    );
+  }
 
   Widget _selectionTile({
     required IconData icon,
     required String title,
+    required String subtitle,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.withOpacity(0.1)),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: Row(
           children: [
-            Icon(icon, color: primaryBlue),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: primarySkyBlue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: primarySkyBlue, size: 22),
+            ),
             const SizedBox(width: 15),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
             ),
             const Spacer(),
-            const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: 18,
+              color: Colors.grey,
+            ),
           ],
         ),
       ),
@@ -217,41 +236,108 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
   Widget _buildPersonsInput() {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12),
-        ],
+        border: Border.all(color: Colors.grey.withOpacity(0.1)),
       ),
       child: TextField(
         controller: personsController,
         keyboardType: TextInputType.number,
+        style: const TextStyle(fontWeight: FontWeight.bold),
         decoration: InputDecoration(
-          prefixIcon: Icon(Icons.person_outline, color: primaryBlue),
+          icon: Icon(Icons.people_outline, color: primarySkyBlue),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 18),
-          hintText: "Number of persons",
+          hintText: "Number of travelers",
+          hintStyle: TextStyle(
+            color: Colors.grey.shade400,
+            fontWeight: FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTransportRow() {
+    final options = [
+      {"type": "Bus", "path": "assets/bus.png"},
+      {"type": "Car", "path": "assets/car.png"},
+      {"type": "Flight", "path": "assets/aero.png"},
+    ];
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: options
+          .map((opt) => _transportCard(opt['type']!, opt['path']!))
+          .toList(),
+    );
+  }
+
+  Widget _transportCard(String type, String path) {
+    bool isSelected = selectedTransport == type;
+    return GestureDetector(
+      onTap: () => setState(() => selectedTransport = type),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: MediaQuery.of(context).size.width * 0.26,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? primarySkyBlue : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isSelected ? primarySkyBlue : Colors.grey.withOpacity(0.1),
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: primarySkyBlue.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
+        ),
+        child: Column(
+          children: [
+            Image.asset(
+              path,
+              height: 32,
+              color: isSelected ? Colors.white : Colors.grey.shade400,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              type,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey.shade600,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _mapPreview() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        height: 150,
-        width: double.infinity,
-        color: Colors.grey.shade200,
+    return Container(
+      height: 140,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
         child: Stack(
           children: [
             const Center(
-              child: Icon(Icons.map_outlined, size: 50, color: Colors.grey),
+              child: Icon(Icons.map_outlined, size: 40, color: Colors.grey),
             ),
             Positioned(
-              bottom: 12,
-              left: 12,
+              bottom: 15,
+              left: 15,
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -259,10 +345,10 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
-                  "View Hotels Nearby",
+                  "View Hotels",
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                 ),
               ),
@@ -273,84 +359,127 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     );
   }
 
-  Widget _confirmButton() {
-    return Container(
-      width: double.infinity,
-      height: 60,
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: primaryBlue.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryBlue,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          elevation: 0,
+  // ✅ REDESIGNED: Smaller price at bottom inside the action bar
+  Widget _buildBottomCheckoutBar() {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 34),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
         ),
-        onPressed: _onConfirmBooking,
-        child: const Text(
-          "Confirm Booking",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+        child: Row(
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Total Price",
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                ),
+                Text(
+                  "Rs. ${totalPrice.toStringAsFixed(0)}",
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 24),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _onConfirmBooking,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primarySkyBlue,
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  "Book Now",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
+  // --- LOGIC ---
+
   Future<void> _onConfirmBooking() async {
     if (selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select travel date")),
+        const SnackBar(content: Text("Please select a travel date")),
       );
       return;
     }
 
-    final int persons = int.tryParse(personsController.text) ?? 1;
-
+    // Show loading or proceed with booking service
     bool success = await BookingService.createBooking(
       packageId: widget.packageId,
       travelDate: selectedDate!.toIso8601String().split("T")[0],
-      persons: persons,
+      persons: int.tryParse(personsController.text) ?? 1,
       transportType: selectedTransport,
     );
 
     if (success) {
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text("Success"),
-          content: const Text("Booking placed successfully"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
-            ),
-          ],
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Booking failed")));
+      _showSuccessDialog();
     }
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Booking Confirmed!"),
+        content: const Text(
+          "Your trek has been successfully booked. Prepare for the adventure!",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Great!", style: TextStyle(color: primarySkyBlue)),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _pickDate() async {
     DateTime? date = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: DateTime.now().add(const Duration(days: 1)),
       firstDate: DateTime.now(),
-      lastDate: DateTime(DateTime.now().year + 1),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(
+            context,
+          ).copyWith(colorScheme: ColorScheme.light(primary: primarySkyBlue)),
+          child: child!,
+        );
+      },
     );
     if (date != null) setState(() => selectedDate = date);
   }
