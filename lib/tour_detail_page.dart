@@ -1,7 +1,9 @@
-// UPDATED UI — CLEAN LAYOUT WITH INTEGRATED BOOKING NAVIGATION
+// TOUR DETAIL PAGE WITH DYNAMIC REVIEWS AND BACKEND INTEGRATION
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 // Ensure this import matches your actual project structure
 import 'package:fyp_project/booking_options_page.dart';
 
@@ -24,6 +26,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
   final double price = 25000;
   final double rating = 4.9;
 
+  // Dynamic list for reviews
   final List<Map<String, dynamic>> reviews = [
     {
       "username": "Anish Giri",
@@ -78,19 +81,74 @@ class _TourDetailPageState extends State<TourDetailPage> {
     });
   }
 
-  // Helper function to handle navigation
+  // Navigate to booking page
   void _navigateToBooking() {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => BookingOptionsPage(
           packageId: widget.tourId,
-          userId: 1, // Replace with dynamic user ID if available
+          userId: 1, // Replace with dynamic user ID
           role: 'user',
           tourId: widget.tourId,
         ),
       ),
     );
+  }
+
+  // Submit review to backend
+  Future<void> _submitReview() async {
+    final String comment = _reviewController.text.trim();
+    if (comment.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please write a review before submitting"),
+        ),
+      );
+      return;
+    }
+
+    final url = Uri.parse(
+      'http://10.0.2.2:3000/api/reviews/submit',
+    ); // change IP if using real device
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "user_id": 1, // Replace with logged-in user ID
+          "tour_id": widget.tourId,
+          "rating": _userSelectedRating,
+          "comment": comment,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['status'] == 'success') {
+        // Add new review to UI
+        setState(() {
+          reviews.add({
+            "username": "You", // or fetch actual username
+            "rating": _userSelectedRating,
+            "comment": comment,
+          });
+          _reviewController.clear();
+          _userSelectedRating = 5;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Review submitted successfully")),
+        );
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Failed: ${data['message']}")));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error submitting review: $e")));
+    }
   }
 
   @override
@@ -99,7 +157,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // STICKY IMAGE SLIDESHOW
+          // IMAGE SLIDESHOW
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.5,
             child: Stack(
@@ -149,6 +207,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
               const SliverToBoxAdapter(child: SizedBox(height: 50)),
             ],
           ),
+
           _buildTopOverlay(),
         ],
       ),
@@ -205,13 +264,13 @@ class _TourDetailPageState extends State<TourDetailPage> {
             children: [
               _infoTile(Icons.timer_outlined, "5 Days", "Duration"),
               const SizedBox(width: 15),
-              _infoTile(Icons.star_rounded, "4.9", "Rating"),
+              _infoTile(Icons.star_rounded, rating.toString(), "Rating"),
             ],
           ),
 
           const SizedBox(height: 35),
 
-          // DESCRIPTION HEADER WITH REDIRECT BUTTON
+          // DESCRIPTION HEADER WITH BOOK BUTTON
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -262,6 +321,69 @@ class _TourDetailPageState extends State<TourDetailPage> {
           ),
           const SizedBox(height: 15),
           ...reviews.map((r) => _reviewCard(r)).toList(),
+
+          const SizedBox(height: 20),
+          const Text(
+            "Write a Review",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+
+          // Star Rating Selector
+          Row(
+            children: List.generate(5, (index) {
+              return IconButton(
+                onPressed: () {
+                  setState(() {
+                    _userSelectedRating = index + 1;
+                  });
+                },
+                icon: Icon(
+                  index < _userSelectedRating
+                      ? Icons.star_rounded
+                      : Icons.star_border_rounded,
+                  color: Colors.amber,
+                ),
+              );
+            }),
+          ),
+
+          // Review TextField
+          TextField(
+            controller: _reviewController,
+            maxLines: 3,
+            decoration: InputDecoration(
+              hintText: "Write your review here...",
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Submit Button
+          ElevatedButton(
+            onPressed: _submitReview,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primarySkyBlue,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              "Submit Review",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
         ],
       ),
     );
