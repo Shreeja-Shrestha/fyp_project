@@ -26,8 +26,8 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   final TextEditingController personsController = TextEditingController(
     text: "1",
   );
+  bool isProcessing = false;
 
-  // ✅ Price Logic
   final double basePrice = 25000.0;
   double totalPrice = 25000.0;
 
@@ -38,15 +38,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   void initState() {
     super.initState();
     personsController.addListener(_updateTotalPrice);
-
-    if (widget.role.toLowerCase() == "admin") {
-      Future.delayed(Duration.zero, () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Admins cannot create bookings")),
-        );
-        Navigator.pop(context);
-      });
-    }
   }
 
   void _updateTotalPrice() {
@@ -54,13 +45,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     setState(() {
       totalPrice = count * basePrice;
     });
-  }
-
-  @override
-  void dispose() {
-    personsController.removeListener(_updateTotalPrice);
-    personsController.dispose();
-    super.dispose();
   }
 
   @override
@@ -75,12 +59,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
               _buildAppBar(),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    24,
-                    10,
-                    24,
-                    160,
-                  ), // Space for bottom bar
+                  padding: const EdgeInsets.fromLTRB(24, 10, 24, 160),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -110,7 +89,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
                       const SizedBox(height: 30),
                       _sectionHeader(
                         "Accommodation",
-                        "Explore local stay options",
+                        "Nearby hotels for your stay",
                       ),
                       const SizedBox(height: 15),
                       _mapPreview(),
@@ -120,13 +99,54 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
               ),
             ],
           ),
-          _buildBottomCheckoutBar(),
+          _buildBottomActionWithPrice(),
+          if (isProcessing)
+            Container(
+              color: Colors.black26,
+              child: const Center(child: CircularProgressIndicator()),
+            ),
         ],
       ),
     );
   }
 
-  // --- UI WIDGETS ---
+  // --- LOGIC: PAYMENT + BOOKING ---
+
+  Future<void> _onConfirmBooking() async {
+    if (selectedDate == null) {
+      _showError("Please select a date first");
+      return;
+    }
+
+    setState(() => isProcessing = true);
+
+    // SIMULATE PAYMENT
+    await Future.delayed(const Duration(seconds: 2));
+
+    bool paymentSuccessful = true;
+
+    if (paymentSuccessful) {
+      bool success = await BookingService.createBooking(
+        packageId: widget.packageId,
+        travelDate: selectedDate!.toIso8601String().split("T")[0],
+        persons: int.tryParse(personsController.text) ?? 1,
+        transportType: selectedTransport,
+      );
+
+      setState(() => isProcessing = false);
+
+      if (success) {
+        _showSuccessDialog();
+      } else {
+        _showError("Payment received, but booking failed. Contact support.");
+      }
+    } else {
+      setState(() => isProcessing = false);
+      _showError("Payment failed. Please try again.");
+    }
+  }
+
+  // --- UI COMPONENTS ---
 
   Widget _buildAppBar() {
     return SliverAppBar(
@@ -161,11 +181,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF2D3142),
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         Text(sub, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
       ],
@@ -187,47 +203,26 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.grey.withOpacity(0.1)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
         child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: primarySkyBlue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: primarySkyBlue, size: 22),
-            ),
+            Icon(icon, color: primarySkyBlue),
             const SizedBox(width: 15),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
                 ),
               ],
             ),
             const Spacer(),
-            const Icon(
-              Icons.calendar_today_outlined,
-              size: 18,
-              color: Colors.grey,
-            ),
+            const Icon(Icons.chevron_right, color: Colors.grey),
           ],
         ),
       ),
@@ -236,7 +231,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
   Widget _buildPersonsInput() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -245,72 +240,60 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       child: TextField(
         controller: personsController,
         keyboardType: TextInputType.number,
-        style: const TextStyle(fontWeight: FontWeight.bold),
         decoration: InputDecoration(
-          icon: Icon(Icons.people_outline, color: primarySkyBlue),
+          icon: Icon(Icons.people, color: primarySkyBlue),
           border: InputBorder.none,
-          hintText: "Number of travelers",
-          hintStyle: TextStyle(
-            color: Colors.grey.shade400,
-            fontWeight: FontWeight.normal,
-          ),
+          hintText: "1",
         ),
       ),
     );
   }
 
+  // ✅ Updated to use Icons and bigger size
   Widget _buildTransportRow() {
-    final options = [
-      {"type": "Bus", "path": "assets/bus.png"},
-      {"type": "Car", "path": "assets/car.png"},
-      {"type": "Flight", "path": "assets/aero.png"},
+    final List<Map<String, dynamic>> transportOptions = [
+      {"type": "Bus", "icon": Icons.directions_bus_rounded},
+      {"type": "Car", "icon": Icons.directions_car_rounded},
+      {"type": "Flight", "icon": Icons.flight_takeoff_rounded},
     ];
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: options
-          .map((opt) => _transportCard(opt['type']!, opt['path']!))
+      children: transportOptions
+          .map((opt) => _transportCard(opt['type']!, opt['icon']!))
           .toList(),
     );
   }
 
-  Widget _transportCard(String type, String path) {
+  Widget _transportCard(String type, IconData iconData) {
     bool isSelected = selectedTransport == type;
     return GestureDetector(
       onTap: () => setState(() => selectedTransport = type),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+      child: Container(
         width: MediaQuery.of(context).size.width * 0.26,
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
           color: isSelected ? primarySkyBlue : Colors.white,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? primarySkyBlue : Colors.grey.withOpacity(0.1),
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: primarySkyBlue.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
         ),
         child: Column(
           children: [
-            Image.asset(
-              path,
-              height: 32,
-              color: isSelected ? Colors.white : Colors.grey.shade400,
+            // ✅ Standard Icon at size 40
+            Icon(
+              iconData,
+              size: 40,
+              color: isSelected ? Colors.white : Colors.grey.shade600,
             ),
             const SizedBox(height: 8),
             Text(
               type,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.grey.shade600,
+                color: isSelected ? Colors.white : Colors.black,
                 fontWeight: FontWeight.bold,
-                fontSize: 13,
+                fontSize: 12,
               ),
             ),
           ],
@@ -321,60 +304,31 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
   Widget _mapPreview() {
     return Container(
-      height: 140,
+      height: 120,
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Stack(
-          children: [
-            const Center(
-              child: Icon(Icons.map_outlined, size: 40, color: Colors.grey),
-            ),
-            Positioned(
-              bottom: 15,
-              left: 15,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  "View Hotels",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      child: const Center(child: Icon(Icons.map_outlined, color: Colors.grey)),
     );
   }
 
-  // ✅ REDESIGNED: Smaller price at bottom inside the action bar
-  Widget _buildBottomCheckoutBar() {
+  Widget _buildBottomActionWithPrice() {
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 34),
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 30),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
-              blurRadius: 20,
+              blurRadius: 10,
               offset: const Offset(0, -5),
             ),
           ],
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         ),
         child: Row(
           children: [
@@ -383,37 +337,35 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Total Price",
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                  "Total Pay",
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
                 Text(
                   "Rs. ${totalPrice.toStringAsFixed(0)}",
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF1A1A1A),
+                    color: Colors.black,
                   ),
                 ),
               ],
             ),
-            const SizedBox(width: 24),
+            const SizedBox(width: 20),
             Expanded(
               child: ElevatedButton(
-                onPressed: _onConfirmBooking,
+                onPressed: isProcessing ? null : _onConfirmBooking,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primarySkyBlue,
                   minimumSize: const Size(double.infinity, 56),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  elevation: 0,
                 ),
                 child: const Text(
-                  "Book Now",
+                  "Pay & Confirm",
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
                   ),
                 ),
               ),
@@ -424,42 +376,24 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     );
   }
 
-  // --- LOGIC ---
-
-  Future<void> _onConfirmBooking() async {
-    if (selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a travel date")),
-      );
-      return;
-    }
-
-    // Show loading or proceed with booking service
-    bool success = await BookingService.createBooking(
-      packageId: widget.packageId,
-      travelDate: selectedDate!.toIso8601String().split("T")[0],
-      persons: int.tryParse(personsController.text) ?? 1,
-      transportType: selectedTransport,
-    );
-
-    if (success) {
-      _showSuccessDialog();
-    }
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   void _showSuccessDialog() {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Booking Confirmed!"),
-        content: const Text(
-          "Your trek has been successfully booked. Prepare for the adventure!",
-        ),
+        title: const Text("Trek Confirmed!"),
+        content: const Text("Payment successful and booking has been saved."),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Great!", style: TextStyle(color: primarySkyBlue)),
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text("Finish"),
           ),
         ],
       ),
@@ -469,18 +403,17 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   Future<void> _pickDate() async {
     DateTime? date = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().add(const Duration(days: 1)),
+      initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(
-            context,
-          ).copyWith(colorScheme: ColorScheme.light(primary: primarySkyBlue)),
-          child: child!,
-        );
-      },
     );
     if (date != null) setState(() => selectedDate = date);
+  }
+
+  @override
+  void dispose() {
+    personsController.removeListener(_updateTotalPrice);
+    personsController.dispose();
+    super.dispose();
   }
 }
