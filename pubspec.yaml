@@ -68,6 +68,12 @@ flutter:
 
   assets:
     - assets/
+    
+    - assets/bus.png
+    - assets/car.png
+    - assets/aero.png
+
+    
 
   # To add assets to your application, add an assets section, like this:
   # assets:
