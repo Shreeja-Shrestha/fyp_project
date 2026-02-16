@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:convert'; // ✅ ADD THIS
 import 'package:flutter/material.dart';
 import '../services/booking_service.dart';
 import 'package:http/http.dart' as http;
@@ -32,17 +33,44 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     text: "1",
   );
   bool isProcessing = false;
-
   final double basePrice = 25000.0;
   double totalPrice = 25000.0;
 
   final Color primarySkyBlue = const Color(0xFF00B4D8);
   final Color bgCanvas = const Color(0xFFF8FDFF);
-
   @override
   void initState() {
     super.initState();
     personsController.addListener(_updateTotalPrice);
+    fetchTourEvents();
+  }
+
+  Future<void> fetchTourEvents() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:3000/tours/${widget.tourId}/events'),
+      );
+
+      if (response.statusCode == 200) {
+        List data = json.decode(response.body);
+
+        Map<DateTime, List<Map<String, dynamic>>> temp = {};
+
+        for (var item in data) {
+          DateTime date = DateTime.parse(item['date']);
+          DateTime cleanDate = DateTime(date.year, date.month, date.day);
+
+          temp.putIfAbsent(cleanDate, () => []);
+          temp[cleanDate]!.add(item);
+        }
+
+        setState(() {
+          eventMap = temp;
+        });
+      }
+    } catch (e) {
+      print("Error fetching events: $e");
+    }
   }
 
   void _updateTotalPrice() {
@@ -406,13 +434,85 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   }
 
   Future<void> _pickDate() async {
-    DateTime? date = await showDatePicker(
+    showModalBottomSheet(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2030),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          height: 420,
+          child: Column(
+            children: [
+              const Text(
+                "Select Travel Date",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 15),
+              Expanded(
+                child: TableCalendar(
+                  firstDay: DateTime.now(),
+                  lastDay: DateTime(2030),
+                  focusedDay: focusedDay,
+                  selectedDayPredicate: (day) => isSameDay(selectedDate, day),
+                  eventLoader: (day) {
+                    return eventMap[DateTime(day.year, day.month, day.day)] ??
+                        [];
+                  },
+                  calendarStyle: const CalendarStyle(
+                    todayDecoration: BoxDecoration(
+                      color: Colors.orange,
+                      shape: BoxShape.circle,
+                    ),
+                    selectedDecoration: BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                    ),
+                    markerDecoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  onDaySelected: (selectedDay, newFocusedDay) {
+                    setState(() {
+                      selectedDate = selectedDay;
+                      focusedDay = newFocusedDay;
+                    });
+
+                    Navigator.pop(context);
+
+                    DateTime clean = DateTime(
+                      selectedDay.year,
+                      selectedDay.month,
+                      selectedDay.day,
+                    );
+
+                    if (eventMap.containsKey(clean)) {
+                      var events = eventMap[clean]!;
+
+                      showDialog(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text("Major Event"),
+                          content: Text(
+                            events
+                                .map(
+                                  (e) => "${e['title']}\n${e['description']}",
+                                )
+                                .join("\n\n"),
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
-    if (date != null) setState(() => selectedDate = date);
   }
 
   @override
