@@ -436,79 +436,93 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   Future<void> _pickDate() async {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true, // 🔥 Important
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          height: 420,
-          child: Column(
-            children: [
-              const Text(
-                "Select Travel Date",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 15),
-              Expanded(
-                child: TableCalendar(
-                  firstDay: DateTime.now(),
-                  lastDay: DateTime(2030),
-                  focusedDay: focusedDay,
-                  selectedDayPredicate: (day) => isSameDay(selectedDate, day),
-                  eventLoader: (day) {
-                    return eventMap[DateTime(day.year, day.month, day.day)] ??
-                        [];
-                  },
-                  calendarStyle: const CalendarStyle(
-                    todayDecoration: BoxDecoration(
-                      color: Colors.orange,
-                      shape: BoxShape.circle,
-                    ),
-                    selectedDecoration: BoxDecoration(
-                      color: Colors.blue,
-                      shape: BoxShape.circle,
-                    ),
-                    markerDecoration: BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  onDaySelected: (selectedDay, newFocusedDay) {
-                    setState(() {
-                      selectedDate = selectedDay;
-                      focusedDay = newFocusedDay;
-                    });
-
-                    Navigator.pop(context);
-
-                    DateTime clean = DateTime(
-                      selectedDay.year,
-                      selectedDay.month,
-                      selectedDay.day,
-                    );
-
-                    if (eventMap.containsKey(clean)) {
-                      var events = eventMap[clean]!;
-
-                      showDialog(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text("Major Event"),
-                          content: Text(
-                            events
-                                .map(
-                                  (e) => "${e['title']}\n${e['description']}",
-                                )
-                                .join("\n\n"),
-                          ),
-                        ),
-                      );
-                    }
-                  },
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.65, // ✅ Fix overflow
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                const Text(
+                  "Select Travel Date",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-              ),
-            ],
+                const SizedBox(height: 15),
+
+                Expanded(
+                  child: TableCalendar(
+                    firstDay: DateTime.now(),
+                    lastDay: DateTime(2030),
+                    focusedDay: focusedDay,
+
+                    selectedDayPredicate: (day) => isSameDay(selectedDate, day),
+
+                    // ✅ Proper Event Loader (VERY IMPORTANT)
+                    eventLoader: (day) {
+                      final cleanDay = DateTime(day.year, day.month, day.day);
+
+                      return eventMap[cleanDay] ?? [];
+                    },
+
+                    calendarStyle: const CalendarStyle(
+                      todayDecoration: BoxDecoration(
+                        color: Colors.orange,
+                        shape: BoxShape.circle,
+                      ),
+                      selectedDecoration: BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                      ),
+                      markerDecoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+
+                    onDaySelected: (selectedDay, newFocusedDay) {
+                      setState(() {
+                        selectedDate = selectedDay;
+                        focusedDay = newFocusedDay;
+                      });
+
+                      Navigator.pop(context);
+
+                      // ✅ Clean date (no time part)
+                      DateTime clean = DateTime(
+                        selectedDay.year,
+                        selectedDay.month,
+                        selectedDay.day,
+                      );
+
+                      if (eventMap.containsKey(clean)) {
+                        var events = eventMap[clean]!;
+
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: const Text("Major Cultural Events"),
+                            content: SingleChildScrollView(
+                              child: Text(
+                                events
+                                    .map(
+                                      (e) =>
+                                          "${e['title']}\n${e['description']}",
+                                    )
+                                    .join("\n\n"),
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
