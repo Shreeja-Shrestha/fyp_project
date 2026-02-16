@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/booking_service.dart';
+import 'package:http/http.dart' as http;
+import 'package:table_calendar/table_calendar.dart';
 
 class BookingOptionsPage extends StatefulWidget {
   final int packageId;
@@ -21,6 +23,9 @@ class BookingOptionsPage extends StatefulWidget {
 }
 
 class _BookingOptionsPageState extends State<BookingOptionsPage> {
+  Map<DateTime, List<Map<String, dynamic>>> eventMap = {};
+  DateTime focusedDay = DateTime.now();
+
   DateTime? selectedDate;
   String selectedTransport = "Bus";
   final TextEditingController personsController = TextEditingController(
