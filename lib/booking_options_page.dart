@@ -48,7 +48,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   Future<void> fetchTourEvents() async {
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:3000/tours/${widget.tourId}/events'),
+        Uri.parse('http://10.0.2.2:3000/nepal-holidays'),
       );
 
       if (response.statusCode == 200) {
@@ -57,15 +57,31 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         Map<DateTime, List<Map<String, dynamic>>> temp = {};
 
         for (var item in data) {
-          DateTime date = DateTime.parse(item['date']);
-          DateTime cleanDate = DateTime(date.year, date.month, date.day);
+          DateTime parsedDate = DateTime.parse(
+            item['date'],
+          ).toLocal(); // 🔥 important
+
+          DateTime cleanDate = DateTime(
+            parsedDate.year,
+            parsedDate.month,
+            parsedDate.day,
+          );
 
           temp.putIfAbsent(cleanDate, () => []);
           temp[cleanDate]!.add(item);
+
+          print("Stored Event Date: $cleanDate"); // debug
         }
 
         setState(() {
           eventMap = temp;
+
+          // Focus calendar on first event if events exist
+          if (temp.isNotEmpty) {
+            // Sort keys to get the earliest date
+            final firstEventDate = temp.keys.toList()..sort();
+            focusedDay = firstEventDate.first;
+          }
         });
       }
     } catch (e) {
@@ -74,10 +90,9 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   }
 
   void _updateTotalPrice() {
-    final int count = int.tryParse(personsController.text) ?? 0;
-    setState(() {
-      totalPrice = count * basePrice;
-    });
+    int count = int.tryParse(personsController.text) ?? 1;
+    if (count < 1) count = 1;
+    totalPrice = count * basePrice;
   }
 
   @override
@@ -434,15 +449,15 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   }
 
   Future<void> _pickDate() async {
-    showModalBottomSheet(
+    final selected = await showModalBottomSheet<DateTime>(
       context: context,
-      isScrollControlled: true, // 🔥 Important
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
       builder: (context) {
         return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.65, // ✅ Fix overflow
+          height: MediaQuery.of(context).size.height * 0.65,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -452,22 +467,23 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 15),
-
                 Expanded(
                   child: TableCalendar(
-                    firstDay: DateTime.now(),
+                    firstDay: DateTime(2020),
                     lastDay: DateTime(2030),
                     focusedDay: focusedDay,
-
+                    onPageChanged: (newFocusedDay) {
+                      focusedDay = newFocusedDay;
+                    },
                     selectedDayPredicate: (day) => isSameDay(selectedDate, day),
-
-                    // ✅ Proper Event Loader (VERY IMPORTANT)
                     eventLoader: (day) {
-                      final cleanDay = DateTime(day.year, day.month, day.day);
-
+                      DateTime cleanDay = DateTime(
+                        day.year,
+                        day.month,
+                        day.day,
+                      );
                       return eventMap[cleanDay] ?? [];
                     },
-
                     calendarStyle: const CalendarStyle(
                       todayDecoration: BoxDecoration(
                         color: Colors.orange,
@@ -482,42 +498,11 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
                         shape: BoxShape.circle,
                       ),
                     ),
-
                     onDaySelected: (selectedDay, newFocusedDay) {
-                      setState(() {
-                        selectedDate = selectedDay;
-                        focusedDay = newFocusedDay;
-                      });
-
-                      Navigator.pop(context);
-
-                      // ✅ Clean date (no time part)
-                      DateTime clean = DateTime(
-                        selectedDay.year,
-                        selectedDay.month,
-                        selectedDay.day,
-                      );
-
-                      if (eventMap.containsKey(clean)) {
-                        var events = eventMap[clean]!;
-
-                        showDialog(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text("Major Cultural Events"),
-                            content: SingleChildScrollView(
-                              child: Text(
-                                events
-                                    .map(
-                                      (e) =>
-                                          "${e['title']}\n${e['description']}",
-                                    )
-                                    .join("\n\n"),
-                              ),
-                            ),
-                          ),
-                        );
-                      }
+                      Navigator.pop(
+                        context,
+                        selectedDay,
+                      ); // return the selected date
                     },
                   ),
                 ),
@@ -527,6 +512,62 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         );
       },
     );
+
+    if (selected != null) {
+      setState(() {
+        selectedDate = selected;
+        focusedDay = selected;
+      });
+
+      DateTime clean = DateTime(selected.year, selected.month, selected.day);
+      if (eventMap.containsKey(clean)) {
+        var events = eventMap[clean]!;
+
+        await showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text("Major Cultural Events"),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: events.map((e) {
+                  String desc = e['description'] ?? "No description available.";
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          e['title'],
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          desc,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Close"),
+              ),
+            ],
+          ),
+        );
+      }
+    }
   }
 
   @override
