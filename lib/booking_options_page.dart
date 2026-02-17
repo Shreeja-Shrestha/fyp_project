@@ -528,42 +528,8 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
           builder: (_) => AlertDialog(
             title: const Text("Major Cultural Events"),
             content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: events.map((e) {
-                  String desc = e['description'] ?? "No description available.";
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          e['title'],
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          desc,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
+              child: Text(events.map((e) => "${e['title']}").join("\n\n")),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Close"),
-              ),
-            ],
           ),
         );
       }
