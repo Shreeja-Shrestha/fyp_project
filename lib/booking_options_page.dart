@@ -166,67 +166,27 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   }
 
   // --- LOGIC: PAYMENT + BOOKING ---
-
   Future<void> _onConfirmBooking() async {
     if (selectedDate == null) {
-      _showError("Please select a date first");
+      _showError("Please select a travel date first.");
       return;
     }
 
-    // 1. Define the payment configuration
     final config = PaymentConfig(
-      amount: (totalPrice * 100)
-          .toInt(), // Khalti uses Paisa (Rs 1 = 100 Paisa)
+      amount: (totalPrice * 100).toInt(), // Converting Rs to Paisa
       productIdentity: widget.packageId.toString(),
-      productName: "Tour Package Booking",
+      productName: "Tour Package #${widget.packageId}",
     );
 
-    // 2. Trigger the Khalti Payment Sheet
     KhaltiScope.of(context).pay(
       config: config,
-      preferences: [
-        PaymentPreference.khalti, // Enables Khalti Wallet
-        PaymentPreference.connectIPS,
-      ],
-      onSuccess: (PaymentSuccessModel success) {
-        // 3. If payment succeeds, verify it locally
-        _verifyPaymentLocally(success.token, success.amount);
+      preferences: [PaymentPreference.khalti, PaymentPreference.connectIPS],
+      onSuccess: (successModel) {
+        // Once the user finishes in the Khalti UI, this runs:
+        _verifyPaymentLocally(successModel.token, successModel.amount);
       },
-      onFailure: (fa) {
-        _showError("Payment Failed: ${fa.message}");
-        Future<void> _onConfirmBooking() async {
-          if (selectedDate == null) {
-            _showError("Please select a date first");
-            return;
-          }
-
-          // 1. Prepare the Configuration
-          final config = PaymentConfig(
-            amount: (totalPrice * 100)
-                .toInt(), // Khalti needs Paisa (Rs 1 = 100 Paisa)
-            productIdentity: widget.packageId.toString(),
-            productName: "Package #${widget.packageId}",
-          );
-
-          // 2. Launch the Khalti Interface
-          KhaltiScope.of(context).pay(
-            config: config,
-            preferences: [
-              PaymentPreference.khalti,
-              PaymentPreference.connectIPS,
-            ],
-            onSuccess: (success) {
-              // Once the user pays, we verify the token
-              _verifyPaymentLocally(success.token, success.amount);
-            },
-            onFailure: (fa) => _showError("Payment Failed: ${fa.message}"),
-            onCancel: () => _showError("Payment Cancelled"),
-          );
-        }
-      },
-      onCancel: () {
-        _showError("Payment Cancelled");
-      },
+      onFailure: (fa) => _showError("Payment Failed: ${fa.message}"),
+      onCancel: () => _showError("Payment Cancelled"),
     );
   }
   // --- UI COMPONENTS ---
@@ -628,7 +588,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     setState(() => isProcessing = true);
 
     try {
-      // This is your Live Secret Key from earlier
+      // 🔥 Use your Secret Key here
       const String secretKey = "9e601b866fff4451973e7407c2ac";
 
       final response = await http.post(
@@ -641,7 +601,8 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       );
 
       if (response.statusCode == 200) {
-        // Payment confirmed by Khalti! Now save the booking to your node server
+        // Payment confirmed by Khalti!
+        // Now we call your existing BookingService to save it to your local DB
         bool success = await BookingService.createBooking(
           packageId: widget.packageId,
           travelDate: selectedDate!.toIso8601String().split("T")[0],
@@ -652,13 +613,15 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         if (success) {
           _showSuccessDialog();
         } else {
-          _showError("Payment okay, but couldn't save booking.");
+          _showError(
+            "Payment verified, but failed to save booking to database.",
+          );
         }
       } else {
-        _showError("Khalti Verification Failed.");
+        _showError("Khalti Verification Failed: ${response.body}");
       }
     } catch (e) {
-      _showError("Connection Error: $e");
+      _showError("Network Error during verification: $e");
     } finally {
       setState(() => isProcessing = false);
     }
