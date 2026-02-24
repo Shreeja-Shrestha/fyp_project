@@ -33,7 +33,7 @@ dependencies:
   flutter:
     sdk: flutter
   # Upgrade this to the latest to support http 1.1.0
-  khalti_checkout_flutter: ^1.0.0-dev.9
+  khalti_flutter: ^3.0.0
   http: ^1.1.0
   table_calendar: ^3.0.9
   flutter_map: ^6.0.0
