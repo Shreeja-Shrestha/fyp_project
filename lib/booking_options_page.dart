@@ -375,7 +375,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
           return ListTile(
             leading: const Icon(Icons.hotel, color: Colors.blue),
             title: Text(hotel['name'] ?? "Hotel"),
-            subtitle: Text("Price: Rs. ${hotel['price'] ?? ''}"),
+            subtitle: Text("Distance: ${hotel['distance_km']} km"),
           );
         },
       ),
