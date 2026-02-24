@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../services/booking_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:table_calendar/table_calendar.dart';
+import '../services/hotel_service.dart';
 
 class BookingOptionsPage extends StatefulWidget {
   final int packageId;
@@ -352,13 +353,32 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
   Widget _mapPreview() {
     return Container(
-      height: 120,
+      height: 180,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: const Center(child: Icon(Icons.map_outlined, color: Colors.grey)),
+      child: FutureBuilder<Map<String, dynamic>?>(
+        future: HotelService.fetchNearestHotel(27.7172, 85.3240),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data == null) {
+            return const Center(child: Text("No nearby hotel found"));
+          }
+
+          final hotel = snapshot.data!;
+
+          return ListTile(
+            leading: const Icon(Icons.hotel, color: Colors.blue),
+            title: Text(hotel['name'] ?? "Hotel"),
+            subtitle: Text("Price: Rs. ${hotel['price'] ?? ''}"),
+          );
+        },
+      ),
     );
   }
 
