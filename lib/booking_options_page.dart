@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:table_calendar/table_calendar.dart';
 import '../services/hotel_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:khalti_flutter/khalti_flutter.dart';
 
 class BookingOptionsPage extends StatefulWidget {
   final int packageId;
@@ -172,34 +173,62 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       return;
     }
 
-    setState(() => isProcessing = true);
+    // 1. Define the payment configuration
+    final config = PaymentConfig(
+      amount: (totalPrice * 100)
+          .toInt(), // Khalti uses Paisa (Rs 1 = 100 Paisa)
+      productIdentity: widget.packageId.toString(),
+      productName: "Tour Package Booking",
+    );
 
-    // SIMULATE PAYMENT
-    await Future.delayed(const Duration(seconds: 2));
+    // 2. Trigger the Khalti Payment Sheet
+    KhaltiScope.of(context).pay(
+      config: config,
+      preferences: [
+        PaymentPreference.khalti, // Enables Khalti Wallet
+        PaymentPreference.connectIPS,
+      ],
+      onSuccess: (PaymentSuccessModel success) {
+        // 3. If payment succeeds, verify it locally
+        _verifyPaymentLocally(success.token, success.amount);
+      },
+      onFailure: (fa) {
+        _showError("Payment Failed: ${fa.message}");
+        Future<void> _onConfirmBooking() async {
+          if (selectedDate == null) {
+            _showError("Please select a date first");
+            return;
+          }
 
-    bool paymentSuccessful = true;
+          // 1. Prepare the Configuration
+          final config = PaymentConfig(
+            amount: (totalPrice * 100)
+                .toInt(), // Khalti needs Paisa (Rs 1 = 100 Paisa)
+            productIdentity: widget.packageId.toString(),
+            productName: "Package #${widget.packageId}",
+          );
 
-    if (paymentSuccessful) {
-      bool success = await BookingService.createBooking(
-        packageId: widget.packageId,
-        travelDate: selectedDate!.toIso8601String().split("T")[0],
-        persons: int.tryParse(personsController.text) ?? 1,
-        transportType: selectedTransport,
-      );
-
-      setState(() => isProcessing = false);
-
-      if (success) {
-        _showSuccessDialog();
-      } else {
-        _showError("Payment received, but booking failed. Contact support.");
-      }
-    } else {
-      setState(() => isProcessing = false);
-      _showError("Payment failed. Please try again.");
-    }
+          // 2. Launch the Khalti Interface
+          KhaltiScope.of(context).pay(
+            config: config,
+            preferences: [
+              PaymentPreference.khalti,
+              PaymentPreference.connectIPS,
+            ],
+            onSuccess: (success) {
+              // Once the user pays, we verify the token
+              _verifyPaymentLocally(success.token, success.amount);
+            },
+            onFailure: (fa) => _showError("Payment Failed: ${fa.message}"),
+            onCancel: () => _showError("Payment Cancelled"),
+          );
+        }
+      },
+      onCancel: () {
+        _showError("Payment Cancelled");
+      },
+    );
   }
-
   // --- UI COMPONENTS ---
 
   Widget _buildAppBar() {
@@ -362,19 +391,38 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       child: FutureBuilder<List<dynamic>>(
         future: HotelService.fetchNearbyHotels(lat, lng),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          // 1. Handling the Loading State
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final hotels = snapshot.data!;
+          // 2. Handling Network or Backend Errors
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                "Error: ${snapshot.error}",
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          }
 
+          // 3. Handling Empty Data (No hotels found)
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text("No nearby hotels found."));
+          }
+
+          final hotels = snapshot.data!;
           Set<Marker> markers = {};
 
           for (var hotel in hotels) {
             markers.add(
               Marker(
-                markerId: MarkerId(hotel['name']),
-                position: LatLng(hotel['latitude'], hotel['longitude']),
+                markerId: MarkerId(hotel['name'].toString()),
+                // ✅ Ensuring values are doubles to prevent LatLng crashes
+                position: LatLng(
+                  double.parse(hotel['latitude'].toString()),
+                  double.parse(hotel['longitude'].toString()),
+                ),
                 infoWindow: InfoWindow(
                   title: hotel['name'],
                   snippet: "${hotel['distance_km']} km away",
@@ -574,5 +622,45 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     personsController.removeListener(_updateTotalPrice);
     personsController.dispose();
     super.dispose();
+  }
+
+  Future<void> _verifyPaymentLocally(String token, int amount) async {
+    setState(() => isProcessing = true);
+
+    try {
+      // This is your Live Secret Key from earlier
+      const String secretKey = "9e601b866fff4451973e7407c2ac";
+
+      final response = await http.post(
+        Uri.parse("https://khalti.com/api/v2/payment/verify/"),
+        headers: {
+          "Authorization": "Key $secretKey",
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({"token": token, "amount": amount}),
+      );
+
+      if (response.statusCode == 200) {
+        // Payment confirmed by Khalti! Now save the booking to your node server
+        bool success = await BookingService.createBooking(
+          packageId: widget.packageId,
+          travelDate: selectedDate!.toIso8601String().split("T")[0],
+          persons: int.tryParse(personsController.text) ?? 1,
+          transportType: selectedTransport,
+        );
+
+        if (success) {
+          _showSuccessDialog();
+        } else {
+          _showError("Payment okay, but couldn't save booking.");
+        }
+      } else {
+        _showError("Khalti Verification Failed.");
+      }
+    } catch (e) {
+      _showError("Connection Error: $e");
+    } finally {
+      setState(() => isProcessing = false);
+    }
   }
 }
