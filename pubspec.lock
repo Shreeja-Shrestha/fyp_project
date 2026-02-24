@@ -251,10 +251,11 @@ packages:
   khalti_flutter:
     dependency: "direct main"
     description:
-      name: khalti_flutter
-      sha256: "1d2a66b1b1af5e1c4b59f3709de6bcc6480582031c4d1b99cf98bd438debfbfa"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/khalti_flutter"
+      ref: HEAD
+      resolved-ref: "5b1f929e14f11f7ce3566c1d1328431010b7cb7d"
+      url: "https://github.com/khalti/khalti-flutter-sdk.git"
+    source: git
     version: "3.0.0"
   latlong2:
     dependency: "direct main"
