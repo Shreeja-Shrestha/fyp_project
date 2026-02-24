@@ -6,7 +6,9 @@ import 'package:http/http.dart' as http;
 import 'package:table_calendar/table_calendar.dart';
 import '../services/hotel_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:khalti_flutter/khalti_flutter.dart';
+// Remove: import 'package:khalti_flutter/khalti_flutter.dart';
+import 'package:khalti_checkout_flutter/khalti_checkout_flutter.dart';
+import 'dart:developer' as dev;
 
 class BookingOptionsPage extends StatefulWidget {
   final int packageId;
@@ -40,6 +42,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     text: "1",
   );
   bool isProcessing = false;
+
   final double basePrice = 25000.0;
   double totalPrice = 25000.0;
 
@@ -166,29 +169,91 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   }
 
   // --- LOGIC: PAYMENT + BOOKING ---
+  // --- LOGIC: PAYMENT + BOOKING ---
+  String? serverPidx; // Add this variable at the top of your State class
+
   Future<void> _onConfirmBooking() async {
     if (selectedDate == null) {
       _showError("Please select a travel date first.");
       return;
     }
 
-    final config = PaymentConfig(
-      amount: (totalPrice * 100).toInt(), // Converting Rs to Paisa
-      productIdentity: widget.packageId.toString(),
-      productName: "Tour Package #${widget.packageId}",
-    );
+    setState(() => isProcessing = true);
 
-    KhaltiScope.of(context).pay(
-      config: config,
-      preferences: [PaymentPreference.khalti, PaymentPreference.connectIPS],
-      onSuccess: (successModel) {
-        // Once the user finishes in the Khalti UI, this runs:
-        _verifyPaymentLocally(successModel.token, successModel.amount);
-      },
-      onFailure: (fa) => _showError("Payment Failed: ${fa.message}"),
-      onCancel: () => _showError("Payment Cancelled"),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2:3000/api/bookings/initiate-payment'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "amount": (totalPrice * 100).toInt(), // Khalti expects Paisa
+          "purchase_order_id": "order_${DateTime.now().millisecondsSinceEpoch}",
+          "purchase_order_name": "Tour Booking",
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        serverPidx = data['pidx']; // ✅ STORE THE PIDX HERE
+
+        final payConfig = KhaltiPayConfig(
+          publicKey: '6eb2bbba11df4ce9972d37a03afad7de',
+          pidx: serverPidx!,
+          environment: Environment.test,
+        );
+
+        Khalti.init(
+          payConfig: payConfig,
+          onPaymentResult: (PaymentResult result, Khalti khalti) {
+            if (result.payload?.status == 'Completed') {
+              khalti.close(context);
+              _handleBookingSave();
+            }
+          },
+          // FIX: Changed to positional arguments to match dev.9 signature
+          onMessage: (khalti, message) {
+            _showError(message.description?.toString() ?? "Error");
+            khalti.close(context);
+          },
+        );
+      }
+    } catch (e) {
+      _showError("Connection Error: $e");
+    } finally {
+      setState(() => isProcessing = false);
+    }
   }
+
+  Future<void> _handleBookingSave() async {
+    setState(() => isProcessing = true);
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2:3000/api/bookings/create'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "user_id": widget.userId,
+          "package_id": widget.packageId,
+          "travel_date": selectedDate!.toIso8601String().split("T")[0],
+          "persons": int.tryParse(personsController.text) ?? 1,
+          "transport_type": selectedTransport,
+          "pidx": serverPidx, // ✅ SEND THIS (Matched to controller)
+          "amount": totalPrice, // ✅ SEND THIS (Matched to controller)
+        }),
+      );
+
+      final result = jsonDecode(response.body);
+      if (response.statusCode == 201 && result['success'] == true) {
+        _showSuccessDialog();
+      } else {
+        _showError("Save failed: ${result['message']}");
+      }
+    } catch (e) {
+      _showError("Database Connection Error: $e");
+    } finally {
+      setState(() => isProcessing = false);
+    }
+  }
+  // DELETE THE ENTIRE _verifyPaymentLocally FUNCTION COMPLETELY
   // --- UI COMPONENTS ---
 
   Widget _buildAppBar() {
@@ -582,48 +647,5 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     personsController.removeListener(_updateTotalPrice);
     personsController.dispose();
     super.dispose();
-  }
-
-  Future<void> _verifyPaymentLocally(String token, int amount) async {
-    setState(() => isProcessing = true);
-
-    try {
-      // 🔥 Use your Secret Key here
-      const String secretKey = "9e601b866fff4451973e7407c2ac";
-
-      final response = await http.post(
-        Uri.parse("https://khalti.com/api/v2/payment/verify/"),
-        headers: {
-          "Authorization": "Key $secretKey",
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode({"token": token, "amount": amount}),
-      );
-
-      if (response.statusCode == 200) {
-        // Payment confirmed by Khalti!
-        // Now we call your existing BookingService to save it to your local DB
-        bool success = await BookingService.createBooking(
-          packageId: widget.packageId,
-          travelDate: selectedDate!.toIso8601String().split("T")[0],
-          persons: int.tryParse(personsController.text) ?? 1,
-          transportType: selectedTransport,
-        );
-
-        if (success) {
-          _showSuccessDialog();
-        } else {
-          _showError(
-            "Payment verified, but failed to save booking to database.",
-          );
-        }
-      } else {
-        _showError("Khalti Verification Failed: ${response.body}");
-      }
-    } catch (e) {
-      _showError("Network Error during verification: $e");
-    } finally {
-      setState(() => isProcessing = false);
-    }
   }
 }
