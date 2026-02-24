@@ -1,13 +1,14 @@
 import 'dart:ui';
 import 'dart:convert'; // ✅ ADD THIS
 import 'package:flutter/material.dart';
+import 'package:khalti_flutter/khalti_flutter.dart';
 import '../services/booking_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:table_calendar/table_calendar.dart';
 import '../services/hotel_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 // Remove: import 'package:khalti_flutter/khalti_flutter.dart';
-import 'package:khalti_checkout_flutter/khalti_checkout_flutter.dart';
+
 import 'dart:developer' as dev;
 
 class BookingOptionsPage extends StatefulWidget {
@@ -100,71 +101,86 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   }
 
   void _updateTotalPrice() {
-    int count = int.tryParse(personsController.text) ?? 1;
-    if (count < 1) count = 1;
-    totalPrice = count * basePrice;
+    setState(() {
+      // ✅ Wrap in setState to update the UI
+      int count = int.tryParse(personsController.text) ?? 1;
+      if (count < 1) count = 1;
+      totalPrice = count * basePrice;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bgCanvas,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              _buildAppBar(),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 10, 24, 160),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _sectionHeader(
-                        "Travel Schedule",
-                        "Pick your preferred date",
+    // 1. Wrap the entire page in KhaltiScope
+    return KhaltiScope(
+      publicKey:
+          '6eb2bbba11df4ce9972d37a03afad7de', // Replace with your actual key
+      builder: (context, khaltiNavigatorKey) {
+        return Scaffold(
+          // 2. IMPORTANT: Pass the key here so Khalti can show its dialogs
+          key: khaltiNavigatorKey,
+          backgroundColor: bgCanvas,
+          body: Stack(
+            children: [
+              CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  _buildAppBar(),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 10, 24, 160),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _sectionHeader(
+                            "Travel Schedule",
+                            "Pick your preferred date",
+                          ),
+                          const SizedBox(height: 15),
+                          _selectionTile(
+                            icon: Icons.calendar_month_rounded,
+                            title: selectedDate == null
+                                ? "Select Travel Date"
+                                : "${selectedDate!.day} / ${selectedDate!.month} / ${selectedDate!.year}",
+                            subtitle: selectedDate == null
+                                ? "Tap to open calendar"
+                                : "Date confirmed",
+                            onTap: _pickDate,
+                          ),
+                          const SizedBox(height: 30),
+                          _sectionHeader("Group Size", "How many travelers?"),
+                          const SizedBox(height: 15),
+                          _buildPersonsInput(),
+                          const SizedBox(height: 30),
+                          _sectionHeader(
+                            "Transportation",
+                            "Select mode of travel",
+                          ),
+                          const SizedBox(height: 15),
+                          _buildTransportRow(),
+                          const SizedBox(height: 30),
+                          _sectionHeader(
+                            "Accommodation",
+                            "Nearby hotels for your stay",
+                          ),
+                          const SizedBox(height: 15),
+                          _mapPreview(widget.lat, widget.lng),
+                        ],
                       ),
-                      const SizedBox(height: 15),
-                      _selectionTile(
-                        icon: Icons.calendar_month_rounded,
-                        title: selectedDate == null
-                            ? "Select Travel Date"
-                            : "${selectedDate!.day} / ${selectedDate!.month} / ${selectedDate!.year}",
-                        subtitle: selectedDate == null
-                            ? "Tap to open calendar"
-                            : "Date confirmed",
-                        onTap: _pickDate,
-                      ),
-                      const SizedBox(height: 30),
-                      _sectionHeader("Group Size", "How many travelers?"),
-                      const SizedBox(height: 15),
-                      _buildPersonsInput(),
-                      const SizedBox(height: 30),
-                      _sectionHeader("Transportation", "Select mode of travel"),
-                      const SizedBox(height: 15),
-                      _buildTransportRow(),
-                      const SizedBox(height: 30),
-                      _sectionHeader(
-                        "Accommodation",
-                        "Nearby hotels for your stay",
-                      ),
-                      const SizedBox(height: 15),
-                      _mapPreview(widget.lat, widget.lng),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
+              _buildBottomActionWithPrice(),
+              if (isProcessing)
+                Container(
+                  color: Colors.black26,
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
             ],
           ),
-          _buildBottomActionWithPrice(),
-          if (isProcessing)
-            Container(
-              color: Colors.black26,
-              child: const Center(child: CircularProgressIndicator()),
-            ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -181,6 +197,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     setState(() => isProcessing = true);
 
     try {
+      // 1. Initiate payment with your backend to get the pidx
       final response = await http.post(
         Uri.parse('http://10.0.2.2:3000/api/bookings/initiate-payment'),
         headers: {"Content-Type": "application/json"},
@@ -193,28 +210,31 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        serverPidx = data['pidx']; // ✅ STORE THE PIDX HERE
+        serverPidx = data['pidx'];
 
-        final payConfig = KhaltiPayConfig(
-          publicKey: '6eb2bbba11df4ce9972d37a03afad7de',
-          pidx: serverPidx!,
-          environment: Environment.test,
-        );
-
-        Khalti.init(
-          payConfig: payConfig,
-          onPaymentResult: (PaymentResult result, Khalti khalti) {
-            if (result.payload?.status == 'Completed') {
-              khalti.close(context);
-              _handleBookingSave();
-            }
+        // 2. Launch Khalti Payment using KhaltiScope
+        // Note: In v3.0.0, you don't use Khalti.init anymore.
+        KhaltiScope.of(context).pay(
+          config: PaymentConfig(
+            amount: (totalPrice * 100).toInt(), // Amount in Paisa
+            productIdentity: serverPidx!, // ✅ Use this instead of 'pidx'
+            productName: "Tour Booking",
+          ),
+          preferences: [PaymentPreference.khalti, PaymentPreference.connectIPS],
+          onSuccess: (PaymentSuccessModel success) {
+            // Success! Khalti handles closing the SDK UI automatically.
+            dev.log('Payment Successful: ${success.idx}');
+            _handleBookingSave();
           },
-          // FIX: Changed to positional arguments to match dev.9 signature
-          onMessage: (khalti, message) {
-            _showError(message.description?.toString() ?? "Error");
-            khalti.close(context);
+          onFailure: (PaymentFailureModel failure) {
+            _showError("Payment Failed: ${failure.message}");
+          },
+          onCancel: () {
+            _showError("Payment Cancelled by user");
           },
         );
+      } else {
+        _showError("Server error: ${response.statusCode}");
       }
     } catch (e) {
       _showError("Connection Error: $e");
