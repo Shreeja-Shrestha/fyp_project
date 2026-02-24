@@ -88,9 +88,11 @@ class _TourDetailPageState extends State<TourDetailPage> {
       MaterialPageRoute(
         builder: (context) => BookingOptionsPage(
           packageId: widget.tourId,
-          userId: 1, // Replace with dynamic user ID
+          userId: 1,
           role: 'user',
           tourId: widget.tourId,
+          lat: 28.37, // example latitude
+          lng: 83.92, // example longitude
         ),
       ),
     );
