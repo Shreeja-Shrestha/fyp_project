@@ -5,12 +5,15 @@ import '../services/booking_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:table_calendar/table_calendar.dart';
 import '../services/hotel_service.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class BookingOptionsPage extends StatefulWidget {
   final int packageId;
   final int userId;
   final String role;
   final int tourId;
+  final double lat;
+  final double lng;
 
   const BookingOptionsPage({
     super.key,
@@ -18,6 +21,8 @@ class BookingOptionsPage extends StatefulWidget {
     required this.userId,
     required this.role,
     required this.tourId,
+    required this.lat,
+    required this.lng,
   });
 
   @override
@@ -141,7 +146,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
                         "Nearby hotels for your stay",
                       ),
                       const SizedBox(height: 15),
-                      _mapPreview(),
+                      _mapPreview(widget.lat, widget.lng),
                     ],
                   ),
                 ),
@@ -351,31 +356,39 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     );
   }
 
-  Widget _mapPreview() {
-    return Container(
-      height: 180,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: FutureBuilder<Map<String, dynamic>?>(
-        future: HotelService.fetchNearestHotel(27.7172, 85.3240),
+  Widget _mapPreview(double lat, double lng) {
+    return SizedBox(
+      height: 250,
+      child: FutureBuilder<List<dynamic>>(
+        future: HotelService.fetchNearbyHotels(lat, lng),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (!snapshot.hasData || snapshot.data == null) {
-            return const Center(child: Text("No nearby hotel found"));
+          final hotels = snapshot.data!;
+
+          Set<Marker> markers = {};
+
+          for (var hotel in hotels) {
+            markers.add(
+              Marker(
+                markerId: MarkerId(hotel['name']),
+                position: LatLng(hotel['latitude'], hotel['longitude']),
+                infoWindow: InfoWindow(
+                  title: hotel['name'],
+                  snippet: "${hotel['distance_km']} km away",
+                ),
+              ),
+            );
           }
 
-          final hotel = snapshot.data!;
-
-          return ListTile(
-            leading: const Icon(Icons.hotel, color: Colors.blue),
-            title: Text(hotel['name'] ?? "Hotel"),
-            subtitle: Text("Distance: ${hotel['distance_km']} km"),
+          return GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: LatLng(lat, lng),
+              zoom: 14,
+            ),
+            markers: markers,
           );
         },
       ),
