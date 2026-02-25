@@ -1,8 +1,7 @@
 import 'dart:ui';
 import 'dart:convert'; // ✅ ADD THIS
 import 'package:flutter/material.dart';
-// Remove: import 'package:khalti_flutter/khalti_flutter.dart';
-import 'package:khalti_checkout_flutter/khalti_checkout_flutter.dart';
+
 import '../services/booking_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:table_calendar/table_calendar.dart';
