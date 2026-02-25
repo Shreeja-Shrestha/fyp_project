@@ -1,7 +1,8 @@
 import 'dart:ui';
 import 'dart:convert'; // ✅ ADD THIS
 import 'package:flutter/material.dart';
-import 'package:khalti_flutter/khalti_flutter.dart';
+// Remove: import 'package:khalti_flutter/khalti_flutter.dart';
+import 'package:khalti_checkout_flutter/khalti_checkout_flutter.dart';
 import '../services/booking_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:table_calendar/table_calendar.dart';
@@ -110,15 +111,15 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
-    // 1. Wrap the entire page in KhaltiScope
-    return KhaltiScope(
-      publicKey:
-          '6eb2bbba11df4ce9972d37a03afad7de', // Replace with your actual key
-      builder: (context, khaltiNavigatorKey) {
+    // 1. Use KhaltiCheckoutScope instead of KhaltiScope
+    return KhaltiCheckoutScope(
+      publicKey: '6eb2bbba11df4ce9972d37a03afad7de',
+      builder: (context, khaltiKey) {
         return Scaffold(
-          // 2. IMPORTANT: Pass the key here so Khalti can show its dialogs
-          key: khaltiNavigatorKey,
+          // 2. Attach the khaltiKey to the Scaffold's key
+          key: khaltiKey,
           backgroundColor: bgCanvas,
           body: Stack(
             children: [
@@ -171,11 +172,18 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
                   ),
                 ],
               ),
+              // Floating bottom action bar
               _buildBottomActionWithPrice(),
+
+              // Loading Overlay
               if (isProcessing)
-                Container(
-                  color: Colors.black26,
-                  child: const Center(child: CircularProgressIndicator()),
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black26,
+                    child: const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -187,7 +195,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   // --- LOGIC: PAYMENT + BOOKING ---
   // --- LOGIC: PAYMENT + BOOKING ---
   String? serverPidx; // Add this variable at the top of your State class
-
   Future<void> _onConfirmBooking() async {
     if (selectedDate == null) {
       _showError("Please select a travel date first.");
@@ -197,13 +204,15 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     setState(() => isProcessing = true);
 
     try {
-      // 1. Initiate payment with your backend to get the pidx
+      final orderId = "order_${DateTime.now().millisecondsSinceEpoch}";
+
+      // 1. Get pidx from your backend
       final response = await http.post(
         Uri.parse('http://10.0.2.2:3000/api/bookings/initiate-payment'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "amount": (totalPrice * 100).toInt(), // Khalti expects Paisa
-          "purchase_order_id": "order_${DateTime.now().millisecondsSinceEpoch}",
+          "purchase_order_id": orderId,
           "purchase_order_name": "Tour Booking",
         }),
       );
@@ -212,29 +221,29 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         final data = jsonDecode(response.body);
         serverPidx = data['pidx'];
 
-        // 2. Launch Khalti Payment using KhaltiScope
-        // Note: In v3.0.0, you don't use Khalti.init anymore.
-        KhaltiScope.of(context).pay(
-          config: PaymentConfig(
-            amount: (totalPrice * 100).toInt(), // Amount in Paisa
-            productIdentity: serverPidx!, // ✅ Use this instead of 'pidx'
-            productName: "Tour Booking",
+        // 2. Launch Khalti Checkout (New Way)
+        final payConfig = KhaltiPayConfig(
+          publicKey: '6eb2bbba11df4ce9972d37a03afad7de',
+          pidx: serverPidx!,
+          environment: Environment.test, // Change to .production when live
+        );
+
+        // Inside your _onConfirmBooking method
+        KhaltiCheckout.start(
+          context, // This must be the context inside KhaltiCheckoutScope
+          config: KhaltiPayConfig(
+            publicKey: 'your_public_key',
+            pidx: serverPidx!,
+            environment: Environment.test,
           ),
-          preferences: [PaymentPreference.khalti, PaymentPreference.connectIPS],
-          onSuccess: (PaymentSuccessModel success) {
-            // Success! Khalti handles closing the SDK UI automatically.
-            dev.log('Payment Successful: ${success.idx}');
+          onSuccess: (result) {
             _handleBookingSave();
           },
-          onFailure: (PaymentFailureModel failure) {
-            _showError("Payment Failed: ${failure.message}");
-          },
-          onCancel: () {
-            _showError("Payment Cancelled by user");
-          },
+          onFailure: (failure) => _showError("Payment Failed"),
+          onCancel: () => _showError("Cancelled"),
         );
       } else {
-        _showError("Server error: ${response.statusCode}");
+        _showError("Failed to initiate payment with server.");
       }
     } catch (e) {
       _showError("Connection Error: $e");
@@ -256,19 +265,18 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
           "travel_date": selectedDate!.toIso8601String().split("T")[0],
           "persons": int.tryParse(personsController.text) ?? 1,
           "transport_type": selectedTransport,
-          "pidx": serverPidx, // ✅ SEND THIS (Matched to controller)
-          "amount": totalPrice, // ✅ SEND THIS (Matched to controller)
+          "pidx": serverPidx, // Essential for backend verification
+          "amount": totalPrice,
         }),
       );
 
-      final result = jsonDecode(response.body);
-      if (response.statusCode == 201 && result['success'] == true) {
+      if (response.statusCode == 201) {
         _showSuccessDialog();
       } else {
-        _showError("Save failed: ${result['message']}");
+        _showError("Booking failed to save.");
       }
     } catch (e) {
-      _showError("Database Connection Error: $e");
+      _showError("Database Error: $e");
     } finally {
       setState(() => isProcessing = false);
     }
