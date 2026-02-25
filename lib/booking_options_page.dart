@@ -228,19 +228,15 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
           environment: Environment.test, // Change to .production when live
         );
 
-        // Inside your _onConfirmBooking method
         KhaltiCheckout.start(
-          context, // This must be the context inside KhaltiCheckoutScope
-          config: KhaltiPayConfig(
-            publicKey: 'your_public_key',
-            pidx: serverPidx!,
-            environment: Environment.test,
-          ),
+          context,
+          config: payConfig,
           onSuccess: (result) {
-            _handleBookingSave();
+            dev.log('Payment Successful: ${result.idx}');
+            _handleBookingSave(); // Save to your DB after success
           },
           onFailure: (failure) => _showError("Payment Failed"),
-          onCancel: () => _showError("Cancelled"),
+          onCancel: () => _showError("Payment Cancelled"),
         );
       } else {
         _showError("Failed to initiate payment with server.");
