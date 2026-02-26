@@ -1,14 +1,10 @@
 import 'dart:ui';
-import 'dart:convert'; // ✅ ADD THIS
+import 'dart:convert';
 import 'package:flutter/material.dart';
-
-import '../services/booking_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:table_calendar/table_calendar.dart';
-import '../services/hotel_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-// Remove: import 'package:khalti_flutter/khalti_flutter.dart';
-
+import '../services/hotel_service.dart';
 import 'dart:developer' as dev;
 
 class BookingOptionsPage extends StatefulWidget {
@@ -34,9 +30,9 @@ class BookingOptionsPage extends StatefulWidget {
 }
 
 class _BookingOptionsPageState extends State<BookingOptionsPage> {
+  // ✅ Restored Event Map
   Map<DateTime, List<Map<String, dynamic>>> eventMap = {};
   DateTime focusedDay = DateTime.now();
-
   DateTime? selectedDate;
   String selectedTransport = "Bus";
   final TextEditingController personsController = TextEditingController(
@@ -49,6 +45,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
   final Color primarySkyBlue = const Color(0xFF00B4D8);
   final Color bgCanvas = const Color(0xFFF8FDFF);
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +53,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     fetchTourEvents();
   }
 
+  // ✅ Restored fetchTourEvents with full logic
   Future<void> fetchTourEvents() async {
     try {
       final response = await http.get(
@@ -64,45 +62,34 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
       if (response.statusCode == 200) {
         List data = json.decode(response.body);
-
         Map<DateTime, List<Map<String, dynamic>>> temp = {};
 
         for (var item in data) {
-          DateTime parsedDate = DateTime.parse(
-            item['date'],
-          ).toLocal(); // 🔥 important
-
+          DateTime parsedDate = DateTime.parse(item['date']).toLocal();
           DateTime cleanDate = DateTime(
             parsedDate.year,
             parsedDate.month,
             parsedDate.day,
           );
-
           temp.putIfAbsent(cleanDate, () => []);
           temp[cleanDate]!.add(item);
-
-          print("Stored Event Date: $cleanDate"); // debug
         }
 
         setState(() {
           eventMap = temp;
-
-          // Focus calendar on first event if events exist
           if (temp.isNotEmpty) {
-            // Sort keys to get the earliest date
             final firstEventDate = temp.keys.toList()..sort();
             focusedDay = firstEventDate.first;
           }
         });
       }
     } catch (e) {
-      print("Error fetching events: $e");
+      dev.log("Error fetching events: $e");
     }
   }
 
   void _updateTotalPrice() {
     setState(() {
-      // ✅ Wrap in setState to update the UI
       int count = int.tryParse(personsController.text) ?? 1;
       if (count < 1) count = 1;
       totalPrice = count * basePrice;
@@ -110,146 +97,78 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   }
 
   @override
-  @override
   Widget build(BuildContext context) {
-    // 1. Use KhaltiCheckoutScope instead of KhaltiScope
-    return KhaltiCheckoutScope(
-      publicKey: '6eb2bbba11df4ce9972d37a03afad7de',
-      builder: (context, khaltiKey) {
-        return Scaffold(
-          // 2. Attach the khaltiKey to the Scaffold's key
-          key: khaltiKey,
-          backgroundColor: bgCanvas,
-          body: Stack(
-            children: [
-              CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  _buildAppBar(),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 10, 24, 160),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _sectionHeader(
-                            "Travel Schedule",
-                            "Pick your preferred date",
-                          ),
-                          const SizedBox(height: 15),
-                          _selectionTile(
-                            icon: Icons.calendar_month_rounded,
-                            title: selectedDate == null
-                                ? "Select Travel Date"
-                                : "${selectedDate!.day} / ${selectedDate!.month} / ${selectedDate!.year}",
-                            subtitle: selectedDate == null
-                                ? "Tap to open calendar"
-                                : "Date confirmed",
-                            onTap: _pickDate,
-                          ),
-                          const SizedBox(height: 30),
-                          _sectionHeader("Group Size", "How many travelers?"),
-                          const SizedBox(height: 15),
-                          _buildPersonsInput(),
-                          const SizedBox(height: 30),
-                          _sectionHeader(
-                            "Transportation",
-                            "Select mode of travel",
-                          ),
-                          const SizedBox(height: 15),
-                          _buildTransportRow(),
-                          const SizedBox(height: 30),
-                          _sectionHeader(
-                            "Accommodation",
-                            "Nearby hotels for your stay",
-                          ),
-                          const SizedBox(height: 15),
-                          _mapPreview(widget.lat, widget.lng),
-                        ],
+    return Scaffold(
+      backgroundColor: bgCanvas,
+      body: Stack(
+        children: [
+          CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              _buildAppBar(),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 10, 24, 160),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _sectionHeader(
+                        "Travel Schedule",
+                        "Pick your preferred date",
                       ),
-                    ),
-                  ),
-                ],
-              ),
-              // Floating bottom action bar
-              _buildBottomActionWithPrice(),
-
-              // Loading Overlay
-              if (isProcessing)
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.black26,
-                    child: const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    ),
+                      const SizedBox(height: 15),
+                      _selectionTile(
+                        icon: Icons.calendar_month_rounded,
+                        title: selectedDate == null
+                            ? "Select Travel Date"
+                            : "${selectedDate!.day} / ${selectedDate!.month} / ${selectedDate!.year}",
+                        subtitle: selectedDate == null
+                            ? "Tap to open calendar"
+                            : "Date confirmed",
+                        onTap: _pickDate,
+                      ),
+                      const SizedBox(height: 30),
+                      _sectionHeader("Group Size", "How many travelers?"),
+                      const SizedBox(height: 15),
+                      _buildPersonsInput(),
+                      const SizedBox(height: 30),
+                      _sectionHeader("Transportation", "Select mode of travel"),
+                      const SizedBox(height: 15),
+                      _buildTransportRow(),
+                      const SizedBox(height: 30),
+                      _sectionHeader(
+                        "Accommodation",
+                        "Nearby hotels for your stay",
+                      ),
+                      const SizedBox(height: 15),
+                      _mapPreview(widget.lat, widget.lng),
+                    ],
                   ),
                 ),
+              ),
             ],
           ),
-        );
-      },
+          _buildBottomActionWithPrice(),
+          if (isProcessing)
+            Container(
+              color: Colors.black26,
+              child: const Center(child: CircularProgressIndicator()),
+            ),
+        ],
+      ),
     );
   }
 
-  // --- LOGIC: PAYMENT + BOOKING ---
-  // --- LOGIC: PAYMENT + BOOKING ---
-  String? serverPidx; // Add this variable at the top of your State class
   Future<void> _onConfirmBooking() async {
     if (selectedDate == null) {
       _showError("Please select a travel date first.");
       return;
     }
-
-    setState(() => isProcessing = true);
-
-    try {
-      final orderId = "order_${DateTime.now().millisecondsSinceEpoch}";
-
-      // 1. Get pidx from your backend
-      final response = await http.post(
-        Uri.parse('http://10.0.2.2:3000/api/bookings/initiate-payment'),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "amount": (totalPrice * 100).toInt(), // Khalti expects Paisa
-          "purchase_order_id": orderId,
-          "purchase_order_name": "Tour Booking",
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        serverPidx = data['pidx'];
-
-        // 2. Launch Khalti Checkout (New Way)
-        final payConfig = KhaltiPayConfig(
-          publicKey: '6eb2bbba11df4ce9972d37a03afad7de',
-          pidx: serverPidx!,
-          environment: Environment.test, // Change to .production when live
-        );
-
-        KhaltiCheckout.start(
-          context,
-          config: payConfig,
-          onSuccess: (result) {
-            dev.log('Payment Successful: ${result.idx}');
-            _handleBookingSave(); // Save to your DB after success
-          },
-          onFailure: (failure) => _showError("Payment Failed"),
-          onCancel: () => _showError("Payment Cancelled"),
-        );
-      } else {
-        _showError("Failed to initiate payment with server.");
-      }
-    } catch (e) {
-      _showError("Connection Error: $e");
-    } finally {
-      setState(() => isProcessing = false);
-    }
+    await _handleBookingSave();
   }
 
   Future<void> _handleBookingSave() async {
     setState(() => isProcessing = true);
-
     try {
       final response = await http.post(
         Uri.parse('http://10.0.2.2:3000/api/bookings/create'),
@@ -260,25 +179,25 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
           "travel_date": selectedDate!.toIso8601String().split("T")[0],
           "persons": int.tryParse(personsController.text) ?? 1,
           "transport_type": selectedTransport,
-          "pidx": serverPidx, // Essential for backend verification
           "amount": totalPrice,
+          "status": "Confirmed",
         }),
       );
 
-      if (response.statusCode == 201) {
+      final result = jsonDecode(response.body);
+      if (response.statusCode == 201 && result['success'] == true) {
         _showSuccessDialog();
       } else {
-        _showError("Booking failed to save.");
+        _showError("Save failed: ${result['message']}");
       }
     } catch (e) {
-      _showError("Database Error: $e");
+      _showError("Database Connection Error: $e");
     } finally {
       setState(() => isProcessing = false);
     }
   }
-  // DELETE THE ENTIRE _verifyPaymentLocally FUNCTION COMPLETELY
-  // --- UI COMPONENTS ---
 
+  // --- UI COMPONENTS ---
   Widget _buildAppBar() {
     return SliverAppBar(
       expandedHeight: 90,
@@ -380,7 +299,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     );
   }
 
-  // ✅ Updated to use Icons and bigger size
   Widget _buildTransportRow() {
     final List<Map<String, dynamic>> transportOptions = [
       {"type": "Bus", "icon": Icons.directions_bus_rounded},
@@ -412,7 +330,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         ),
         child: Column(
           children: [
-            // ✅ Standard Icon at size 40
             Icon(
               iconData,
               size: 40,
@@ -439,45 +356,32 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       child: FutureBuilder<List<dynamic>>(
         future: HotelService.fetchNearbyHotels(lat, lng),
         builder: (context, snapshot) {
-          // 1. Handling the Loading State
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting)
             return const Center(child: CircularProgressIndicator());
-          }
-
-          // 2. Handling Network or Backend Errors
-          if (snapshot.hasError) {
+          if (snapshot.hasError)
             return Center(
               child: Text(
                 "Error: ${snapshot.error}",
                 style: const TextStyle(color: Colors.red),
               ),
             );
-          }
-
-          // 3. Handling Empty Data (No hotels found)
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          if (!snapshot.hasData || snapshot.data!.isEmpty)
             return const Center(child: Text("No nearby hotels found."));
-          }
 
           final hotels = snapshot.data!;
-          Set<Marker> markers = {};
-
-          for (var hotel in hotels) {
-            markers.add(
-              Marker(
-                markerId: MarkerId(hotel['name'].toString()),
-                // ✅ Ensuring values are doubles to prevent LatLng crashes
-                position: LatLng(
-                  double.parse(hotel['latitude'].toString()),
-                  double.parse(hotel['longitude'].toString()),
-                ),
-                infoWindow: InfoWindow(
-                  title: hotel['name'],
-                  snippet: "${hotel['distance_km']} km away",
-                ),
+          Set<Marker> markers = hotels.map((hotel) {
+            return Marker(
+              markerId: MarkerId(hotel['name'].toString()),
+              position: LatLng(
+                double.parse(hotel['latitude'].toString()),
+                double.parse(hotel['longitude'].toString()),
+              ),
+              infoWindow: InfoWindow(
+                title: hotel['name'],
+                snippet: "${hotel['distance_km']} km away",
               ),
             );
-          }
+          }).toSet();
 
           return GoogleMap(
             initialCameraPosition: CameraPosition(
@@ -539,7 +443,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
                   ),
                 ),
                 child: const Text(
-                  "Pay & Confirm",
+                  "Confirm Booking",
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -563,7 +467,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       barrierDismissible: false,
       builder: (_) => AlertDialog(
         title: const Text("Trek Confirmed!"),
-        content: const Text("Payment successful and booking has been saved."),
+        content: const Text("Your booking has been saved successfully."),
         actions: [
           TextButton(
             onPressed: () {
@@ -577,6 +481,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     );
   }
 
+  // ✅ Restored _pickDate with Event descriptions logic
   Future<void> _pickDate() async {
     final selected = await showModalBottomSheet<DateTime>(
       context: context,
@@ -628,10 +533,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
                       ),
                     ),
                     onDaySelected: (selectedDay, newFocusedDay) {
-                      Navigator.pop(
-                        context,
-                        selectedDay,
-                      ); // return the selected date
+                      Navigator.pop(context, selectedDay);
                     },
                   ),
                 ),
@@ -648,10 +550,10 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         focusedDay = selected;
       });
 
+      // ✅ Restored the Cultural Event Dialog Logic
       DateTime clean = DateTime(selected.year, selected.month, selected.day);
       if (eventMap.containsKey(clean)) {
         var events = eventMap[clean]!;
-
         await showDialog(
           context: context,
           builder: (_) => AlertDialog(
