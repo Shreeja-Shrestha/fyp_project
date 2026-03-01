@@ -30,6 +30,8 @@ class BookingOptionsPage extends StatefulWidget {
 }
 
 class _BookingOptionsPageState extends State<BookingOptionsPage> {
+  // Inside _BookingOptionsPageState class
+  late Future<List<dynamic>> _hotelFuture; // Add this line
   // ✅ Restored Event Map
   Map<DateTime, List<Map<String, dynamic>>> eventMap = {};
   DateTime focusedDay = DateTime.now();
@@ -51,6 +53,9 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     super.initState();
     personsController.addListener(_updateTotalPrice);
     fetchTourEvents();
+
+    // Initialize the hotel fetch here, NOT in the build method
+    _hotelFuture = HotelService.fetchNearbyHotels(widget.lat, widget.lng);
   }
 
   // ✅ Restored fetchTourEvents with full logic
@@ -354,7 +359,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     return SizedBox(
       height: 250,
       child: FutureBuilder<List<dynamic>>(
-        future: HotelService.fetchNearbyHotels(lat, lng),
+        future: _hotelFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -363,8 +368,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
           if (snapshot.hasError) {
             return Center(child: Text("Error: ${snapshot.error}"));
           }
-
-          // 🔍 Debug: Print the raw data to the console to see what the server sent
           if (snapshot.hasData) {
             debugPrint("Hotel Data: ${snapshot.data}");
           }
