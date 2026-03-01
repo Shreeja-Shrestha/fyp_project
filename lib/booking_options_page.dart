@@ -180,12 +180,12 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
           "persons": int.tryParse(personsController.text) ?? 1,
           "transport_type": selectedTransport,
           "amount": totalPrice,
-          "status": "Confirmed",
+          "status": "Pending", // ✅ Changed from 'Confirmed' to 'Pending'
         }),
       );
 
       final result = jsonDecode(response.body);
-      if (response.statusCode == 201 && result['success'] == true) {
+      if (response.statusCode == 201) {
         _showSuccessDialog();
       } else {
         _showError("Save failed: ${result['message']}");

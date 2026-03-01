@@ -7,23 +7,31 @@ class HotelService {
 
   static Future<List<dynamic>> fetchNearbyHotels(double lat, double lng) async {
     try {
-      final url = Uri.parse("$baseUrl/nearest-hotel?lat=$lat&lng=$lng");
-      final response = await http.get(url);
+      final response = await http.get(
+        Uri.parse("$baseUrl/nearest-hotel?lat=$lat&lng=$lng"),
+      );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
+        final dynamic decodedData = jsonDecode(response.body);
 
-        // 🔍 IMPORTANT: Look at your Debug Console for this output!
-        debugPrint("HOTEL API SUCCESS: Found ${data.length} hotels");
-        debugPrint("DATA: $data");
+        // ✅ FIX: If backend sends a single Map, wrap it in a List
+        if (decodedData is Map) {
+          debugPrint("🏨 API returned a single object. Wrapping in list.");
+          return [decodedData];
+        }
 
-        return data;
+        // If it's already a list, return as is
+        if (decodedData is List) {
+          debugPrint("🏨 API returned a list of ${decodedData.length} hotels.");
+          return decodedData;
+        }
+
+        return [];
       } else {
-        debugPrint("HOTEL API ERROR: ${response.statusCode}");
         return [];
       }
     } catch (e) {
-      debugPrint("HOTEL SERVICE CRASH: $e");
+      debugPrint("❌ Hotel Service Error: $e");
       return [];
     }
   }
