@@ -1,37 +1,33 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart'; // For debugPrint
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
 
 class HotelService {
+  // Use 10.0.2.2 for Android Emulator, localhost for iOS/Web
   static const String baseUrl = "http://10.0.2.2:3000/api";
 
   static Future<List<dynamic>> fetchNearbyHotels(double lat, double lng) async {
     try {
-      final response = await http.get(
-        Uri.parse("$baseUrl/nearest-hotel?lat=$lat&lng=$lng"),
+      final url = Uri.parse("$baseUrl/nearest-hotel").replace(
+        queryParameters: {'lat': lat.toString(), 'lng': lng.toString()},
       );
 
+      final response = await http.get(url);
+
       if (response.statusCode == 200) {
-        final dynamic decodedData = jsonDecode(response.body);
+        final decodedData = jsonDecode(response.body);
 
-        // ✅ FIX: If backend sends a single Map, wrap it in a List
-        if (decodedData is Map) {
-          debugPrint("🏨 API returned a single object. Wrapping in list.");
-          return [decodedData];
-        }
-
-        // If it's already a list, return as is
         if (decodedData is List) {
-          debugPrint("🏨 API returned a list of ${decodedData.length} hotels.");
           return decodedData;
+        } else if (decodedData is Map) {
+          return [decodedData]; // VERY IMPORTANT
         }
-
         return [];
       } else {
         return [];
       }
     } catch (e) {
-      debugPrint("❌ Hotel Service Error: $e");
+      debugPrint("Error: $e");
       return [];
     }
   }

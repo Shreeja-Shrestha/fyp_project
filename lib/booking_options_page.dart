@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:table_calendar/table_calendar.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+//import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../services/hotel_service.dart';
 import 'dart:developer' as dev;
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class BookingOptionsPage extends StatefulWidget {
   final int packageId;
@@ -90,12 +92,8 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
   void _updateTotalPrice() {
     setState(() {
-      String text = personsController.text;
-      if (text.isEmpty) {
-        totalPrice = 0.0; // Or keep basePrice, depending on your UX preference
-        return;
-      }
-      int count = int.tryParse(text) ?? 1;
+      int count = int.tryParse(personsController.text) ?? 1;
+      if (count < 1) count = 1;
       totalPrice = count * basePrice;
     });
   }
@@ -355,66 +353,123 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   }
 
   Widget _mapPreview(double lat, double lng) {
-    return SizedBox(
+    return Container(
       height: 250,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: FutureBuilder<List<dynamic>>(
         future: HotelService.fetchNearbyHotels(lat, lng),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting)
-            return const Center(child: CircularProgressIndicator());
-          if (snapshot.hasError)
-            return Center(
-              child: Text(
-                "Error: ${snapshot.error}",
-                style: const TextStyle(color: Colors.red),
+          List<Marker> markers = [];
+
+          // Destination marker
+          markers.add(
+            Marker(
+              width: 40,
+              height: 40,
+              point: LatLng(lat, lng),
+              child: const Icon(
+                Icons.location_on,
+                color: Colors.blue,
+                size: 40,
               ),
-            );
-          if (!snapshot.hasData || snapshot.data!.isEmpty)
-            return const Center(child: Text("No nearby hotels found."));
-
-          final hotels = snapshot.data!;
-          Set<Marker> markers = hotels
-              .map((hotel) {
-                final lat = double.tryParse(
-                  hotel['latitude']?.toString() ?? '',
-                );
-                final lng = double.tryParse(
-                  hotel['longitude']?.toString() ?? '',
-                );
-
-                if (lat == null || lng == null) return null;
-
-                return Marker(
-                  markerId: MarkerId(
-                    hotel['name']?.toString() ?? DateTime.now().toString(),
-                  ),
-                  position: LatLng(lat, lng),
-                  infoWindow: InfoWindow(
-                    title: hotel['name'] ?? 'Hotel',
-                    snippet: "${hotel['distance_km'] ?? '0'} km away",
-                  ),
-                );
-              })
-              .whereType<Marker>()
-              .toSet(); // Filters out the nulls// This filters out any 'null' markers
-          return GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: LatLng(lat, lng),
-              zoom: 14,
             ),
-            markers: markers,
-            circles: {
-              Circle(
-                circleId: const CircleId("search_area"),
-                center: LatLng(lat, lng),
-                radius: 5000, // 5km
-                fillColor: primarySkyBlue.withOpacity(0.1),
-                strokeColor: primarySkyBlue,
-                strokeWidth: 1,
+          );
+
+          // Hotel markers
+          if (snapshot.hasData && snapshot.data != null) {
+            for (var hotel in snapshot.data!) {
+              markers.add(
+                Marker(
+                  width: 40,
+                  height: 40,
+                  point: LatLng(
+                    double.parse(hotel['hotel_lat'].toString()),
+                    double.parse(hotel['hotel_lng'].toString()),
+                  ),
+                  child: GestureDetector(
+                    onTap: () => _showHotelDetails(hotel),
+                    child: const Icon(
+                      Icons.location_on,
+                      color: Colors.red,
+                      size: 35,
+                    ),
+                  ),
+                ),
+              );
+            }
+          }
+
+          return FlutterMap(
+            options: MapOptions(
+              initialCenter: LatLng(lat, lng),
+              initialZoom: 14,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                userAgentPackageName: 'com.example.fyp_project',
               ),
-            },
+              MarkerLayer(markers: markers),
+            ],
           );
         },
+      ),
+    );
+  }
+
+  void _showHotelDetails(Map<String, dynamic> hotel) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              hotel['name'] ?? "Hotel Name",
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              "Price: Rs. ${hotel['price'] ?? 'N/A'}/night",
+              style: const TextStyle(
+                color: Colors.blue,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 15),
+            Text(
+              hotel['description'] ??
+                  "No description available for this property.",
+            ),
+            const SizedBox(height: 25),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00B4D8),
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
+              child: const Text(
+                "Select this Hotel",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

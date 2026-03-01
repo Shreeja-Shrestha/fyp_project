@@ -12,6 +12,7 @@ import 'package:fyp_project/home.dart';
 import 'package:fyp_project/signup.dart';
 import 'package:fyp_project/tour_detail_page.dart';
 import 'package:fyp_project/user_profile_page.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 void main() {
   runApp(const MyApp());
