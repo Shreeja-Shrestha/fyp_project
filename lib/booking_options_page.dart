@@ -365,7 +365,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         builder: (context, snapshot) {
           List<Marker> markers = [];
 
-          // Destination marker
+          // 🔵 Destination Marker
           markers.add(
             Marker(
               width: 40,
@@ -379,17 +379,14 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
             ),
           );
 
-          // Hotel markers
+          // 🔴 Hotel Markers
           if (snapshot.hasData && snapshot.data != null) {
             for (var hotel in snapshot.data!) {
               markers.add(
                 Marker(
                   width: 40,
                   height: 40,
-                  point: LatLng(
-                    double.parse(hotel['hotel_lat'].toString()),
-                    double.parse(hotel['hotel_lng'].toString()),
-                  ),
+                  point: LatLng(hotel['latitude'], hotel['longitude']),
                   child: GestureDetector(
                     onTap: () => _showHotelDetails(hotel),
                     child: const Icon(
@@ -424,53 +421,133 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   void _showHotelDetails(Map<String, dynamic> hotel) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              hotel['name'] ?? "Hotel Name",
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              "Price: Rs. ${hotel['price'] ?? 'N/A'}/night",
-              style: const TextStyle(
-                color: Colors.blue,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 🔥 HOTEL IMAGE HEADER
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(30),
+                    ),
+                    child: Image.asset(
+                      "assets/hotel.jpg", // 🔁 change if different name
+                      height: 250,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+
+                  Container(
+                    height: 250,
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(30),
+                      ),
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.7),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  Positioned(
+                    bottom: 20,
+                    left: 20,
+                    right: 20,
+                    child: Text(
+                      hotel['name'] ?? "Hotel Name",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 15),
-            Text(
-              hotel['description'] ??
-                  "No description available for this property.",
-            ),
-            const SizedBox(height: 25),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00B4D8),
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
+
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ⭐ Rating + Distance
+                    Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.amber),
+                        const SizedBox(width: 5),
+                        const Text(
+                          "4.5",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 15),
+                        const Icon(Icons.location_on, color: Colors.red),
+                        const SizedBox(width: 5),
+                        Text("${hotel['distance_km']} km away"),
+                      ],
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    Text(
+                      "Rs. 2,500 / night",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: primarySkyBlue,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    const Text(
+                      "Comfortable stay with modern amenities and peaceful surroundings.",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primarySkyBlue,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text(
+                          "Select this Hotel",
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              child: const Text(
-                "Select this Hotel",
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 
