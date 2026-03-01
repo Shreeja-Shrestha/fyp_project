@@ -30,8 +30,6 @@ class BookingOptionsPage extends StatefulWidget {
 }
 
 class _BookingOptionsPageState extends State<BookingOptionsPage> {
-  // Inside _BookingOptionsPageState class
-  late Future<List<dynamic>> _hotelFuture; // Add this line
   // ✅ Restored Event Map
   Map<DateTime, List<Map<String, dynamic>>> eventMap = {};
   DateTime focusedDay = DateTime.now();
@@ -53,9 +51,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     super.initState();
     personsController.addListener(_updateTotalPrice);
     fetchTourEvents();
-
-    // Initialize the hotel fetch here, NOT in the build method
-    _hotelFuture = HotelService.fetchNearbyHotels(widget.lat, widget.lng);
   }
 
   // ✅ Restored fetchTourEvents with full logic
@@ -95,8 +90,12 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
   void _updateTotalPrice() {
     setState(() {
-      int count = int.tryParse(personsController.text) ?? 1;
-      if (count < 1) count = 1;
+      String text = personsController.text;
+      if (text.isEmpty) {
+        totalPrice = 0.0; // Or keep basePrice, depending on your UX preference
+        return;
+      }
+      int count = int.tryParse(text) ?? 1;
       totalPrice = count * basePrice;
     });
   }
@@ -185,12 +184,12 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
           "persons": int.tryParse(personsController.text) ?? 1,
           "transport_type": selectedTransport,
           "amount": totalPrice,
-          "status": "Pending", // ✅ Changed from 'Confirmed' to 'Pending'
+          "status": "Confirmed",
         }),
       );
 
       final result = jsonDecode(response.body);
-      if (response.statusCode == 201) {
+      if (response.statusCode == 201 && result['success'] == true) {
         _showSuccessDialog();
       } else {
         _showError("Save failed: ${result['message']}");
@@ -359,62 +358,61 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     return SizedBox(
       height: 250,
       child: FutureBuilder<List<dynamic>>(
-        future: _hotelFuture,
+        future: HotelService.fetchNearbyHotels(lat, lng),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting)
             return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
-          if (snapshot.hasData) {
-            debugPrint("Hotel Data: ${snapshot.data}");
-          }
-
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          if (snapshot.hasError)
+            return Center(
+              child: Text(
+                "Error: ${snapshot.error}",
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          if (!snapshot.hasData || snapshot.data!.isEmpty)
             return const Center(child: Text("No nearby hotels found."));
-          }
 
           final hotels = snapshot.data!;
-          Set<Marker> markers = {};
+          Set<Marker> markers = hotels
+              .map((hotel) {
+                final lat = double.tryParse(
+                  hotel['latitude']?.toString() ?? '',
+                );
+                final lng = double.tryParse(
+                  hotel['longitude']?.toString() ?? '',
+                );
 
-          try {
-            markers = hotels.map((hotel) {
-              // ✅ FIX 1: Handle different key names (latitude vs lat) and nulls
-              final hLat = hotel['latitude'] ?? hotel['lat'];
-              final hLng = hotel['longitude'] ?? hotel['lng'];
-              final name = hotel['name'] ?? "Hotel";
-              final dist = hotel['distance_km'] ?? "0.0";
+                if (lat == null || lng == null) return null;
 
-              return Marker(
-                markerId: MarkerId(name.toString() + hLat.toString()),
-                position: LatLng(
-                  double.parse(hLat.toString()),
-                  double.parse(hLng.toString()),
-                ),
-                infoWindow: InfoWindow(
-                  title: name.toString(),
-                  snippet: "$dist km away",
-                ),
-              );
-            }).toSet();
-          } catch (e) {
-            debugPrint("Marker Mapping Error: $e");
-            return const Center(
-              child: Text("Data format error. Check console."),
-            );
-          }
-
+                return Marker(
+                  markerId: MarkerId(
+                    hotel['name']?.toString() ?? DateTime.now().toString(),
+                  ),
+                  position: LatLng(lat, lng),
+                  infoWindow: InfoWindow(
+                    title: hotel['name'] ?? 'Hotel',
+                    snippet: "${hotel['distance_km'] ?? '0'} km away",
+                  ),
+                );
+              })
+              .whereType<Marker>()
+              .toSet(); // Filters out the nulls// This filters out any 'null' markers
           return GoogleMap(
             initialCameraPosition: CameraPosition(
               target: LatLng(lat, lng),
               zoom: 14,
             ),
             markers: markers,
-            // ✅ FIX 2: Ensure the map can actually render in a scroll view
-            myLocationEnabled: true,
-            zoomControlsEnabled: false,
+            circles: {
+              Circle(
+                circleId: const CircleId("search_area"),
+                center: LatLng(lat, lng),
+                radius: 5000, // 5km
+                fillColor: primarySkyBlue.withOpacity(0.1),
+                strokeColor: primarySkyBlue,
+                strokeWidth: 1,
+              ),
+            },
           );
         },
       ),
