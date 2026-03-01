@@ -356,32 +356,52 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       child: FutureBuilder<List<dynamic>>(
         future: HotelService.fetchNearbyHotels(lat, lng),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting)
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
-          if (snapshot.hasError)
-            return Center(
-              child: Text(
-                "Error: ${snapshot.error}",
-                style: const TextStyle(color: Colors.red),
-              ),
-            );
-          if (!snapshot.hasData || snapshot.data!.isEmpty)
+          }
+
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+
+          // 🔍 Debug: Print the raw data to the console to see what the server sent
+          if (snapshot.hasData) {
+            debugPrint("Hotel Data: ${snapshot.data}");
+          }
+
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text("No nearby hotels found."));
+          }
 
           final hotels = snapshot.data!;
-          Set<Marker> markers = hotels.map((hotel) {
-            return Marker(
-              markerId: MarkerId(hotel['name'].toString()),
-              position: LatLng(
-                double.parse(hotel['latitude'].toString()),
-                double.parse(hotel['longitude'].toString()),
-              ),
-              infoWindow: InfoWindow(
-                title: hotel['name'],
-                snippet: "${hotel['distance_km']} km away",
-              ),
+          Set<Marker> markers = {};
+
+          try {
+            markers = hotels.map((hotel) {
+              // ✅ FIX 1: Handle different key names (latitude vs lat) and nulls
+              final hLat = hotel['latitude'] ?? hotel['lat'];
+              final hLng = hotel['longitude'] ?? hotel['lng'];
+              final name = hotel['name'] ?? "Hotel";
+              final dist = hotel['distance_km'] ?? "0.0";
+
+              return Marker(
+                markerId: MarkerId(name.toString() + hLat.toString()),
+                position: LatLng(
+                  double.parse(hLat.toString()),
+                  double.parse(hLng.toString()),
+                ),
+                infoWindow: InfoWindow(
+                  title: name.toString(),
+                  snippet: "$dist km away",
+                ),
+              );
+            }).toSet();
+          } catch (e) {
+            debugPrint("Marker Mapping Error: $e");
+            return const Center(
+              child: Text("Data format error. Check console."),
             );
-          }).toSet();
+          }
 
           return GoogleMap(
             initialCameraPosition: CameraPosition(
@@ -389,6 +409,9 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
               zoom: 14,
             ),
             markers: markers,
+            // ✅ FIX 2: Ensure the map can actually render in a scroll view
+            myLocationEnabled: true,
+            zoomControlsEnabled: false,
           );
         },
       ),
