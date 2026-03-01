@@ -8,26 +8,27 @@ class HotelService {
 
   static Future<List<dynamic>> fetchNearbyHotels(double lat, double lng) async {
     try {
+      // ✅ Using toString() ensures the query parameters are formatted correctly
       final url = Uri.parse("$baseUrl/nearest-hotel").replace(
         queryParameters: {'lat': lat.toString(), 'lng': lng.toString()},
       );
 
-      final response = await http.get(url);
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final decodedData = jsonDecode(response.body);
 
+        // ✅ Return as a list; if null or not a list, return empty
         if (decodedData is List) {
           return decodedData;
-        } else if (decodedData is Map) {
-          return [decodedData]; // VERY IMPORTANT
         }
         return [];
       } else {
+        debugPrint("Server Error: ${response.statusCode}");
         return [];
       }
     } catch (e) {
-      debugPrint("Error: $e");
+      debugPrint("Network/Parsing Error: $e");
       return [];
     }
   }
