@@ -32,10 +32,40 @@ class BookingOptionsPage extends StatefulWidget {
 }
 
 class _BookingOptionsPageState extends State<BookingOptionsPage> {
+  String calculateTravelTime(double distanceKm) {
+    double speed;
+
+    switch (selectedTransport) {
+      case "Car":
+        speed = 40; // km/h
+        break;
+      case "Bus":
+        speed = 35;
+        break;
+      case "Walk":
+        speed = 5;
+        break;
+      default:
+        speed = 40;
+    }
+
+    double timeInHours = distanceKm / speed;
+    int minutes = (timeInHours * 60).round();
+
+    if (minutes < 60) {
+      return "$minutes mins";
+    } else {
+      int hours = minutes ~/ 60;
+      int remaining = minutes % 60;
+      return "$hours hr $remaining mins";
+    }
+  }
+
   // ✅ Restored Event Map
   Map<DateTime, List<Map<String, dynamic>>> eventMap = {};
   DateTime focusedDay = DateTime.now();
   DateTime? selectedDate;
+  DateTime? checkOutDate;
   String selectedTransport = "Bus";
   final TextEditingController personsController = TextEditingController(
     text: "1",
@@ -305,7 +335,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     final List<Map<String, dynamic>> transportOptions = [
       {"type": "Bus", "icon": Icons.directions_bus_rounded},
       {"type": "Car", "icon": Icons.directions_car_rounded},
-      {"type": "Flight", "icon": Icons.flight_takeoff_rounded},
+      {"type": "Walk", "icon": Icons.directions_walk_rounded},
     ];
 
     return Row(
@@ -422,130 +452,144 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
       builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.75,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.85,
+          maxChildSize: 0.95,
+          builder: (_, controller) {
+            return SingleChildScrollView(
+              controller: controller,
+              child: _buildHotelDetailsContent(hotel),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildHotelDetailsContent(Map<String, dynamic> hotel) {
+    DateTime checkIn = selectedDate ?? DateTime.now();
+    DateTime checkOut = checkOutDate ?? checkIn.add(const Duration(days: 1));
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 🏨 Image
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.asset(
+              "assets/hotel.png",
+              height: 220,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 🔥 HOTEL IMAGE HEADER
-              Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(30),
-                    ),
-                    child: Image.asset(
-                      "assets/hotel.jpg", // 🔁 change if different name
-                      height: 250,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
 
-                  Container(
-                    height: 250,
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(30),
-                      ),
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [
-                          Colors.black.withOpacity(0.7),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
+          const SizedBox(height: 15),
 
-                  Positioned(
-                    bottom: 20,
-                    left: 20,
-                    right: 20,
-                    child: Text(
-                      hotel['name'] ?? "Hotel Name",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          Text(
+            hotel['name'],
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
 
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ⭐ Rating + Distance
-                    Row(
-                      children: [
-                        const Icon(Icons.star, color: Colors.amber),
-                        const SizedBox(width: 5),
-                        const Text(
-                          "4.5",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(width: 15),
-                        const Icon(Icons.location_on, color: Colors.red),
-                        const SizedBox(width: 5),
-                        Text("${hotel['distance_km']} km away"),
-                      ],
-                    ),
+          const SizedBox(height: 10),
+          const Divider(),
+          const SizedBox(height: 10),
 
-                    const SizedBox(height: 15),
+          const Text(
+            "Stay Details",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
 
-                    Text(
-                      "Rs. 2,500 / night",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: primarySkyBlue,
-                      ),
-                    ),
+          const SizedBox(height: 10),
 
-                    const SizedBox(height: 10),
+          Text("Check-in: ${checkIn.day}/${checkIn.month}/${checkIn.year}"),
 
-                    const Text(
-                      "Comfortable stay with modern amenities and peaceful surroundings.",
-                      style: TextStyle(color: Colors.grey),
-                    ),
+          const SizedBox(height: 5),
 
-                    const SizedBox(height: 25),
+          Text("Check-out: ${checkOut.day}/${checkOut.month}/${checkOut.year}"),
 
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primarySkyBlue,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Text(
-                          "Select this Hotel",
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ),
-                    ),
-                  ],
+          const SizedBox(height: 30),
+
+          SizedBox(
+            width: double.infinity,
+            height: 55,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 81, 128, 223),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
                 ),
               ),
+              onPressed: () {
+                _showHotelConfirmDialog(hotel);
+              },
+              child: const Text(
+                "Confirm Booking",
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHotelConfirmDialog(Map<String, dynamic> hotel) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            "Confirm Hotel Booking",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                hotel['name'],
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Text("Guests: ${personsController.text}"),
+              Text("Transport: $selectedTransport"),
             ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                Navigator.pop(context); // close dialog
+                Navigator.pop(context); // close bottom sheet
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Hotel Booking Confirmed!")),
+                );
+              },
+              child: const Text("Confirm"),
+            ),
+          ],
         );
       },
     );
