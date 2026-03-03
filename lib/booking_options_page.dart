@@ -32,6 +32,7 @@ class BookingOptionsPage extends StatefulWidget {
 }
 
 class _BookingOptionsPageState extends State<BookingOptionsPage> {
+  late Future<List<dynamic>> _hotelsFuture;
   String calculateTravelTime(double distanceKm) {
     double speed;
 
@@ -83,6 +84,8 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     super.initState();
     personsController.addListener(_updateTotalPrice);
     fetchTourEvents();
+
+    _hotelsFuture = HotelService.fetchNearbyHotels(widget.lat, widget.lng);
   }
 
   // ✅ Restored fetchTourEvents with full logic
@@ -391,7 +394,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       ),
       clipBehavior: Clip.antiAlias,
       child: FutureBuilder<List<dynamic>>(
-        future: HotelService.fetchNearbyHotels(lat, lng),
+        future: _hotelsFuture,
         builder: (context, snapshot) {
           List<Marker> markers = [];
 
@@ -408,15 +411,18 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
               ),
             ),
           );
-
-          // 🔴 Hotel Markers
+          //hotel Marker
           if (snapshot.hasData && snapshot.data != null) {
             for (var hotel in snapshot.data!) {
+              double hotelLat = double.parse(hotel['latitude'].toString());
+              double hotelLng = double.parse(hotel['longitude'].toString());
+              print("Marker -> $lat , $lng");
+
               markers.add(
                 Marker(
                   width: 40,
                   height: 40,
-                  point: LatLng(hotel['latitude'], hotel['longitude']),
+                  point: LatLng(hotelLat, hotelLng),
                   child: GestureDetector(
                     onTap: () => _showHotelDetails(hotel),
                     child: const Icon(
