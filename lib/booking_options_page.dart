@@ -8,6 +8,7 @@ import '../services/hotel_service.dart';
 import 'dart:developer' as dev;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class BookingOptionsPage extends StatefulWidget {
   final int packageId;
@@ -32,7 +33,6 @@ class BookingOptionsPage extends StatefulWidget {
 }
 
 class _BookingOptionsPageState extends State<BookingOptionsPage> {
-  late Future<List<dynamic>> _hotelsFuture;
   String calculateTravelTime(double distanceKm) {
     double speed;
 
@@ -84,8 +84,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     super.initState();
     personsController.addListener(_updateTotalPrice);
     fetchTourEvents();
-
-    _hotelsFuture = HotelService.fetchNearbyHotels(widget.lat, widget.lng);
   }
 
   // ✅ Restored fetchTourEvents with full logic
@@ -204,8 +202,10 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
   Future<void> _handleBookingSave() async {
     setState(() => isProcessing = true);
+
     try {
-      final response = await http.post(
+      // 1️⃣ Create booking first (Pending + Unpaid)
+      final bookingResponse = await http.post(
         Uri.parse('http://10.0.2.2:3000/api/bookings/create'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
@@ -215,18 +215,39 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
           "persons": int.tryParse(personsController.text) ?? 1,
           "transport_type": selectedTransport,
           "amount": totalPrice,
-          "status": "Confirmed",
+          "booking_status": "Pending",
+          "payment_status": "Unpaid",
         }),
       );
 
-      final result = jsonDecode(response.body);
-      if (response.statusCode == 201 && result['success'] == true) {
-        _showSuccessDialog();
+      final bookingData = jsonDecode(bookingResponse.body);
+
+      if (bookingResponse.statusCode == 201 && bookingData['success'] == true) {
+        int bookingId = bookingData["booking_id"];
+
+        // 2️⃣ Initiate Khalti Payment
+        final paymentResponse = await http.post(
+          Uri.parse('http://10.0.2.2:3000/api/payment/initiate-payment'),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({
+            "amount": totalPrice.toInt(),
+            "booking_id": bookingId,
+          }),
+        );
+
+        final paymentData = jsonDecode(paymentResponse.body);
+        String paymentUrl = paymentData["payment_url"];
+
+        // 3️⃣ Open Khalti page
+        await launchUrl(
+          Uri.parse(paymentUrl),
+          mode: LaunchMode.externalApplication,
+        );
       } else {
-        _showError("Save failed: ${result['message']}");
+        _showError("Booking creation failed");
       }
     } catch (e) {
-      _showError("Database Connection Error: $e");
+      _showError("Error: $e");
     } finally {
       setState(() => isProcessing = false);
     }
@@ -394,7 +415,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       ),
       clipBehavior: Clip.antiAlias,
       child: FutureBuilder<List<dynamic>>(
-        future: _hotelsFuture,
+        future: HotelService.fetchNearbyHotels(lat, lng),
         builder: (context, snapshot) {
           List<Marker> markers = [];
 
@@ -411,18 +432,15 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
               ),
             ),
           );
-          //hotel Marker
+
+          // 🔴 Hotel Markers
           if (snapshot.hasData && snapshot.data != null) {
             for (var hotel in snapshot.data!) {
-              double hotelLat = double.parse(hotel['latitude'].toString());
-              double hotelLng = double.parse(hotel['longitude'].toString());
-              print("Marker -> $lat , $lng");
-
               markers.add(
                 Marker(
                   width: 40,
                   height: 40,
-                  point: LatLng(hotelLat, hotelLng),
+                  point: LatLng(hotel['latitude'], hotel['longitude']),
                   child: GestureDetector(
                     onTap: () => _showHotelDetails(hotel),
                     child: const Icon(
@@ -649,7 +667,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
                   ),
                 ),
                 child: const Text(
-                  "Confirm Booking",
+                  "Confirm & Pay",
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
