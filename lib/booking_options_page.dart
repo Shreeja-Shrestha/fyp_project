@@ -223,8 +223,12 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       final bookingData = jsonDecode(bookingResponse.body);
 
       if (bookingResponse.statusCode == 201 && bookingData['success'] == true) {
-        int bookingId = bookingData["booking_id"];
+        if (bookingData["booking_id"] == null) {
+          _showError("Booking ID not returned from server");
+          return;
+        }
 
+        int bookingId = bookingData["booking_id"];
         // 2️⃣ Initiate Khalti Payment
         final paymentResponse = await http.post(
           Uri.parse('http://10.0.2.2:3000/api/payment/initiate-payment'),
