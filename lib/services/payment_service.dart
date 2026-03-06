@@ -1,19 +1,47 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 class PaymentService {
+  static const String baseUrl = "http://192.168.18.11:3000/api/payment";
+
   static Future<bool> processPayment({
+    required int bookingId,
     required double amount,
-    required String method,
     required BuildContext context,
   }) async {
-    // 1. You would normally trigger the SDK here (Khalti, Stripe, etc.)
-    // 2. Wait for the transaction response
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/initiate-payment"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"booking_id": bookingId, "amount": amount}),
+      );
 
-    bool paymentSuccessful = true; // Simulating a successful transaction
+      print("Payment Response: ${response.body}");
 
-    if (paymentSuccessful) {
-      return true;
-    } else {
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        String paymentUrl = data["payment_url"];
+
+        if (paymentUrl.isEmpty) {
+          print("Payment URL missing");
+          return false;
+        }
+
+        // open khalti payment page
+        final uri = Uri.parse(paymentUrl);
+
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          return true;
+        }
+      }
+
+      return false;
+    } catch (e) {
+      print("Payment Error: $e");
       return false;
     }
   }
