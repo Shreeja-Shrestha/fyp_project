@@ -204,7 +204,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     setState(() => isProcessing = true);
 
     try {
-      // 1️⃣ Create booking first (Pending + Unpaid)
       final bookingResponse = await http.post(
         Uri.parse('http://10.0.2.2:3000/api/bookings/create'),
         headers: {"Content-Type": "application/json"},
@@ -220,13 +219,8 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       final bookingData = jsonDecode(bookingResponse.body);
 
       if (bookingResponse.statusCode == 200) {
-        if (bookingData["booking_id"] == null) {
-          _showError("Booking ID not returned from server");
-          return;
-        }
-
         int bookingId = bookingData["booking_id"];
-        // 2️⃣ Initiate Khalti Payment
+
         final paymentResponse = await http.post(
           Uri.parse('http://10.0.2.2:3000/api/payment/initiate-payment'),
           headers: {"Content-Type": "application/json"},
@@ -239,7 +233,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         final paymentData = jsonDecode(paymentResponse.body);
         String paymentUrl = paymentData["payment_url"];
 
-        // 3️⃣ Open Khalti page
         await launchUrl(
           Uri.parse(paymentUrl),
           mode: LaunchMode.externalApplication,
@@ -249,9 +242,9 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       }
     } catch (e) {
       _showError("Error: $e");
-    } finally {
-      setState(() => isProcessing = false);
     }
+
+    setState(() => isProcessing = false);
   }
 
   // --- UI COMPONENTS ---
