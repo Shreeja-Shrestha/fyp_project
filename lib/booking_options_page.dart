@@ -231,7 +231,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
           Uri.parse('http://10.0.2.2:3000/api/payment/initiate-payment'),
           headers: {"Content-Type": "application/json"},
           body: jsonEncode({
-            "amount": totalPrice.toInt(),
+            "amount": (totalPrice * 100).toInt(),
             "booking_id": bookingId,
           }),
         );
