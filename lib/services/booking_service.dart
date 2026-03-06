@@ -2,75 +2,70 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class BookingService {
-  // Ensure this IP is correct for your current network!
   static const String baseUrl = "http://192.168.18.11:3000/api/bookings";
 
-  // ===== CREATE BOOKING =====
-  static Future<bool> createBooking({
-    required int packageId,
+  // CREATE BOOKING
+  static Future<int?> createBooking({
+    required int userId,
+    required int tourId,
     required String travelDate,
     required int persons,
-    required String transportType,
+    required String transportMode,
   }) async {
     try {
       final response = await http.post(
         Uri.parse("$baseUrl/create"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "package_id": packageId,
+          "user_id": userId,
+          "tour_id": tourId,
           "travel_date": travelDate,
-          "persons": persons,
-          "transport_type": transportType,
+          "number_of_people": persons,
+          "transport_mode": transportMode,
         }),
       );
-      return response.statusCode == 201;
-    } catch (e) {
-      print("Error: $e");
-      return false;
-    }
-  }
 
-  // ===== FETCH USER BOOKINGS =====
-  static Future<List> fetchUserBookings(int userId) async {
-    try {
-      final response = await http.get(
-        Uri.parse("$baseUrl/user/$userId"),
-        headers: {"Content-Type": "application/json"},
-      );
+      print("Booking Response: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // If your backend sends [ {...}, {...} ], return data directly.
-        // If your backend sends { "bookings": [...] }, return data["bookings"].
-        if (data is List) return data;
+
+        return data["booking_id"]; // return booking id
+      }
+
+      return null;
+    } catch (e) {
+      print("Booking Error: $e");
+      return null;
+    }
+  }
+
+  // FETCH USER BOOKINGS
+  static Future<List> fetchUserBookings(int userId) async {
+    try {
+      final response = await http.get(Uri.parse("$baseUrl/user/$userId"));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
         return data["bookings"] ?? [];
       }
+
       return [];
     } catch (e) {
-      print("Fetch error: $e");
+      print("Fetch Error: $e");
       return [];
     }
   }
 
-  // ===== CANCEL BOOKING (The Missing Piece) =====
+  // CANCEL BOOKING
   static Future<bool> cancelBooking(int id) async {
     try {
-      // This matches your Node.js route: router.delete('/cancel/:id', ...)
-      final response = await http.delete(
-        Uri.parse("$baseUrl/cancel/$id"),
-        headers: {"Content-Type": "application/json"},
-      );
+      final response = await http.delete(Uri.parse("$baseUrl/cancel/$id"));
 
-      print("Cancel Status: ${response.statusCode}");
-
-      if (response.statusCode == 200) {
-        return true;
-      } else {
-        print("Cancel failed: ${response.body}");
-        return false;
-      }
+      return response.statusCode == 200;
     } catch (e) {
-      print("Cancel Service Error: $e");
+      print("Cancel Error: $e");
       return false;
     }
   }

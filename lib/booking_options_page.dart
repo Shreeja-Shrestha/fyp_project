@@ -73,8 +73,8 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   );
   bool isProcessing = false;
 
-  final double basePrice = 25000.0;
-  double totalPrice = 25000.0;
+  final double basePrice = 500.0;
+  double totalPrice = 500.0;
 
   final Color primarySkyBlue = const Color(0xFF00B4D8);
   final Color bgCanvas = const Color(0xFFF8FDFF);
@@ -231,7 +231,12 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         );
 
         final paymentData = jsonDecode(paymentResponse.body);
-        String paymentUrl = paymentData["payment_url"];
+        String? paymentUrl = paymentData["payment_url"];
+
+        if (paymentUrl == null) {
+          _showError("Payment URL not received from server");
+          return;
+        }
 
         await launchUrl(
           Uri.parse(paymentUrl),
