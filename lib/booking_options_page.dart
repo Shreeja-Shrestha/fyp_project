@@ -210,13 +210,10 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "user_id": widget.userId,
-          "package_id": widget.packageId,
+          "tour_id": widget.tourId,
           "travel_date": selectedDate!.toIso8601String().split("T")[0],
-          "persons": int.tryParse(personsController.text) ?? 1,
-          "transport_type": selectedTransport,
-          "amount": totalPrice,
-          "booking_status": "Pending",
-          "payment_status": "Unpaid",
+          "number_of_people": int.tryParse(personsController.text) ?? 1,
+          "transport_mode": selectedTransport,
         }),
       );
 
