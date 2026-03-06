@@ -219,7 +219,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
       final bookingData = jsonDecode(bookingResponse.body);
 
-      if (bookingResponse.statusCode == 201 && bookingData['success'] == true) {
+      if (bookingResponse.statusCode == 200) {
         if (bookingData["booking_id"] == null) {
           _showError("Booking ID not returned from server");
           return;
