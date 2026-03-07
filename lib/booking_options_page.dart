@@ -225,19 +225,27 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
           Uri.parse('http://10.0.2.2:3000/api/payment/initiate-payment'),
           headers: {"Content-Type": "application/json"},
           body: jsonEncode({
-            "amount": (totalPrice * 100).toInt(),
+            "amount": totalPrice.toInt(),
             "booking_id": bookingId,
           }),
         );
 
-        final paymentData = jsonDecode(paymentResponse.body);
-        String? paymentUrl = paymentData["payment_url"];
-
-        if (paymentUrl == null) {
-          _showError("Payment URL not received from server");
+        if (paymentResponse.statusCode != 200) {
+          print("Payment Error: ${paymentResponse.body}");
+          _showError("Payment initiation failed");
           return;
         }
 
+        final paymentData = jsonDecode(paymentResponse.body);
+
+        print("Payment Response: $paymentData");
+
+        String? paymentUrl = paymentData["payment_url"];
+
+        if (paymentUrl == null) {
+          _showError("Payment URL not received from the server");
+          return;
+        }
         await launchUrl(
           Uri.parse(paymentUrl),
           mode: LaunchMode.externalApplication,
