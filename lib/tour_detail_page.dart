@@ -9,6 +9,7 @@ import 'package:fyp_project/booking_options_page.dart';
 
 class TourDetailPage extends StatefulWidget {
   final int tourId;
+
   const TourDetailPage({super.key, required this.tourId});
 
   @override
@@ -16,6 +17,7 @@ class TourDetailPage extends StatefulWidget {
 }
 
 class _TourDetailPageState extends State<TourDetailPage> {
+  bool isFavorite = false;
   final TextEditingController _reviewController = TextEditingController();
 
   final String title = "Mardi Himal Trek";
@@ -58,6 +60,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
   void initState() {
     super.initState();
     _startImageTimer();
+    _checkFavorite();
   }
 
   @override
@@ -214,6 +217,64 @@ class _TourDetailPageState extends State<TourDetailPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _toggleFavorite() async {
+    final url = isFavorite
+        ? Uri.parse("http://10.0.2.2:3000/api/favorites/remove")
+        : Uri.parse("http://10.0.2.2:3000/api/favorites/add");
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"user_id": 1, "tour_id": widget.tourId}),
+      );
+
+      print("Response status: ${response.statusCode}");
+      print("Response body: ${response.body}");
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data["status"] == "success") {
+        setState(() {
+          isFavorite = !isFavorite;
+        });
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(data["message"])));
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Failed: ${data["message"]}")));
+      }
+    } catch (e) {
+      print("Error: $e");
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+    }
+  }
+
+  Future<void> _checkFavorite() async {
+    final url = Uri.parse(
+      "http://10.0.2.2:3000/api/favorites/check?user_id=1&tour_id=${widget.tourId}",
+    );
+
+    try {
+      final response = await http.get(url);
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        setState(() {
+          isFavorite = data["isFavorite"];
+        });
+      }
+    } catch (e) {
+      print("Check favorite error: $e");
+    }
   }
 
   Widget _buildTourContent() {
@@ -471,7 +532,10 @@ class _TourDetailPageState extends State<TourDetailPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _blurButton(Icons.arrow_back_ios_new, () => Navigator.pop(context)),
-          _blurButton(Icons.favorite_border, () {}),
+          _blurButton(
+            isFavorite ? Icons.favorite : Icons.favorite_border,
+            _toggleFavorite,
+          ),
         ],
       ),
     );
