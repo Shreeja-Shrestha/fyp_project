@@ -4,6 +4,7 @@ import 'package:fyp_project/tour_detail_page.dart';
 import 'package:fyp_project/user_profile_page.dart';
 import 'mardi.dart'; // PlaceDetailsPage
 import 'user_profile_page.dart'; // Account page
+import 'favorite_page.dart';
 
 /// HOME PAGE
 class HomePage extends StatefulWidget {
@@ -71,9 +72,9 @@ class _HomePageState extends State<HomePage> {
             label: "Trips",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.rate_review_outlined),
-            activeIcon: Icon(Icons.rate_review),
-            label: "Review",
+            icon: Icon(Icons.favorite_border),
+            activeIcon: Icon(Icons.favorite),
+            label: "Favorites",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.history_outlined),
@@ -98,7 +99,7 @@ class _HomePageState extends State<HomePage> {
       case 1:
         return const Center(child: Text("Trips page")); // placeholder
       case 2:
-        return const Center(child: Text("Review page")); // placeholder
+        return const FavoritePage(); // placeholder
       case 3:
         return const Center(child: Text("History page")); // placeholder
       default:
@@ -176,14 +177,12 @@ class _HomePageState extends State<HomePage> {
                   title: tour["title"]!,
                   image: tour["image"]!,
                   onTap: () {
-                    if (tour["title"] == "Mardi Himal Trek") {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const TourDetailPage(tourId: 1),
-                        ),
-                      );
-                    }
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TourDetailPage(tourId: tour["id"]),
+                      ),
+                    );
                   },
                 );
               },
@@ -562,13 +561,18 @@ class ReligiousTempleCard extends StatelessWidget {
 }
 
 /// DATA
-final List<Map<String, String>> tours = [
-  {"title": "Muktinath Religious Tour", "image": "assets/muktinath.jpg"},
-  {"title": "Annapurna Base Camp", "image": "assets/annapurna.jpg"},
-  {"title": "Mardi Himal Trek", "image": "assets/mardi.jpg"},
-  {"title": "Everest Base Camp", "image": "assets/everest.jpg"},
-  {"title": "Nagarkot Hike", "image": "assets/NagarkotHiking.jpg"},
+final List<Map<String, dynamic>> tours = [
   {
+    "id": 1,
+    "title": "Muktinath Religious Tour",
+    "image": "assets/muktinath.jpg",
+  },
+  {"id": 2, "title": "Annapurna Base Camp", "image": "assets/annapurna.jpg"},
+  {"id": 3, "title": "Mardi Himal Trek", "image": "assets/mardi.jpg"},
+  {"id": 4, "title": "Everest Base Camp", "image": "assets/everest.jpg"},
+  {"id": 5, "title": "Nagarkot Hike", "image": "assets/NagarkotHiking.jpg"},
+  {
+    "id": 6,
     "title": "Nagarkot Sunrise Point",
     "image": "assets/nagarkotSunrisePoint.jpg",
   },
