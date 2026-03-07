@@ -3,6 +3,7 @@ import 'package:fyp_project/add_package_page.dart';
 import 'package:fyp_project/admin_manage_packages_page.dart';
 import 'package:fyp_project/admin_profile_page.dart';
 import 'package:fyp_project/booking_options_page.dart';
+import 'package:fyp_project/favorite_page.dart';
 import 'package:fyp_project/getstarted.dart';
 import 'package:fyp_project/hotel1.dart';
 import 'package:fyp_project/hotel2.dart';
@@ -30,7 +31,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const TourDetailPage(tourId: 1),
+      //home: const TourDetailPage(tourId: 1),
+      home: const HomePage(),
     );
   }
 }
