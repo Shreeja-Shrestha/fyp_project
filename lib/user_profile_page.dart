@@ -5,11 +5,9 @@ import 'package:fyp_project/editprofile.dart';
 import 'package:fyp_project/trip_history.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+
 import 'login.dart';
-import 'editprofile.dart';
 import 'settings_page.dart';
-import 'trip_history.dart';
-import 'booking_history.dart';
 import 'wishlist_page.dart';
 import 'support_page.dart';
 
@@ -26,6 +24,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   int trips = 0;
   int bookings = 0;
   int wishlist = 0;
+
   bool isLoading = true;
   bool hasError = false;
 
@@ -51,8 +50,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
       final response = await http.get(
         Uri.parse("http://10.0.2.2:3000/api/user/profile/$userId"),
       );
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+
         setState(() {
           name = data["name"];
           email = data["email"];
@@ -63,14 +64,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
         });
       } else {
         setState(() {
-          isLoading = false;
           hasError = true;
+          isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        isLoading = false;
         hasError = true;
+        isLoading = false;
       });
     }
   }
@@ -85,6 +86,39 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
   }
 
+  void showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          title: const Text("Sign Out"),
+          content: const Text(
+            "Are you sure you want to sign out of your account?",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+                logout();
+              },
+              child: const Text("Sign Out"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -92,50 +126,54 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
 
     if (hasError) {
-      return Scaffold(body: Center(child: Text("Failed to load profile")));
+      return const Scaffold(
+        body: Center(child: Text("Failed to load profile")),
+      );
     }
 
     return Scaffold(
+      backgroundColor: const Color(0xfff4f6fb),
       appBar: AppBar(
         title: const Text("My Profile"),
-        backgroundColor: Colors.blueAccent,
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.black,
       ),
-
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Profile Picture
-            CircleAvatar(
+            const CircleAvatar(
               radius: 55,
-              backgroundImage: const AssetImage("assets/profile.png"),
+              backgroundImage: AssetImage("assets/profile.png"),
             ),
-            const SizedBox(height: 12),
 
-            // Name + Email
+            const SizedBox(height: 15),
+
             Text(
               name,
-              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              email,
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 4),
 
-            // Stats Row
+            Text(email, style: const TextStyle(color: Colors.grey)),
+
+            const SizedBox(height: 25),
+
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _statItem("Trips", trips),
-                _statItem("Bookings", bookings),
-                _statItem("Wishlist", wishlist),
+                _statCard("Trips", trips),
+                _statCard("Bookings", bookings),
+                _statCard("Wishlist", wishlist),
               ],
             ),
 
             const SizedBox(height: 30),
+
             _sectionTitle("Account"),
+
             _menuTile(
               icon: Icons.confirmation_number_outlined,
               title: "My Bookings",
@@ -145,8 +183,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 MaterialPageRoute(builder: (_) => const BookingHistoryPage()),
               ),
             ),
+
             _menuTile(
-              icon: Icons.favorite_border_outlined,
+              icon: Icons.favorite_border,
               title: "Wishlist",
               subtitle: "Saved places & locations",
               onTap: () => Navigator.push(
@@ -154,6 +193,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 MaterialPageRoute(builder: (_) => const WishlistPage()),
               ),
             ),
+
             _menuTile(
               icon: Icons.history,
               title: "Travel History",
@@ -164,9 +204,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 25),
 
             _sectionTitle("Settings"),
+
             _menuTile(
               icon: Icons.person_outline,
               title: "Edit Profile",
@@ -176,6 +217,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 MaterialPageRoute(builder: (_) => const EditProfilePage()),
               ),
             ),
+
             _menuTile(
               icon: Icons.settings,
               title: "App Settings",
@@ -196,19 +238,28 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ),
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
 
-            // Logout Button
-            ElevatedButton(
-              onPressed: logout,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 14,
-                  horizontal: 40,
+            /// SIGN OUT BUTTON
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.logout),
+                label: const Text(
+                  "Sign Out",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                onPressed: showLogoutDialog,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 3,
                 ),
               ),
-              child: const Text("Sign Out", style: TextStyle(fontSize: 18)),
             ),
           ],
         ),
@@ -216,15 +267,29 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
   }
 
-  Widget _statItem(String label, int value) {
-    return Column(
-      children: [
-        Text(
-          "$value",
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+  Widget _statCard(String label, int value) {
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 6),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6),
+          ],
         ),
-        Text(label),
-      ],
+        child: Column(
+          children: [
+            Text(
+              "$value",
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(label, style: const TextStyle(color: Colors.grey)),
+          ],
+        ),
+      ),
     );
   }
 
@@ -235,21 +300,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
     required Function() onTap,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
         color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6),
         ],
       ),
       child: ListTile(
         onTap: onTap,
-        leading: Icon(icon, color: Colors.blueAccent, size: 28),
+        leading: Icon(icon, color: Colors.blueAccent),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -258,14 +319,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Widget _sectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8, left: 4),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 14,
-          color: Colors.grey.shade600,
-          fontWeight: FontWeight.bold,
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.grey,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
