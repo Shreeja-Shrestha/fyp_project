@@ -18,6 +18,12 @@ class _HomePageState extends State<HomePage> {
   int selectedIndex = 0;
   List tours = [];
   @override
+  void initState() {
+    super.initState();
+    fetchTours();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -89,6 +95,20 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
+  }
+
+  Future<void> fetchTours() async {
+    final response = await http.get(
+      Uri.parse("http://10.0.2.2:3000/api/tours"),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      setState(() {
+        tours = data;
+      });
+    }
   }
 
   /// Build the body based on selected tab
