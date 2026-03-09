@@ -6,6 +6,9 @@ import 'mardi.dart'; // PlaceDetailsPage
 import 'user_profile_page.dart'; // Account page
 import 'favorite_page.dart';
 
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 /// HOME PAGE
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -98,16 +101,22 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> fetchTours() async {
-    final response = await http.get(
-      Uri.parse("http://10.0.2.2:3000/api/tours"),
-    );
+    try {
+      final response = await http.get(
+        Uri.parse("http://10.0.2.2:3000/api/tours"),
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
 
-      setState(() {
-        tours = data;
-      });
+        setState(() {
+          tours = data;
+        });
+      } else {
+        print("Failed to load tours");
+      }
+    } catch (e) {
+      print("Error fetching tours: $e");
     }
   }
 
@@ -194,8 +203,8 @@ class _HomePageState extends State<HomePage> {
               itemBuilder: (context, index) {
                 final tour = tours[index];
                 return TourCard(
-                  title: tour["title"]!,
-                  image: tour["image"]!,
+                  title: tour["title"],
+                  image: "assets/mardi.jpg", // or dynamic later
                   onTap: () {
                     Navigator.push(
                       context,
