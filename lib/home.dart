@@ -16,7 +16,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int selectedIndex = 0;
-
+  List tours = [];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -561,22 +561,6 @@ class ReligiousTempleCard extends StatelessWidget {
 }
 
 /// DATA
-final List<Map<String, dynamic>> tours = [
-  {
-    "id": 1,
-    "title": "Muktinath Religious Tour",
-    "image": "assets/muktinath.jpg",
-  },
-  {"id": 2, "title": "Annapurna Base Camp", "image": "assets/annapurna.jpg"},
-  {"id": 3, "title": "Mardi Himal Trek", "image": "assets/mardi.jpg"},
-  {"id": 4, "title": "Everest Base Camp", "image": "assets/everest.jpg"},
-  {"id": 5, "title": "Nagarkot Hike", "image": "assets/NagarkotHiking.jpg"},
-  {
-    "id": 6,
-    "title": "Nagarkot Sunrise Point",
-    "image": "assets/nagarkotSunrisePoint.jpg",
-  },
-];
 
 final List<Map<String, String>> exploreTours = [
   {
