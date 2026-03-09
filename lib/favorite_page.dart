@@ -45,7 +45,16 @@ class _FavoritePageState extends State<FavoritePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Saved Favorites"), centerTitle: true),
+      backgroundColor: const Color(0xFFF5F6FA),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        centerTitle: true,
+        title: const Text(
+          "Saved Favorites",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+        ),
+      ),
       body: favoriteTours.isEmpty
           ? const Center(
               child: Column(
@@ -67,15 +76,15 @@ class _FavoritePageState extends State<FavoritePage> {
                 final tour = favoriteTours[index];
 
                 return Container(
-                  margin: const EdgeInsets.only(bottom: 16),
+                  margin: const EdgeInsets.only(bottom: 18),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(22),
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.08),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                        blurRadius: 14,
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
@@ -84,28 +93,31 @@ class _FavoritePageState extends State<FavoritePage> {
                       /// TOUR IMAGE
                       ClipRRect(
                         borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          bottomLeft: Radius.circular(20),
+                          topLeft: Radius.circular(22),
+                          bottomLeft: Radius.circular(22),
                         ),
                         child: Image.asset(
                           "assets/${tour["image"]}",
                           width: 120,
-                          height: 110,
+                          height: 120,
                           fit: BoxFit.cover,
                         ),
                       ),
 
-                      /// TOUR DETAILS
+                      /// DETAILS
                       Expanded(
                         child: Padding(
-                          padding: const EdgeInsets.all(14),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                tour["title"] ?? "Tour",
+                                tour["title"],
                                 style: const TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 17,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -120,14 +132,14 @@ class _FavoritePageState extends State<FavoritePage> {
                                 ),
                               ),
 
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 10),
 
                               Row(
                                 children: [
                                   const Icon(
                                     Icons.star,
                                     color: Colors.orange,
-                                    size: 16,
+                                    size: 18,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
@@ -153,15 +165,18 @@ class _FavoritePageState extends State<FavoritePage> {
                       ),
 
                       /// REMOVE FAVORITE BUTTON
-                      IconButton(
-                        icon: const Icon(
-                          Icons.favorite,
-                          color: Colors.red,
-                          size: 28,
+                      Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.favorite,
+                            color: Colors.red,
+                            size: 30,
+                          ),
+                          onPressed: () {
+                            removeFavorite(tour["id"]);
+                          },
                         ),
-                        onPressed: () {
-                          removeFavorite(tour["id"]);
-                        },
                       ),
                     ],
                   ),
