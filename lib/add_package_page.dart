@@ -4,7 +4,7 @@ import 'package:fyp_project/services/package_service.dart';
 class AddPackagePage extends StatefulWidget {
   final Map<String, dynamic>? package; // optional for editing
 
-  // ❌ Remove 'const' here, allow package parameter
+  //Remove 'const' here, allow package parameter
   AddPackagePage({super.key, this.package});
 
   @override
@@ -28,6 +28,13 @@ class _AddPackagePageState extends State<AddPackagePage> {
     "assets/janakpur.jpg",
     "assets/lumbini.jpg",
     "assets/kanchan.jpg",
+    "assets/mardi.jpg",
+    "assets/mardi3.jpg",
+    "assets/muktinath.jpg",
+    "assets/tilicho.jpg",
+    "assets/pashupati.jpg",
+    "assets/nagarkotSunrisePoint.jpg",
+    "assets/annapurna.jpg",
   ];
 
   late String selectedImage;
