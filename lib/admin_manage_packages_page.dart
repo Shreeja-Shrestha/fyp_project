@@ -152,9 +152,8 @@ class _AdminManagePackagesPageState extends State<AdminManagePackagesPage> {
                             ),
                             IconButton(
                               onPressed: () {
-                                if (package['id'] != null) {
-                                  deletePackage(package['id']);
-                                }
+                                int id = int.parse(package['id'].toString());
+                                deletePackage(id);
                               },
                               icon: const Icon(Icons.delete, color: Colors.red),
                             ),
