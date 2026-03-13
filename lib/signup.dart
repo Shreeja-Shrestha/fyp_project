@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fyp_project/login.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'login.dart'; // Ensure this filename matches your login file
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -21,6 +20,37 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isPasswordVisible = false;
 
   Future<void> signup() async {
+    if (nameController.text.isEmpty ||
+        emailController.text.isEmpty ||
+        passwordController.text.isEmpty ||
+        confirmController.text.isEmpty) {
+      _showSnackBar("All fields are required");
+      return;
+    }
+
+    if (nameController.text.length < 3) {
+      _showSnackBar("Name must be at least 3 characters");
+      return;
+    }
+
+    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]+$');
+
+    if (!emailRegex.hasMatch(emailController.text.trim())) {
+      _showSnackBar("Enter a valid email address");
+      return;
+    }
+
+    final passwordRegex = RegExp(
+      r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$',
+    );
+
+    if (!passwordRegex.hasMatch(passwordController.text)) {
+      _showSnackBar(
+        "Password must be at least 8 characters with letters and numbers",
+      );
+      return;
+    }
+
     if (passwordController.text != confirmController.text) {
       _showSnackBar("Passwords do not match");
       return;
@@ -28,7 +58,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:3000/api/auth/signup"),
+        Uri.parse("http://192.168.18.11:3000/api/auth/signup"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "name": nameController.text.trim(),
