@@ -153,7 +153,34 @@ class _AdminManagePackagesPageState extends State<AdminManagePackagesPage> {
                             IconButton(
                               onPressed: () {
                                 int id = int.parse(package['id'].toString());
-                                deletePackage(id);
+
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text("Delete Package"),
+                                    content: const Text(
+                                      "Are you sure you want to delete this package?",
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context); // cancel
+                                        },
+                                        child: const Text("Cancel"),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                          deletePackage(id);
+                                        },
+                                        child: const Text(
+                                          "Delete",
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
                               },
                               icon: const Icon(Icons.delete, color: Colors.red),
                             ),
