@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fyp_project/mardi.dart';
+import 'package:fyp_project/screens/notification_screen.dart';
 import 'package:fyp_project/tour_detail_page.dart';
 import 'package:fyp_project/user_profile_page.dart';
 import 'mardi.dart'; // PlaceDetailsPage
@@ -43,9 +44,19 @@ class _HomePageState extends State<HomePage> {
             fontSize: 20,
           ),
         ),
-        actions: const [
-          Icon(Icons.notifications_none, color: Colors.black),
-          SizedBox(width: 16),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none, color: Colors.black),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NotificationScreen(userId: 1),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 16),
         ],
       ),
 
@@ -103,7 +114,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> fetchTours() async {
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:3000/api/tours"),
+        Uri.parse("http://192.168.18.11:3000/api/tours"),
       );
 
       if (response.statusCode == 200) {
@@ -204,7 +215,7 @@ class _HomePageState extends State<HomePage> {
                 final tour = tours[index];
                 return TourCard(
                   title: tour["title"],
-                  image: "assets/mardi.jpg", // or dynamic later
+                  image: tour["image"],
                   onTap: () {
                     Navigator.push(
                       context,
@@ -280,9 +291,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// ----------------------------
 // INTEREST CARD, TOUR CARD, EXPLORE CARD, RELIGIOUS CARD remain same
-// ----------------------------
 
 /// INTEREST CARD
 class InterestCard extends StatelessWidget {
