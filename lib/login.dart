@@ -17,6 +17,18 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  bool isValidEmail(String email) {
+    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]+$');
+    return emailRegex.hasMatch(email);
+  }
+
+  bool isValidPassword(String password) {
+    // Minimum 8 characters, at least 1 letter and 1 number
+    final passwordRegex = RegExp(
+      r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$',
+    );
+    return passwordRegex.hasMatch(password);
+  }
 
   bool isLoading = false;
   bool rememberMe = false;
@@ -36,11 +48,23 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+    if (!isValidEmail(emailController.text.trim())) {
+      _showSnackBar("Enter a valid email address");
+      return;
+    }
+
+    if (!isValidPassword(passwordController.text)) {
+      _showSnackBar(
+        "Password must be at least 8 characters with letters and numbers",
+      );
+      return;
+    }
+
     setState(() => isLoading = true);
 
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:3000/api/auth/login"),
+        Uri.parse("http://192.168.18.11:3000/api/auth/login"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "email": emailController.text.trim(),
