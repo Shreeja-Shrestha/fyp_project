@@ -62,7 +62,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     }
   }
 
-  // ✅ Restored Event Map
+  //Restored Event Map
   Map<DateTime, List<Map<String, dynamic>>> eventMap = {};
   DateTime focusedDay = DateTime.now();
   DateTime? selectedDate;
@@ -86,11 +86,11 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     fetchTourEvents();
   }
 
-  // ✅ Restored fetchTourEvents with full logic
+  //Restored fetchTourEvents with full logic
   Future<void> fetchTourEvents() async {
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:3000/nepal-holidays'),
+        Uri.parse('http://172.20.10.2:3000/nepal-holidays'),
       );
 
       if (response.statusCode == 200) {
@@ -205,7 +205,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
     try {
       final bookingResponse = await http.post(
-        Uri.parse('http://10.0.2.2:3000/api/bookings/create'),
+        Uri.parse('http://172.20.10.2:3000/api/bookings/create'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "user_id": widget.userId,
@@ -222,7 +222,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         int bookingId = bookingData["booking_id"];
 
         final paymentResponse = await http.post(
-          Uri.parse('http://10.0.2.2:3000/api/payment/initiate-payment'),
+          Uri.parse('http://172.20.10.2:3000/api/payment/initiate-payment'),
           headers: {"Content-Type": "application/json"},
           body: jsonEncode({
             "amount": totalPrice.toInt(),
@@ -424,6 +424,14 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       child: FutureBuilder<List<dynamic>>(
         future: HotelService.fetchNearbyHotels(lat, lng),
         builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return const Center(child: Text("Failed to load hotels"));
+          }
+
           List<Marker> markers = [];
 
           // 🔵 Destination Marker
@@ -440,31 +448,54 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
             ),
           );
 
-          // 🔴 Hotel Markers
-          if (snapshot.hasData && snapshot.data != null) {
-            for (var hotel in snapshot.data!) {
-              markers.add(
-                Marker(
-                  width: 40,
-                  height: 40,
-                  point: LatLng(hotel['latitude'], hotel['longitude']),
-                  child: GestureDetector(
-                    onTap: () => _showHotelDetails(hotel),
-                    child: const Icon(
-                      Icons.location_on,
-                      color: Colors.red,
-                      size: 35,
-                    ),
+          //Hotel Markers
+
+          int hotelCount = 0;
+
+          for (var hotel in snapshot.data!) {
+            if (hotelCount >= 6) break; // show only 6 hotels
+
+            // Skip unnamed hotels
+            if (hotel['name'] == null ||
+                hotel['name'].toString().trim().isEmpty) {
+              continue;
+            }
+
+            final latValue = hotel['latitude'] ?? hotel['hotel_lat'];
+            final lngValue = hotel['longitude'] ?? hotel['hotel_lng'];
+
+            if (latValue == null || lngValue == null) continue;
+
+            final double hotelLat = double.tryParse(latValue.toString()) ?? 0.0;
+            final double hotelLng = double.tryParse(lngValue.toString()) ?? 0.0;
+
+            if (hotelLat == 0.0 && hotelLng == 0.0) continue;
+
+            markers.add(
+              Marker(
+                width: 40,
+                height: 40,
+                point: LatLng(
+                  hotelLat + (0.0001 * hotelCount),
+                  hotelLng + (0.0001 * hotelCount),
+                ),
+                child: GestureDetector(
+                  onTap: () => _showHotelDetails(hotel),
+                  child: const Icon(
+                    Icons.location_on,
+                    color: Colors.red,
+                    size: 35,
                   ),
                 ),
-              );
-            }
-          }
+              ),
+            );
 
+            hotelCount++;
+          }
           return FlutterMap(
             options: MapOptions(
               initialCenter: LatLng(lat, lng),
-              initialZoom: 14,
+              initialZoom: 12,
             ),
             children: [
               TileLayer(
@@ -511,7 +542,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 🏨 Image
+          // Image
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: Image.asset(
@@ -712,7 +743,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     );
   }
 
-  // ✅ Restored _pickDate with Event descriptions logic
+  //  Restored _pickDate with Event descriptions logic
   Future<void> _pickDate() async {
     final selected = await showModalBottomSheet<DateTime>(
       context: context,
@@ -781,7 +812,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         focusedDay = selected;
       });
 
-      // ✅ Restored the Cultural Event Dialog Logic
+      // Restored the Cultural Event Dialog Logic
       DateTime clean = DateTime(selected.year, selected.month, selected.day);
       if (eventMap.containsKey(clean)) {
         var events = eventMap[clean]!;

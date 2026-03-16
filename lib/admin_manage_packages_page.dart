@@ -143,7 +143,7 @@ class _AdminManagePackagesPageState extends State<AdminManagePackagesPage> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => AddPackagePage(
-                                      package: package, // ✅ Pass package
+                                      package: package, //  Pass package
                                     ),
                                   ),
                                 ).then((_) => fetchPackages());

@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       //home: const TourDetailPage(tourId: 1),
-      home: const HomePage(),
+      home: LoginPage(),
     );
   }
 }

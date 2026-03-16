@@ -3,9 +3,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ReviewService {
-  static const String baseUrl = "http://192.168.18.11:3000/api/reviews";
+  static const String baseUrl = "http://172.20.10.2:3000/api/reviews";
 
-  // ===== FETCH REVIEWS FOR A TOUR =====
+  // FETCH REVIEWS FOR A TOUR
   static Future<List> getReviews(int tourId) async {
     try {
       final response = await http.get(Uri.parse("$baseUrl/tour/$tourId"));

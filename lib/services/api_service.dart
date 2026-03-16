@@ -4,14 +4,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 
 class ApiService {
-  static const String baseUrl = "http://192.168.18.11:3000/api";
+  static const String baseUrl = "http://172.20.10.2:3000/api";
 
   static Future<UserModel> fetchUserProfile() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString("token");
+    final userId = prefs.getInt("user_id"); // saved during login
 
     final response = await http.get(
-      Uri.parse("$baseUrl/user/profile"),
+      Uri.parse("$baseUrl/users/profile/$userId"),
       headers: {
         "Authorization": "Bearer $token",
         "Content-Type": "application/json",

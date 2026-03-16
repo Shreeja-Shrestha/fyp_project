@@ -1,8 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:fyp_project/booking_success_page.dart';
 import 'package:fyp_project/mardi.dart';
+import 'package:fyp_project/outdoors_page.dart';
 import 'package:fyp_project/screens/notification_screen.dart';
 import 'package:fyp_project/tour_detail_page.dart';
 import 'package:fyp_project/user_profile_page.dart';
+import 'package:app_links/app_links.dart';
+import 'dart:async';
+import 'package:fyp_project/booking_success_page.dart';
 import 'mardi.dart'; // PlaceDetailsPage
 import 'user_profile_page.dart'; // Account page
 import 'favorite_page.dart';
@@ -21,10 +28,30 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int selectedIndex = 0;
   List tours = [];
+  bool isSearching = false;
+  late final AppLinks _appLinks;
+  StreamSubscription<Uri>? _linkSub;
   @override
   void initState() {
     super.initState();
     fetchTours();
+
+    _appLinks = AppLinks();
+
+    _linkSub = _appLinks.uriLinkStream.listen((uri) {
+      if (uri.scheme == 'fypapp' && uri.host == 'booking-success') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const BookingSuccessPage()),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _linkSub?.cancel();
+    super.dispose();
   }
 
   @override
@@ -114,7 +141,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> fetchTours() async {
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/tours"),
+        Uri.parse("http://172.20.10.2:3000/api/tours"),
       );
 
       if (response.statusCode == 200) {
@@ -128,6 +155,38 @@ class _HomePageState extends State<HomePage> {
       }
     } catch (e) {
       print("Error fetching tours: $e");
+    }
+  }
+
+  Future<void> searchTours(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        isSearching = false;
+      });
+      fetchTours();
+      return;
+    }
+
+    setState(() {
+      isSearching = true;
+    });
+
+    try {
+      final response = await http.get(
+        Uri.parse(
+          "http://172.20.10.2:3000/api/search/tours?q=${Uri.encodeComponent(query)}",
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          tours = data;
+        });
+      }
+    } catch (e) {
+      print("Search error: $e");
     }
   }
 
@@ -147,7 +206,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  /// Explore/Home content
   Widget exploreBody() {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
@@ -155,20 +213,19 @@ class _HomePageState extends State<HomePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           /// SEARCH BAR
-          IgnorePointer(
-            child: SizedBox(
-              width: double.infinity,
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: "Places to go, things to do",
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: Colors.grey.shade100,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
+          SizedBox(
+            width: double.infinity,
+            child: TextField(
+              onChanged: searchTours,
+              decoration: InputDecoration(
+                hintText: "Places to go, things to do",
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
                 ),
               ),
             ),
@@ -195,6 +252,7 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
+
           const SizedBox(height: 20),
 
           /// WE MIGHT LIKE THESE
@@ -205,29 +263,58 @@ class _HomePageState extends State<HomePage> {
             style: TextStyle(fontSize: 13, color: Colors.grey),
           ),
           const SizedBox(height: 10),
-          SizedBox(
-            height: 255,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: tours.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 16),
-              itemBuilder: (context, index) {
-                final tour = tours[index];
-                return TourCard(
-                  title: tour["title"],
-                  image: tour["image"],
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => TourDetailPage(tourId: tour["id"]),
-                      ),
-                    );
-                  },
-                );
-              },
+
+          if (isSearching && tours.isEmpty)
+            Container(
+              height: 180,
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.search_off, size: 60, color: Colors.grey),
+                  SizedBox(height: 10),
+                  Text(
+                    "No tours found",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    "Try another destination",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(
+              height: 255,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: tours.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 16),
+                itemBuilder: (context, index) {
+                  final tour = tours[index];
+
+                  return TourCard(
+                    title: tour["title"],
+                    image: tour["image"],
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TourDetailPage(tourId: tour["id"]),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
+
           const SizedBox(height: 20),
 
           /// EXPLORE MORE
@@ -246,6 +333,7 @@ class _HomePageState extends State<HomePage> {
               separatorBuilder: (_, __) => const SizedBox(width: 16),
               itemBuilder: (context, index) {
                 final tour = exploreTours[index];
+
                 return ExploreCard(
                   title: tour["title"]!,
                   image: tour["image"]!,
@@ -254,6 +342,7 @@ class _HomePageState extends State<HomePage> {
               },
             ),
           ),
+
           const SizedBox(height: 20),
 
           /// RELIGIOUS TEMPLES
@@ -270,6 +359,7 @@ class _HomePageState extends State<HomePage> {
             physics: const NeverScrollableScrollPhysics(),
             itemBuilder: (context, index) {
               final temple = religiousTemples[index];
+
               return ReligiousTempleCard(
                 title: temple["title"]!,
                 image: temple["image"]!,
@@ -300,31 +390,43 @@ class InterestCard extends StatelessWidget {
 
   const InterestCard({super.key, required this.title, required this.image});
 
+  void handleTap(BuildContext context) {
+    if (title == "Outdoors") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const OutdoorsPage()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 130,
-      margin: const EdgeInsets.only(right: 14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        image: DecorationImage(image: AssetImage(image), fit: BoxFit.cover),
-      ),
+    return GestureDetector(
+      onTap: () => handleTap(context),
       child: Container(
-        padding: const EdgeInsets.all(12),
-        alignment: Alignment.bottomLeft,
+        width: 130,
+        margin: const EdgeInsets.only(right: 14),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
-          gradient: LinearGradient(
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-            colors: [Colors.black.withOpacity(0.6), Colors.transparent],
-          ),
+          image: DecorationImage(image: AssetImage(image), fit: BoxFit.cover),
         ),
-        child: Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          alignment: Alignment.bottomLeft,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [Colors.black54, Colors.transparent],
+            ),
+          ),
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),

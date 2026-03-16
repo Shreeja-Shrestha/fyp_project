@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
 class PaymentService {
-  static const String baseUrl = "http://192.168.18.11:3000/api/payment";
+  static const String baseUrl = "http://172.20.10.2:3000/api/payment";
 
   static Future<bool> processPayment({
     required int bookingId,

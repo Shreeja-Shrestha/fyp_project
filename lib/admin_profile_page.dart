@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fyp_project/add_package_page.dart';
 import 'package:fyp_project/admin_manage_packages_page.dart';
+import 'package:fyp_project/login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminProfilePage extends StatefulWidget {
@@ -348,10 +349,40 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   Widget _buildLogoutButton() {
     return Center(
       child: TextButton.icon(
-        onPressed: () async {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.clear();
-          Navigator.pop(context);
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text("Sign Out"),
+              content: const Text("Are you sure you want to sign out?"),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Cancel
+                  },
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.clear();
+
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginPage(),
+                      ),
+                      (route) => false,
+                    );
+                  },
+                  child: const Text(
+                    "Sign Out",
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+          );
         },
         icon: const Icon(
           Icons.logout_rounded,

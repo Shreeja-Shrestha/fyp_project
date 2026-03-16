@@ -48,18 +48,18 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:3000/api/user/profile/$userId"),
+        Uri.parse("http://192.168.18.11:3000/api/users/profile/$userId"),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
         setState(() {
-          name = data["name"];
-          email = data["email"];
-          trips = data["trips"];
-          bookings = data["bookings"];
-          wishlist = data["wishlist"];
+          name = data["name"] ?? "";
+          email = data["email"] ?? "";
+          trips = data["trips"] ?? 0;
+          bookings = data["bookings"] ?? 0;
+          wishlist = data["wishlist"] ?? 0;
           isLoading = false;
         });
       } else {

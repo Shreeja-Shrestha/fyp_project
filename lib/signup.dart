@@ -58,7 +58,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://192.168.18.11:3000/api/auth/signup"),
+        Uri.parse("http://172.20.10.2:3000/api/auth/signup"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "name": nameController.text.trim(),
@@ -160,7 +160,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                       const SizedBox(height: 10),
 
-                      // --- REMEMBER ME CHECKBOX ---
                       Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
@@ -183,7 +182,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                       const SizedBox(height: 30),
 
-                      // --- SIGN UP BUTTON ---
                       SizedBox(
                         width: double.infinity,
                         height: 55,
@@ -209,7 +207,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                       const SizedBox(height: 25),
 
-                      // --- FOOTER REDIRECT ---
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
