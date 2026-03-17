@@ -462,7 +462,7 @@ class TourCard extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.network(
+                  child: Image.asset(
                     image,
                     height: 150,
                     width: double.infinity,
@@ -545,7 +545,7 @@ class ExploreCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(22),
-            child: Image.network(
+            child: Image.asset(
               image,
               height: 220,
               width: double.infinity,
