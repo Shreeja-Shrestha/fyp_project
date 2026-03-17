@@ -141,7 +141,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> fetchTours() async {
     try {
       final response = await http.get(
-        Uri.parse("http://172.20.10.2:3000/api/tours"),
+        Uri.parse("http://192.168.18.11:3000/api/tours"),
       );
 
       if (response.statusCode == 200) {
@@ -174,7 +174,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final response = await http.get(
         Uri.parse(
-          "http://172.20.10.2:3000/api/search/tours?q=${Uri.encodeComponent(query)}",
+          "http://192.168.18.11:3000/api/search/tours?q=${Uri.encodeComponent(query)}",
         ),
       );
 
@@ -701,39 +701,6 @@ class ReligiousTempleCard extends StatelessWidget {
 }
 
 /// DATA
-
-final List<Map<String, String>> exploreTours = [
-  {
-    "title": "Shey Phoksundo trek",
-    "image": "assets/shey.jpg",
-    "price": "From Rs.1000/adult",
-  },
-  {
-    "title": "Manaslu Base Camp",
-    "image": "assets/manaslu.jpg",
-    "price": "From Rs.1000/adult",
-  },
-  {
-    "title": "Tilicho Base Camp",
-    "image": "assets/tilicho.jpg",
-    "price": "From Rs.1000/adult",
-  },
-  {
-    "title": "Makalu Base Camp",
-    "image": "assets/makalu.jpg",
-    "price": "From Rs.1000/adult",
-  },
-  {
-    "title": "Kanchanjunga Base Camp",
-    "image": "assets/kanchan.jpg",
-    "price": "From Rs.1000/adult",
-  },
-  {
-    "title": "Dhaulagiri Base Camp",
-    "image": "assets/dhaulagiri.jpg",
-    "price": "From Rs.1000/adult",
-  },
-];
 
 final List<Map<String, String>> religiousTemples = [
   {
