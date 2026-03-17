@@ -114,7 +114,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
     }
 
     final url = Uri.parse(
-      'http://172.20.10.2:3000/api/reviews/submit',
+      'http://192.168.18.11:3000/api/reviews/submit',
     ); // change IP if using real device
     try {
       final response = await http.post(
@@ -221,8 +221,8 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
   Future<void> _toggleFavorite() async {
     final url = isFavorite
-        ? Uri.parse("http://172.20.10.2:3000/api/favorites/remove")
-        : Uri.parse("http://172.20.10.2:3000/api/favorites/add");
+        ? Uri.parse("http://192.168.18.11:3000/api/favorites/remove")
+        : Uri.parse("http://192.168.18.11:3000/api/favorites/add");
 
     try {
       final response = await http.post(
@@ -260,7 +260,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
   Future<void> _checkFavorite() async {
     final url = Uri.parse(
-      "http://172.20.10.2:3000/api/favorites/check?user_id=1&tour_id=${widget.tourId}",
+      "http://192.168.18.11:3000/api/favorites/check?user_id=1&tour_id=${widget.tourId}",
     );
 
     try {

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class TourService {
-  static const baseUrl = "http://172.20.10.2:3000/api/tours";
+  static const baseUrl = "http://192.168.18.11:3000/api/tours";
 
   static Future<Map<String, dynamic>> getTour(int id) async {
     final res = await http.get(Uri.parse("$baseUrl/$id"));

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class SearchService {
-  static const String baseUrl = "http://172.20.10.2:3000/api/search/tours";
+  static const String baseUrl = "http://192.168.18.11:3000/api/search/tours";
 
   static Future<List<dynamic>> searchTours(String query) async {
     final response = await http.get(Uri.parse("$baseUrl?q=$query"));
