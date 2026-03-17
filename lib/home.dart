@@ -207,6 +207,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget exploreBody() {
+    var recommended = tours.take(5).toList();
+    var explore = tours.skip(5).toList();
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
       child: Column(
@@ -294,10 +296,10 @@ class _HomePageState extends State<HomePage> {
               height: 255,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                itemCount: tours.length,
+                itemCount: recommended.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 16),
                 itemBuilder: (context, index) {
-                  final tour = tours[index];
+                  final tour = recommended[index];
 
                   return TourCard(
                     title: tour["title"],
@@ -329,10 +331,10 @@ class _HomePageState extends State<HomePage> {
             height: 330,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: exploreTours.length,
+              itemCount: explore.length,
               separatorBuilder: (_, __) => const SizedBox(width: 16),
               itemBuilder: (context, index) {
-                final tour = exploreTours[index];
+                final tour = explore[index];
 
                 return ExploreCard(
                   title: tour["title"]!,
@@ -460,7 +462,7 @@ class TourCard extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.asset(
+                  child: Image.network(
                     image,
                     height: 150,
                     width: double.infinity,
@@ -543,7 +545,7 @@ class ExploreCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(22),
-            child: Image.asset(
+            child: Image.network(
               image,
               height: 220,
               width: double.infinity,
