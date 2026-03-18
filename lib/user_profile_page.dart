@@ -212,10 +212,21 @@ class _UserProfilePageState extends State<UserProfilePage> {
               icon: Icons.person_outline,
               title: "Edit Profile",
               subtitle: "Name, tagline, photo",
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const EditProfilePage()),
-              ),
+              onTap: () async {
+                final prefs = await SharedPreferences.getInstance();
+                final userId = prefs.getInt("user_id");
+
+                final updated = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => EditProfilePage(userId: userId!),
+                  ),
+                );
+
+                if (updated == true) {
+                  loadUserProfile(); // 🔥 refresh UI after edit
+                }
+              },
             ),
 
             _menuTile(
