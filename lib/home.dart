@@ -36,6 +36,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     fetchTours();
+    fetchReligiousTours(); // ADD THIS
 
     _appLinks = AppLinks();
 
@@ -719,38 +720,3 @@ class ReligiousTempleCard extends StatelessWidget {
     );
   }
 }
-
-/// DATA
-
-final List<Map<String, String>> religiousTemples = [
-  {
-    "title": "Lumbini (Birthplace of Gautam Buddha)",
-    "image": "assets/lumbini.jpg",
-    "price": "From Rs.1000/adult",
-    "reviews": "234",
-  },
-  {
-    "title": "Bouddha Stupa(peace and enlightment)",
-    "image": "assets/bouddha.jpg",
-    "price": "From Rs.1000/adult",
-    "reviews": "234",
-  },
-  {
-    "title": "Pashupatinath Temple(religious hindu temple)",
-    "image": "assets/pashupati.jpg",
-    "price": "From Rs.1000/adult",
-    "reviews": "234",
-  },
-  {
-    "title": "Dharapani(world largest trishul)",
-    "image": "assets/dharapani.jpg",
-    "price": "From Rs.1000/adult",
-    "reviews": "234",
-  },
-  {
-    "title": "Janakpur(birthplace of goddess sita)",
-    "image": "assets/janakpur.jpg",
-    "price": "From Rs.1000/adult",
-    "reviews": "234",
-  },
-];
