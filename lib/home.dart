@@ -375,17 +375,17 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(height: 12),
           ListView.builder(
-            itemCount: religiousTemples.length,
+            itemCount: religiousTours.length,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemBuilder: (context, index) {
-              final temple = religiousTemples[index];
+              final temple = religiousTours[index];
 
-              return ReligiousTempleCard(
-                title: temple["title"]!,
-                image: temple["image"]!,
-                price: temple["price"]!,
-                reviews: temple["reviews"]!,
+              ReligiousTempleCard(
+                title: temple["title"] ?? "",
+                image: temple["image"] ?? "",
+                price: temple["price"].toString(),
+                reviews: "0", // until backend provides reviews
               );
             },
           ),
