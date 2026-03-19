@@ -28,6 +28,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int selectedIndex = 0;
   List tours = [];
+  List religiousTours = [];
   bool isSearching = false;
   late final AppLinks _appLinks;
   StreamSubscription<Uri>? _linkSub;
@@ -57,23 +58,22 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
       /// APP BAR
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: const Text(
           "Where to?",
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.black),
+            icon: Icon(
+              Icons.notifications_none,
+              color: Theme.of(context).colorScheme.onBackground,
+            ),
             onPressed: () {
               Navigator.push(
                 context,
@@ -94,8 +94,8 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: selectedIndex,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.grey.shade400,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Theme.of(context).iconTheme.color,
         onTap: (index) {
           if (index == 4) {
             // Navigate to Account/UserProfilePage
@@ -155,6 +155,24 @@ class _HomePageState extends State<HomePage> {
       }
     } catch (e) {
       print("Error fetching tours: $e");
+    }
+  }
+
+  Future<void> fetchReligiousTours() async {
+    try {
+      final response = await http.get(
+        Uri.parse("http://192.168.18.11:3000/api/tours/category/religious"),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          religiousTours = jsonDecode(response.body);
+        });
+      } else {
+        print("Failed to load religious tours");
+      }
+    } catch (e) {
+      print("Error fetching religious tours: $e");
     }
   }
 
@@ -223,7 +241,7 @@ class _HomePageState extends State<HomePage> {
                 hintText: "Places to go, things to do",
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
-                fillColor: Colors.grey.shade100,
+                fillColor: Theme.of(context).cardColor,
                 contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -272,7 +290,7 @@ class _HomePageState extends State<HomePage> {
               alignment: Alignment.center,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
+                children: [
                   Icon(Icons.search_off, size: 60, color: Colors.grey),
                   SizedBox(height: 10),
                   Text(
