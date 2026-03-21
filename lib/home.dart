@@ -381,11 +381,22 @@ class _HomePageState extends State<HomePage> {
             itemBuilder: (context, index) {
               final temple = religiousTours[index];
 
-              ReligiousTempleCard(
+              return ReligiousTempleCard(
                 title: temple["title"] ?? "",
                 image: temple["image"] ?? "",
                 price: temple["price"].toString(),
-                reviews: "0", // until backend provides reviews
+                reviews: "0",
+
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TourDetailPage(
+                        tourId: temple["id"], // 🔥 THIS LINE IS KEY
+                      ),
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -612,6 +623,7 @@ class ReligiousTempleCard extends StatelessWidget {
   final String image;
   final String price;
   final String reviews;
+  final VoidCallback? onTap; // ✅ ADD THIS
 
   const ReligiousTempleCard({
     super.key,
@@ -619,103 +631,110 @@ class ReligiousTempleCard extends StatelessWidget {
     required this.image,
     required this.price,
     required this.reviews,
+    this.onTap, // ✅ ADD THIS
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(18),
-                ),
-                child: Image.asset(
-                  image,
-                  height: 180,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  height: 36,
-                  width: 36,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.favorite_border),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(18),
+                  ),
+                  child: Image.asset(
+                    image,
+                    height: 180,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Text(
-                      "5.0",
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    height: 36,
+                    width: 36,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(width: 6),
-                    Row(
-                      children: List.generate(
-                        5,
-                        (index) => const Icon(
-                          Icons.circle,
-                          size: 6,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      "Reviews($reviews)",
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  price,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    child: const Icon(Icons.favorite_border),
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Text(
+                        "5.0",
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(width: 6),
+                      Row(
+                        children: List.generate(
+                          5,
+                          (index) => const Icon(
+                            Icons.circle,
+                            size: 6,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        "Reviews($reviews)",
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    price,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
