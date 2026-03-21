@@ -566,6 +566,7 @@ class TourCard extends StatelessWidget {
 
 /// EXPLORE CARD
 class ExploreCard extends StatelessWidget {
+  final VoidCallback? onTap;
   final String title;
   final String image;
   final String price;
@@ -575,54 +576,61 @@ class ExploreCard extends StatelessWidget {
     required this.title,
     required this.image,
     required this.price,
+    this.onTap, // ✅ ADD
   });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 200,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(22),
-            child: Image.asset(
-              image,
-              height: 220,
-              width: double.infinity,
-              fit: BoxFit.cover,
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 200,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: Image.asset(
+                image,
+                height: 220,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: const [
-              Text(
-                "5.0",
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-              ),
-              SizedBox(width: 4),
-              Icon(Icons.circle, size: 6, color: Colors.green),
-              Icon(Icons.circle, size: 6, color: Colors.green),
-              Icon(Icons.circle, size: 6, color: Colors.green),
-              Icon(Icons.circle, size: 6, color: Colors.green),
-              Icon(Icons.circle, size: 6, color: Colors.green),
-              SizedBox(width: 6),
-              Text(
-                "Reviews(123)",
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(price, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        ],
+            const SizedBox(height: 10),
+            Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: const [
+                Text(
+                  "5.0",
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+                SizedBox(width: 4),
+                Icon(Icons.circle, size: 6, color: Colors.green),
+                Icon(Icons.circle, size: 6, color: Colors.green),
+                Icon(Icons.circle, size: 6, color: Colors.green),
+                Icon(Icons.circle, size: 6, color: Colors.green),
+                Icon(Icons.circle, size: 6, color: Colors.green),
+                SizedBox(width: 6),
+                Text(
+                  "Reviews(123)",
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              price,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
       ),
     );
   }
