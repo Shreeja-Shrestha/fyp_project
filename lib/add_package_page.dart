@@ -20,7 +20,8 @@ class _AddPackagePageState extends State<AddPackagePage> {
   late TextEditingController durationController;
   late TextEditingController descriptionController;
 
-  String selectedCategory = "Adventure";
+  String selectedCategory = "adventure";
+  String selectedDifficulty = "Beginner";
 
   final List<String> localImages = const [
     "assets/bouddha.jpg",
@@ -58,7 +59,7 @@ class _AddPackagePageState extends State<AddPackagePage> {
     descriptionController = TextEditingController(
       text: widget.package?['description'] ?? '',
     );
-    selectedCategory = widget.package?['category'] ?? "Adventure";
+    selectedCategory = widget.package?['category'] ?? "adventure";
     selectedImage = widget.package?['image'] ?? "assets/kanchan.jpg";
   }
 
@@ -82,6 +83,7 @@ class _AddPackagePageState extends State<AddPackagePage> {
         "category": selectedCategory,
         "description": descriptionController.text,
         "image": selectedImage,
+        "difficulty": selectedDifficulty,
         "created_by": 1, // admin id placeholder
       };
 
@@ -166,6 +168,8 @@ class _AddPackagePageState extends State<AddPackagePage> {
                       });
                     },
                   ),
+
+                  const SizedBox(height: 12),
                 ],
               ),
               const SizedBox(height: 12),
@@ -219,6 +223,8 @@ class _AddPackagePageState extends State<AddPackagePage> {
               ),
               const SizedBox(height: 12),
               // Category
+              // Category
+              // Category
               DropdownButtonFormField<String>(
                 value: selectedCategory,
                 decoration: const InputDecoration(
@@ -227,20 +233,48 @@ class _AddPackagePageState extends State<AddPackagePage> {
                 ),
                 items: const [
                   DropdownMenuItem(
-                    value: "Adventure",
+                    value: "religious",
+                    child: Text("Religious"),
+                  ),
+                  DropdownMenuItem(value: "trekking", child: Text("Trekking")),
+                  DropdownMenuItem(
+                    value: "adventure",
                     child: Text("Adventure"),
                   ),
-                  DropdownMenuItem(value: "Family", child: Text("Family")),
-                  DropdownMenuItem(value: "Budget", child: Text("Budget")),
-                  DropdownMenuItem(value: "Luxury", child: Text("Luxury")),
+                  DropdownMenuItem(value: "family", child: Text("Family")),
+                  DropdownMenuItem(value: "budget", child: Text("Budget")),
+                  DropdownMenuItem(value: "luxury", child: Text("Luxury")),
                 ],
                 onChanged: (value) {
                   setState(() {
-                    selectedCategory = value ?? "Adventure";
+                    selectedCategory = value ?? "adventure";
                   });
                 },
               ),
+
               const SizedBox(height: 12),
+
+              // 🔥 Difficulty (ADDED CORRECTLY)
+              DropdownButtonFormField<String>(
+                value: selectedDifficulty,
+                decoration: const InputDecoration(
+                  labelText: "Difficulty",
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: "Beginner", child: Text("Beginner")),
+                  DropdownMenuItem(value: "Moderate", child: Text("Moderate")),
+                  DropdownMenuItem(value: "Expert", child: Text("Expert")),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    selectedDifficulty = value ?? "Beginner";
+                  });
+                },
+              ),
+
+              const SizedBox(height: 12),
+
               // Description
               TextFormField(
                 controller: descriptionController,
@@ -253,6 +287,9 @@ class _AddPackagePageState extends State<AddPackagePage> {
                     ? "Please enter description"
                     : null,
               ),
+              const SizedBox(height: 12),
+
+              // Description
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
