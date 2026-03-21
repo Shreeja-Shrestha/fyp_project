@@ -359,6 +359,17 @@ class _HomePageState extends State<HomePage> {
                   title: tour["title"]!,
                   image: tour["image"]!,
                   price: tour["price"]!,
+
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TourDetailPage(
+                          tourId: tour["id"], // 🔥 SAME PATTERN
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
