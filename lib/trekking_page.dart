@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:fyp_project/tour_detail_page.dart';
 
 class TrekkingPage extends StatefulWidget {
   const TrekkingPage({super.key});
@@ -8,6 +11,9 @@ class TrekkingPage extends StatefulWidget {
 }
 
 class _TrekkingPageState extends State<TrekkingPage> {
+  List filteredTours = [];
+  List trekkingTours = [];
+  bool isLoading = true;
   // To keep track of which category is clicked
   String selectedCategory = "All Treks";
 
@@ -17,6 +23,43 @@ class _TrekkingPageState extends State<TrekkingPage> {
     "Moderate",
     "Expert",
   ];
+  @override
+  void initState() {
+    super.initState();
+    fetchTrekkingTours();
+  }
+
+  Future<void> fetchTrekkingTours() async {
+    try {
+      final response = await http.get(
+        Uri.parse("http://172.20.10.2:3000/api/tours/category/trekking"),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          trekkingTours = jsonDecode(response.body);
+          filteredTours = trekkingTours;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+
+  void searchTrekking(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        filteredTours = trekkingTours;
+      });
+    } else {
+      setState(() {
+        filteredTours = trekkingTours.where((tour) {
+          return tour["title"].toLowerCase().contains(query.toLowerCase());
+        }).toList();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +76,17 @@ class _TrekkingPageState extends State<TrekkingPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 24),
+                  TextField(
+                    onChanged: searchTrekking,
+                    decoration: InputDecoration(
+                      hintText: "Search trekking routes...",
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
                   /// 1. CLICKABLE CATEGORIES
                   _buildClickableCategories(),
@@ -50,30 +104,98 @@ class _TrekkingPageState extends State<TrekkingPage> {
                   const SizedBox(height: 20),
 
                   /// 2. REFINED TREK CARDS
-                  _refinedTrekCard(
-                    "Everest Base Camp",
-                    "12 Days",
-                    "Hard",
-                    "Rs. 1,60,000",
-                    "assets/everest.jpg",
-                    "4.9",
-                  ),
-                  _refinedTrekCard(
-                    "Annapurna Circuit",
-                    "10 Days",
-                    "Moderate",
-                    "Rs. 95,000",
-                    "assets/annapurna.jpg",
-                    "4.7",
-                  ),
-                  _refinedTrekCard(
-                    "Mardi Himal",
-                    "5 Days",
-                    "Easy",
-                    "Rs. 45,000",
-                    "assets/mardi.jpg",
-                    "4.8",
-                  ),
+                  isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : filteredTours.isEmpty
+                      ? const Center(
+                          child: Text(
+                            "No trekking tours available",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        )
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: filteredTours.length,
+                          itemBuilder: (context, index) {
+                            final tour = filteredTours[index];
+
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        TourDetailPage(tourId: tour["id"]),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 24),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(24),
+                                      ),
+                                      child:
+                                          tour["image"].toString().startsWith(
+                                            "http",
+                                          )
+                                          ? Image.network(
+                                              tour["image"],
+                                              height: 200,
+                                              width: double.infinity,
+                                              fit: BoxFit.cover,
+                                            )
+                                          : Image.asset(
+                                              tour["image"],
+                                              height: 200,
+                                              width: double.infinity,
+                                              fit: BoxFit.cover,
+                                            ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(18),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            tour["title"],
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            tour["duration"],
+                                            style: const TextStyle(
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          Text(
+                                            "Rs ${tour["price"]}",
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
 
                   const SizedBox(height: 40),
                 ],
@@ -157,132 +279,6 @@ class _TrekkingPageState extends State<TrekkingPage> {
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _refinedTrekCard(
-    String title,
-    String duration,
-    String level,
-    String price,
-    String img,
-    String rating,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            child: Stack(
-              children: [
-                Image.asset(
-                  img,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          color: Colors.amber,
-                          size: 16,
-                        ),
-                        Text(
-                          " $rating",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      level,
-                      style: TextStyle(
-                        color: Colors.blue.shade700,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  "$duration trip • High Altitude",
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-                ),
-                const SizedBox(height: 14),
-                // REFINED PRICE (Simple and Pretty, not loud)
-                Row(
-                  children: [
-                    Text(
-                      price,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey.shade900,
-                      ),
-                    ),
-                    Text(
-                      " / person",
-                      style: TextStyle(
-                        color: Colors.grey.shade400,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

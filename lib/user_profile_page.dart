@@ -24,6 +24,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
   int trips = 0;
   int bookings = 0;
   int wishlist = 0;
+  String phone = "";
+  String bio = "";
 
   bool isLoading = true;
   bool hasError = false;
@@ -35,6 +37,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> loadUserProfile() async {
+    setState(() {
+      isLoading = true;
+      hasError = false;
+    });
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getInt("user_id");
 
@@ -48,7 +54,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/users/profile/$userId"),
+        Uri.parse("http://172.20.10.2:3000/api/users/profile/$userId"),
       );
 
       if (response.statusCode == 200) {
@@ -57,6 +63,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
         setState(() {
           name = data["name"] ?? "";
           email = data["email"] ?? "";
+          phone = data["phone"] ?? "";
+          bio = data["tagline"] ?? "";
           trips = data["trips"] ?? 0;
           bookings = data["bookings"] ?? 0;
           wishlist = data["wishlist"] ?? 0;
@@ -132,13 +140,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xfff4f6fb),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("My Profile"),
         centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        foregroundColor: Colors.black,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).colorScheme.onBackground,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -158,8 +165,48 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
             const SizedBox(height: 4),
 
-            Text(email, style: const TextStyle(color: Colors.grey)),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                email,
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                ),
+              ),
+            ),
+            if (phone.isNotEmpty)
+              Text(
+                phone,
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                ),
+              ),
 
+            if (bio.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    bio.isNotEmpty ? bio : "Add your vibe ✨",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: bio.isNotEmpty
+                          ? Theme.of(context).textTheme.bodyMedium?.color
+                          : Theme.of(context).textTheme.bodySmall?.color,
+                    ),
+                  ),
+                ),
+              ),
             const SizedBox(height: 25),
 
             Row(
@@ -233,10 +280,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
               icon: Icons.settings,
               title: "App Settings",
               subtitle: "Password, notifications",
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsPage()),
-              ),
+              onTap: () async {
+                final prefs = await SharedPreferences.getInstance();
+                final userId = prefs.getInt("user_id");
+
+                if (userId != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SettingsPage(userId: userId),
+                    ),
+                  );
+                }
+              },
             ),
 
             _menuTile(
@@ -284,7 +340,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         margin: const EdgeInsets.symmetric(horizontal: 6),
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6),
@@ -297,7 +353,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
-            Text(label, style: const TextStyle(color: Colors.grey)),
+            Text(
+              label,
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodySmall?.color,
+              ),
+            ),
           ],
         ),
       ),
@@ -313,7 +374,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6),
@@ -321,9 +382,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
       ),
       child: ListTile(
         onTap: onTap,
-        leading: Icon(icon, color: Colors.blueAccent),
+        leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).textTheme.bodySmall?.color,
+          ),
+        ),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
       ),
     );

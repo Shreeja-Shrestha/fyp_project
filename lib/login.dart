@@ -61,7 +61,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://192.168.18.11:3000/api/auth/login"),
+        Uri.parse("http://172.20.10.2:3000/api/auth/login"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "email": emailController.text.trim(),
@@ -113,7 +113,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff8f9fd),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -136,12 +136,12 @@ class _LoginPageState extends State<LoginPage> {
 
             const SizedBox(height: 10), // Reduced since curve is deep
 
-            const Text(
+            Text(
               "Login to Access Your",
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w800,
-                color: Colors.black,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             const Text(
@@ -177,12 +177,12 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       Checkbox(
                         value: rememberMe,
-                        activeColor: Colors.black,
+                        activeColor: Theme.of(context).primaryColor,
                         onChanged: (val) => setState(() => rememberMe = val!),
                       ),
-                      const Text(
+                      Text(
                         "Remember me",
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(color: Theme.of(context).hintColor),
                       ),
                     ],
                   ),
@@ -193,10 +193,10 @@ class _LoginPageState extends State<LoginPage> {
                         builder: (_) => const ForgotPasswordScreen(),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       "Forgot password?",
                       style: TextStyle(
-                        color: Colors.black,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -214,7 +214,7 @@ class _LoginPageState extends State<LoginPage> {
                 height: 55,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
+                    backgroundColor: Theme.of(context).primaryColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -222,14 +222,7 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: isLoading ? null : login,
                   child: isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          "Login",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      : Text("Login", style: TextStyle(color: Colors.white)),
                 ),
               ),
             ),
@@ -239,9 +232,9 @@ class _LoginPageState extends State<LoginPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
+                Text(
                   "Don't have an account? ",
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(color: Theme.of(context).hintColor),
                 ),
                 GestureDetector(
                   onTap: () => Navigator.push(
@@ -277,17 +270,20 @@ class _LoginPageState extends State<LoginPage> {
         controller: controller,
         obscureText: obscure,
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.grey.shade600),
+          prefixIcon: Icon(icon, color: Theme.of(context).iconTheme.color),
           hintText: hint,
           filled: true,
-          fillColor: Colors.white,
+          fillColor: Theme.of(context).cardColor,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(30),
-            borderSide: BorderSide(color: Colors.grey.shade300),
+            borderSide: BorderSide(color: Theme.of(context).dividerColor),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(30),
-            borderSide: const BorderSide(color: Colors.black, width: 1.5),
+            borderSide: BorderSide(
+              color: Theme.of(context).primaryColor,
+              width: 1.5,
+            ),
           ),
         ),
       ),

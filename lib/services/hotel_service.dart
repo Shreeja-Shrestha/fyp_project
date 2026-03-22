@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 class HotelService {
   // Use 10.0.2.2 for Android Emulator, localhost for iOS/Web
-  static const String baseUrl = "http://192.168.18.11:3000/api";
+  static const String baseUrl = "http://172.20.10.2:3000/api";
   static Future<List<dynamic>> fetchNearbyHotels(double lat, double lng) async {
     try {
       final url = Uri.parse("$baseUrl/hotels/nearest").replace(

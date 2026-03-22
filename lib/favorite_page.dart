@@ -14,7 +14,7 @@ class _FavoritePageState extends State<FavoritePage> {
 
   Future<void> fetchFavorites() async {
     final response = await http.get(
-      Uri.parse("http://192.168.18.11:3000/api/favorites/user/1"),
+      Uri.parse("http://172.20.10.2:3000/api/favorites/user/1"),
     );
 
     if (response.statusCode == 200) {
@@ -28,7 +28,7 @@ class _FavoritePageState extends State<FavoritePage> {
 
   Future<void> removeFavorite(int tourId) async {
     await http.post(
-      Uri.parse("http://192.168.18.11:3000/api/favorites/remove"),
+      Uri.parse("http://172.20.10.2:3000/api/favorites/remove"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"user_id": 1, "tour_id": tourId}),
     );

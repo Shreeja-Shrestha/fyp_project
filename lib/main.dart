@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:fyp_project/add_package_page.dart';
-import 'package:fyp_project/admin_manage_packages_page.dart';
-import 'package:fyp_project/admin_profile_page.dart';
-import 'package:fyp_project/booking_options_page.dart';
-import 'package:fyp_project/favorite_page.dart';
-import 'package:fyp_project/getstarted.dart';
-import 'package:fyp_project/hotel1.dart';
-import 'package:fyp_project/hotel2.dart';
-import 'package:fyp_project/login.dart';
-import 'package:fyp_project/mardi.dart';
-import 'package:fyp_project/home.dart';
-import 'package:fyp_project/signup.dart';
-import 'package:fyp_project/tour_detail_page.dart';
-import 'package:fyp_project/user_profile_page.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+import 'package:fyp_project/login.dart';
+
+/// 🔥 GLOBAL THEME CONTROLLER
+ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final prefs = await SharedPreferences.getInstance();
+  bool isDark = prefs.getBool("dark_mode") ?? false;
+
+  /// LOAD SAVED THEME
+  themeNotifier.value = isDark ? ThemeMode.dark : ThemeMode.light;
+
   runApp(const MyApp());
 }
 
@@ -24,15 +23,39 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Login UI',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      //home: const TourDetailPage(tourId: 1),
-      home: LoginPage(),
+    return ValueListenableBuilder(
+      valueListenable: themeNotifier,
+      builder: (context, ThemeMode currentMode, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Travel App',
+
+          /// LIGHT THEME (WHITE)
+          theme: ThemeData(
+            brightness: Brightness.light,
+            scaffoldBackgroundColor: Colors.white,
+            useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xff1a73e8), // your blue
+            ),
+          ),
+
+          darkTheme: ThemeData(
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: Colors.black,
+            useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xff1a73e8), // same brand color
+              brightness: Brightness.dark,
+            ),
+          ),
+
+          /// 🔥 SWITCHES THEME INSTANTLY
+          themeMode: currentMode,
+
+          home: LoginPage(),
+        );
+      },
     );
   }
 }

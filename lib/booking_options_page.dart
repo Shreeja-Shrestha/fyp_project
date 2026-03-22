@@ -90,7 +90,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   Future<void> fetchTourEvents() async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.18.11:3000/nepal-holidays'),
+        Uri.parse('http://172.20.10.2:3000/nepal-holidays'),
       );
 
       if (response.statusCode == 200) {
@@ -205,7 +205,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
     try {
       final bookingResponse = await http.post(
-        Uri.parse('http://192.168.18.11:3000/api/bookings/create'),
+        Uri.parse('http://172.20.10.2:3000/api/bookings/create'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "user_id": widget.userId,
@@ -222,7 +222,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         int bookingId = bookingData["booking_id"];
 
         final paymentResponse = await http.post(
-          Uri.parse('http://192.168.18.11:3000/api/payment/initiate-payment'),
+          Uri.parse('http://172.20.10.2:3000/api/payment/initiate-payment'),
           headers: {"Content-Type": "application/json"},
           body: jsonEncode({
             "amount": totalPrice.toInt(),

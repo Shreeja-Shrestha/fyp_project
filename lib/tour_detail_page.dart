@@ -20,13 +20,8 @@ class _TourDetailPageState extends State<TourDetailPage> {
   bool isFavorite = false;
   final TextEditingController _reviewController = TextEditingController();
 
-  final String title = "Mardi Himal Trek";
-  final String location = "Gandaki Province, Nepal";
-  final String description =
-      "Experience the breathtaking beauty of the Annapurna region. This trek offers stunning views of Machhapuchhre (Fishtail) and the Annapurna massif. Perfect for those looking for a shorter, quieter alternative to the more crowded Everest routes.";
-
-  final double price = 25000;
-  final double rating = 4.9;
+  Map<String, dynamic>? tour;
+  bool isLoading = true;
 
   // Dynamic list for reviews
   final List<Map<String, dynamic>> reviews = [
@@ -42,23 +37,18 @@ class _TourDetailPageState extends State<TourDetailPage> {
     },
   ];
 
-  final List<String> images = [
-    "assets/mardi1.jpg",
-    "assets/mardi2.jpg",
-    "assets/mardi3.jpg",
-  ];
-
   final PageController _pageController = PageController();
   int _currentPage = 0;
   int _userSelectedRating = 5;
   Timer? _timer;
-
+  List<String> images = [];
   final Color primarySkyBlue = const Color(0xFF00B4D8);
   final Color softSkyBlue = const Color(0xFFCAF0F8);
 
   @override
   void initState() {
     super.initState();
+    fetchTour(); // 🔥 THIS IS THE CORE
     _startImageTimer();
     _checkFavorite();
   }
@@ -71,10 +61,41 @@ class _TourDetailPageState extends State<TourDetailPage> {
     super.dispose();
   }
 
+  Future<void> fetchTour() async {
+    try {
+      final response = await http.get(
+        Uri.parse("http://172.20.10.2:3000/api/tours/${widget.tourId}"),
+      );
+
+      print("API RESPONSE: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          tour = data;
+          final img = tour?["image"];
+
+          images = [
+            (img != null && img.toString().isNotEmpty)
+                ? img.toString()
+                : "assets/mardi2.jpg",
+          ];
+          isLoading = false;
+        });
+      } else {
+        print("Failed to load tour");
+      }
+    } catch (e) {
+      print("Error fetching tour: $e");
+    }
+  }
+
   void _startImageTimer() {
     _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
-      if (_pageController.hasClients) {
-        int nextPage = (_currentPage + 1) % images.length;
+      if (_pageController.hasClients && tour != null) {
+        int nextPage =
+            (_currentPage + 1) % images.length; // only 1 image for now
         _pageController.animateToPage(
           nextPage,
           duration: const Duration(milliseconds: 900),
@@ -114,7 +135,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
     }
 
     final url = Uri.parse(
-      'http://192.168.18.11:3000/api/reviews/submit',
+      'http://172.20.10.2:3000/api/reviews/submit',
     ); // change IP if using real device
     try {
       final response = await http.post(
@@ -158,8 +179,11 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading || tour == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // IMAGE SLIDESHOW
@@ -167,13 +191,44 @@ class _TourDetailPageState extends State<TourDetailPage> {
             height: MediaQuery.of(context).size.height * 0.5,
             child: Stack(
               alignment: Alignment.bottomCenter,
+
               children: [
                 PageView.builder(
                   controller: _pageController,
                   itemCount: images.length,
                   onPageChanged: (i) => setState(() => _currentPage = i),
-                  itemBuilder: (context, index) =>
-                      Image.asset(images[index], fit: BoxFit.cover),
+                  itemBuilder: (context, index) {
+                    final image = images[index];
+
+                    if (image.startsWith("http")) {
+                      return Image.network(image, fit: BoxFit.cover);
+                    } else {
+                      return Image.asset(
+                        image,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                      );
+                    }
+                  },
+                ),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 120,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.75),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
                 // SLIDESHOW INDICATOR
                 Positioned(
@@ -187,7 +242,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
                         height: 8,
                         width: _currentPage == index ? 20 : 8,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(
+                          color: Theme.of(context).cardColor.withOpacity(
                             _currentPage == index ? 1 : 0.5,
                           ),
                           borderRadius: BorderRadius.circular(10),
@@ -205,7 +260,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
             slivers: [
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.43,
+                  height: MediaQuery.of(context).size.height * 0.43 + 70,
                 ),
               ),
               SliverToBoxAdapter(child: _buildTourContent()),
@@ -221,8 +276,8 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
   Future<void> _toggleFavorite() async {
     final url = isFavorite
-        ? Uri.parse("http://192.168.18.11:3000/api/favorites/remove")
-        : Uri.parse("http://192.168.18.11:3000/api/favorites/add");
+        ? Uri.parse("http://172.20.10.2:3000/api/favorites/remove")
+        : Uri.parse("http://172.20.10.2:3000/api/favorites/add");
 
     try {
       final response = await http.post(
@@ -260,7 +315,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
   Future<void> _checkFavorite() async {
     final url = Uri.parse(
-      "http://192.168.18.11:3000/api/favorites/check?user_id=1&tour_id=${widget.tourId}",
+      "http://172.20.10.2:3000/api/favorites/check?user_id=1&tour_id=${widget.tourId}",
     );
 
     try {
@@ -279,8 +334,8 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
   Widget _buildTourContent() {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
         boxShadow: [
           BoxShadow(
@@ -306,18 +361,19 @@ class _TourDetailPageState extends State<TourDetailPage> {
           ),
           const SizedBox(height: 25),
           Text(
-            title,
-            style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900),
+            tour?["title"] ?? "",
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
           ),
           const SizedBox(height: 8),
           Row(
             children: [
               Icon(Icons.location_on, color: primarySkyBlue, size: 18),
               const SizedBox(width: 4),
-              Text(
-                location,
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
-              ),
+              Text(tour?["destination"] ?? ""),
             ],
           ),
           const SizedBox(height: 25),
@@ -325,9 +381,13 @@ class _TourDetailPageState extends State<TourDetailPage> {
           // QUICK INFO TILES
           Row(
             children: [
-              _infoTile(Icons.timer_outlined, "5 Days", "Duration"),
+              _infoTile(
+                Icons.timer_outlined,
+                tour?["duration"] ?? "",
+                "Duration",
+              ),
               const SizedBox(width: 15),
-              _infoTile(Icons.star_rounded, rating.toString(), "Rating"),
+              _infoTile(Icons.star_rounded, "4.5", "Rating"),
             ],
           ),
 
@@ -366,14 +426,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            description,
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              fontSize: 16,
-              height: 1.6,
-            ),
-          ),
+          Text(tour?["description"] ?? ""),
 
           const SizedBox(height: 40),
 
@@ -438,10 +491,10 @@ class _TourDetailPageState extends State<TourDetailPage> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text(
+            child: Text(
               "Submit Review",
               style: TextStyle(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -516,7 +569,9 @@ class _TourDetailPageState extends State<TourDetailPage> {
           const SizedBox(height: 10),
           Text(
             r["comment"],
-            style: TextStyle(color: Colors.grey.shade700, height: 1.4),
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyMedium!.color,
+            ),
           ),
         ],
       ),
@@ -526,8 +581,8 @@ class _TourDetailPageState extends State<TourDetailPage> {
   Widget _buildTopOverlay() {
     return Positioned(
       top: MediaQuery.of(context).padding.top + 10,
-      left: 20,
-      right: 20,
+      left: 16,
+      right: 16,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -549,10 +604,10 @@ class _TourDetailPageState extends State<TourDetailPage> {
         child: Container(
           height: 45,
           width: 45,
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.black.withOpacity(0.35),
           child: IconButton(
             padding: EdgeInsets.zero,
-            icon: Icon(icon, color: Colors.white, size: 20),
+            icon: Icon(icon, color: Colors.white, size: 22),
             onPressed: onTap,
           ),
         ),

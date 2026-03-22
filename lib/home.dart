@@ -142,7 +142,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> fetchTours() async {
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/tours"),
+        Uri.parse("http://172.20.10.2:3000/api/tours"),
       );
 
       if (response.statusCode == 200) {
@@ -162,7 +162,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> fetchReligiousTours() async {
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/tours/category/religious"),
+        Uri.parse("http://172.20.10.2:3000/api/tours/category/religious"),
       );
 
       if (response.statusCode == 200) {
@@ -193,7 +193,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final response = await http.get(
         Uri.parse(
-          "http://192.168.18.11:3000/api/search/tours?q=${Uri.encodeComponent(query)}",
+          "http://172.20.10.2:3000/api/search/tours?q=${Uri.encodeComponent(query)}",
         ),
       );
 
