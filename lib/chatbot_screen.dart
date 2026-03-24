@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class ChatbotScreen extends StatefulWidget {
   const ChatbotScreen({super.key});
@@ -13,9 +15,29 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   List<Map<String, String>> messages = [
     {"sender": "bot", "text": "Hi 👋 What are you looking for today?"},
   ];
+  Future<List> fetchTours({String? category}) async {
+    try {
+      String url = "http://192.168.18.11:3000/api/tours";
 
-  void sendMessage() {
-    String text = _controller.text.trim();
+      if (category != null) {
+        url += "/category/$category";
+      }
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return [];
+      }
+    } catch (e) {
+      print("Error: $e");
+      return [];
+    }
+  }
+
+  void sendMessage() async {
+    String text = _controller.text.trim().toLowerCase();
     if (text.isEmpty) return;
 
     setState(() {
@@ -23,18 +45,41 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     });
 
     _controller.clear();
+    FocusScope.of(context).unfocus();
 
-    FocusScope.of(context).unfocus(); // close keyboard
+    /// Detect intent
+    String? category;
 
-    /// TEMP BOT RESPONSE (UI ONLY)
-    Future.delayed(const Duration(milliseconds: 500), () {
+    if (text.contains("trek") || text.contains("mountain")) {
+      category = "adventure";
+    } else if (text.contains("temple") || text.contains("religious")) {
+      category = "religious";
+    }
+
+    /// Show loading message
+    setState(() {
+      messages.add({"sender": "bot", "text": "Finding best tours..."});
+    });
+
+    /// Call API
+    List tours = await fetchTours(category: category);
+
+    /// Respond
+    if (tours.isEmpty) {
       setState(() {
         messages.add({
           "sender": "bot",
-          "text": "Searching best tours for you...",
+          "text": "No tours found. Try something else.",
         });
       });
-    });
+    } else {
+      setState(() {
+        messages.add({
+          "sender": "bot",
+          "text": "I found ${tours.length} tours for you.",
+        });
+      });
+    }
   }
 
   Widget buildMessage(Map<String, String> message) {
