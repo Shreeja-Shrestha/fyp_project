@@ -13,7 +13,7 @@ import 'package:fyp_project/booking_success_page.dart';
 import 'mardi.dart'; // PlaceDetailsPage
 import 'user_profile_page.dart'; // Account page
 import 'favorite_page.dart';
-
+import 'package:fyp_project/chatbot_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
