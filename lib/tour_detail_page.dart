@@ -24,18 +24,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
   bool isLoading = true;
 
   // Dynamic list for reviews
-  final List<Map<String, dynamic>> reviews = [
-    {
-      "username": "Anish Giri",
-      "rating": 5,
-      "comment": "Absolutely stunning views!",
-    },
-    {
-      "username": "Sita Thapa",
-      "rating": 4,
-      "comment": "A bit challenging but worth every step!",
-    },
-  ];
+  List<Map<String, dynamic>> reviews = [];
 
   final PageController _pageController = PageController();
   int _currentPage = 0;
@@ -48,7 +37,8 @@ class _TourDetailPageState extends State<TourDetailPage> {
   @override
   void initState() {
     super.initState();
-    fetchTour(); // 🔥 THIS IS THE CORE
+    fetchTour();
+    fetchReviews(); // ✅ ADD THIS HERE
     _startImageTimer();
     _checkFavorite();
   }
@@ -58,13 +48,14 @@ class _TourDetailPageState extends State<TourDetailPage> {
     _timer?.cancel();
     _pageController.dispose();
     _reviewController.dispose();
+
     super.dispose();
   }
 
   Future<void> fetchTour() async {
     try {
       final response = await http.get(
-        Uri.parse("http://172.20.10.2:3000/api/tours/${widget.tourId}"),
+        Uri.parse("http://192.168.18.11:3000/api/tours/${widget.tourId}"),
       );
 
       print("API RESPONSE: ${response.body}");
@@ -88,6 +79,24 @@ class _TourDetailPageState extends State<TourDetailPage> {
       }
     } catch (e) {
       print("Error fetching tour: $e");
+    }
+  }
+
+  Future<void> fetchReviews() async {
+    try {
+      final response = await http.get(
+        Uri.parse("http://192.168.18.11:3000/api/reviews/${widget.tourId}"),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          reviews = List<Map<String, dynamic>>.from(data);
+        });
+      }
+    } catch (e) {
+      print("Error fetching reviews: $e");
     }
   }
 
@@ -135,7 +144,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
     }
 
     final url = Uri.parse(
-      'http://172.20.10.2:3000/api/reviews/submit',
+      'http://192.168.18.11:3000/api/reviews/submit',
     ); // change IP if using real device
     try {
       final response = await http.post(
@@ -152,13 +161,10 @@ class _TourDetailPageState extends State<TourDetailPage> {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['status'] == 'success') {
+        await fetchReviews();
         // Add new review to UI
         setState(() {
-          reviews.add({
-            "username": "You", // or fetch actual username
-            "rating": _userSelectedRating,
-            "comment": comment,
-          });
+          // reload from backend
           _reviewController.clear();
           _userSelectedRating = 5;
         });
@@ -174,6 +180,26 @@ class _TourDetailPageState extends State<TourDetailPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Error submitting review: $e")));
+    }
+  }
+
+  Future<void> deleteReview(int reviewId) async {
+    final url = Uri.parse("http://192.168.18.11:3000/api/reviews/delete");
+
+    try {
+      final response = await http.delete(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"id": reviewId, "user_id": 1}),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (data["status"] == "success") {
+        await fetchReviews();
+      }
+    } catch (e) {
+      print("Delete error: $e");
     }
   }
 
@@ -276,8 +302,8 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
   Future<void> _toggleFavorite() async {
     final url = isFavorite
-        ? Uri.parse("http://172.20.10.2:3000/api/favorites/remove")
-        : Uri.parse("http://172.20.10.2:3000/api/favorites/add");
+        ? Uri.parse("http://192.168.18.11:3000/api/favorites/remove")
+        : Uri.parse("http://192.168.18.11:3000/api/favorites/add");
 
     try {
       final response = await http.post(
@@ -315,7 +341,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
   Future<void> _checkFavorite() async {
     final url = Uri.parse(
-      "http://172.20.10.2:3000/api/favorites/check?user_id=1&tour_id=${widget.tourId}",
+      "http://192.168.18.11:3000/api/favorites/check?user_id=1&tour_id=${widget.tourId}",
     );
 
     try {
@@ -436,7 +462,9 @@ class _TourDetailPageState extends State<TourDetailPage> {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 15),
-          ...reviews.map((r) => _reviewCard(r)).toList(),
+          reviews.isEmpty
+              ? const Text("No reviews yet. Be the first!")
+              : Column(children: reviews.map((r) => _reviewCard(r)).toList()),
 
           const SizedBox(height: 20),
           const Text(
@@ -539,6 +567,8 @@ class _TourDetailPageState extends State<TourDetailPage> {
   }
 
   Widget _reviewCard(Map<String, dynamic> r) {
+    final int currentUserId = 1;
+    final bool isOwner = r["user_id"] == currentUserId;
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(18),
@@ -557,11 +587,15 @@ class _TourDetailPageState extends State<TourDetailPage> {
                 child: Icon(Icons.person, color: primarySkyBlue),
               ),
               const SizedBox(width: 12),
-              Text(
-                r["username"],
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
+              Text(r["user_name"] ?? "User"),
               const Spacer(),
+
+              if (isOwner)
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () => deleteReview(r["id"]),
+                ),
+
               const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
               Text(" ${r["rating"]}"),
             ],
