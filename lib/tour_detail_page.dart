@@ -27,6 +27,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
   List<Map<String, dynamic>> reviews = [];
 
   final PageController _pageController = PageController();
+  int currentUserId = 0;
   int _currentPage = 0;
   int _userSelectedRating = 5;
   Timer? _timer;
