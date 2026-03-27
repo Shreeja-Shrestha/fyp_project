@@ -162,7 +162,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "user_id": 1, // Replace with logged-in user ID
+          "user_id": currentUserId, // Replace with logged-in user ID
           "tour_id": widget.tourId,
           "rating": _userSelectedRating,
           "comment": comment,
@@ -201,7 +201,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
       final response = await http.delete(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"id": reviewId, "user_id": 1}),
+        body: jsonEncode({"id": reviewId, "user_id": currentUserId}),
       );
 
       final data = jsonDecode(response.body);
@@ -578,7 +578,6 @@ class _TourDetailPageState extends State<TourDetailPage> {
   }
 
   Widget _reviewCard(Map<String, dynamic> r) {
-    final int currentUserId = 1;
     final bool isOwner = r["user_id"] == currentUserId;
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
