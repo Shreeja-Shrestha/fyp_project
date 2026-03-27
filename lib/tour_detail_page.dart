@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 // Ensure this import matches your actual project structure
 import 'package:fyp_project/booking_options_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TourDetailPage extends StatefulWidget {
   final int tourId;
@@ -22,12 +23,13 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
   Map<String, dynamic>? tour;
   bool isLoading = true;
+  int currentUserId = 0;
 
   // Dynamic list for reviews
   List<Map<String, dynamic>> reviews = [];
 
   final PageController _pageController = PageController();
-  int currentUserId = 0;
+
   int _currentPage = 0;
   int _userSelectedRating = 5;
   Timer? _timer;
@@ -38,8 +40,9 @@ class _TourDetailPageState extends State<TourDetailPage> {
   @override
   void initState() {
     super.initState();
+    loadUserId(); // ✅ ADD THIS LINE
     fetchTour();
-    fetchReviews(); // ✅ ADD THIS HERE
+    fetchReviews();
     _startImageTimer();
     _checkFavorite();
   }
@@ -101,6 +104,13 @@ class _TourDetailPageState extends State<TourDetailPage> {
     }
   }
 
+  Future<void> loadUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      currentUserId = prefs.getInt("user_id") ?? 0;
+    });
+  }
+
   void _startImageTimer() {
     _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
       if (_pageController.hasClients && tour != null) {
@@ -122,7 +132,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
       MaterialPageRoute(
         builder: (context) => BookingOptionsPage(
           packageId: widget.tourId,
-          userId: 1,
+          userId: currentUserId,
           role: 'user',
           tourId: widget.tourId,
           lat: 28.37, // example latitude
