@@ -40,11 +40,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
   @override
   void initState() {
     super.initState();
-    loadUserId(); // ✅ ADD THIS LINE
-    fetchTour();
-    fetchReviews();
-    _startImageTimer();
-    _checkFavorite();
+    initPage();
   }
 
   @override
@@ -59,7 +55,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
   Future<void> fetchTour() async {
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/tours/${widget.tourId}"),
+        Uri.parse("http://172.20.10.2:3000/api/tours/${widget.tourId}"),
       );
 
       print("API RESPONSE: ${response.body}");
@@ -89,7 +85,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
   Future<void> fetchReviews() async {
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/reviews/${widget.tourId}"),
+        Uri.parse("http://172.20.10.2:3000/api/reviews/${widget.tourId}"),
       );
 
       if (response.statusCode == 200) {
@@ -109,6 +105,14 @@ class _TourDetailPageState extends State<TourDetailPage> {
     setState(() {
       currentUserId = prefs.getInt("user_id") ?? 0;
     });
+  }
+
+  Future<void> initPage() async {
+    await loadUserId(); // 🔥 wait for user_id
+    await fetchTour();
+    await fetchReviews(); // 🔥 now reviews will come
+    _startImageTimer();
+    _checkFavorite();
   }
 
   void _startImageTimer() {
@@ -155,7 +159,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
     }
 
     final url = Uri.parse(
-      'http://192.168.18.11:3000/api/reviews/submit',
+      'http://172.20.10.2:3000/api/reviews/submit',
     ); // change IP if using real device
     try {
       final response = await http.post(
@@ -195,7 +199,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
   }
 
   Future<void> deleteReview(int reviewId) async {
-    final url = Uri.parse("http://192.168.18.11:3000/api/reviews/delete");
+    final url = Uri.parse("http://172.20.10.2:3000/api/reviews/delete");
 
     try {
       final response = await http.delete(
@@ -313,14 +317,14 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
   Future<void> _toggleFavorite() async {
     final url = isFavorite
-        ? Uri.parse("http://192.168.18.11:3000/api/favorites/remove")
-        : Uri.parse("http://192.168.18.11:3000/api/favorites/add");
+        ? Uri.parse("http://172.20.10.2:3000/api/favorites/remove")
+        : Uri.parse("http://172.20.10.2:3000/api/favorites/add");
 
     try {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"user_id": 1, "tour_id": widget.tourId}),
+        body: jsonEncode({"user_id": currentUserId, "tour_id": widget.tourId}),
       );
 
       print("Response status: ${response.statusCode}");
@@ -352,7 +356,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
   Future<void> _checkFavorite() async {
     final url = Uri.parse(
-      "http://192.168.18.11:3000/api/favorites/check?user_id=1&tour_id=${widget.tourId}",
+      "http://172.20.10.2:3000/api/favorites/check?user_id=$currentUserId&tour_id=${widget.tourId}",
     );
 
     try {
@@ -597,8 +601,24 @@ class _TourDetailPageState extends State<TourDetailPage> {
                 child: Icon(Icons.person, color: primarySkyBlue),
               ),
               const SizedBox(width: 12),
-              Text(r["user_name"] ?? "User"),
-              const Spacer(),
+              if (isOwner)
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    "Your Review",
+                    style: TextStyle(color: Colors.white, fontSize: 10),
+                  ),
+                ),
+              Expanded(
+                child: Text(
+                  r["user_name"] ?? "User",
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
 
               if (isOwner)
                 IconButton(
