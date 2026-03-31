@@ -36,6 +36,10 @@ class _AddPackagePageState extends State<AddPackagePage> {
     "assets/pashupati.jpg",
     "assets/nagarkotSunrisePoint.jpg",
     "assets/annapurna.jpg",
+    "assets/shey.jpg",
+    "assets/pokhara.jpg",
+    "assets/gumba.jpg",
+    "assets/dhaulagiri.jpg",
   ];
 
   late String selectedImage;

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fyp_project/booking_success_page.dart';
 import '../services/booking_service.dart';
 
 class BookingHistoryPage extends StatefulWidget {
@@ -23,9 +25,19 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
     setState(() => isLoading = true);
 
     try {
-      // NOTE: Passing '1' as a placeholder userId.
-      // Replace this with your dynamic userId from SharedPreferences/Auth later.
-      final fetched = await BookingService.fetchUserBookings(1);
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt("user_id");
+      print("USER ID FROM APP: $userId");
+
+      if (userId == null) {
+        setState(() {
+          bookings = [];
+          isLoading = false;
+        });
+        return;
+      }
+
+      final fetched = await BookingService.fetchUserBookings(userId);
 
       setState(() {
         bookings = List<Map<String, dynamic>>.from(fetched);
@@ -41,7 +53,6 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
   }
 
   Future<void> cancelBooking(dynamic bookingId) async {
-    // 1. Show Confirmation Dialog
     bool? confirm = await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -62,12 +73,10 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
 
     if (confirm != true) return;
 
-    // 2. Execute Cancellation
     try {
       int id = int.tryParse(bookingId.toString()) ?? 0;
       if (id == 0) throw Exception("Invalid Booking ID");
 
-      // Calling the DELETE method in your BookingService
       bool success = await BookingService.cancelBooking(id);
 
       if (mounted) {
@@ -79,16 +88,16 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
                   : "Failed to cancel booking",
             ),
             backgroundColor: success ? Colors.green : Colors.red,
-            behavior: SnackBarBehavior.floating,
           ),
         );
-        if (success) fetchBookings(); // Refresh the list automatically
+
+        if (success) fetchBookings();
       }
     } catch (e) {
       debugPrint("Cancel error: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("An error occurred while cancelling")),
+          const SnackBar(content: Text("Error cancelling booking")),
         );
       }
     }
@@ -100,7 +109,7 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text(
-          "My Trips",
+          "My Bookings",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -114,23 +123,11 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
 
   Widget _buildBody() {
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Colors.teal));
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (bookings.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.luggage_outlined, size: 80, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            const Text(
-              "No bookings yet",
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-          ],
-        ),
-      );
+      return const Center(child: Text("No bookings yet"));
     }
 
     return RefreshIndicator(
@@ -141,74 +138,107 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
         itemBuilder: (context, index) {
           final b = bookings[index];
 
-          // Use the key aliases from your SQL JOIN (tour_title)
-          String name = b["tour_title"] ?? b["packageName"] ?? "Unknown Tour";
+          String name = b["title"] ?? "Unknown Tour";
           String date = b["travel_date"]?.toString().split('T')[0] ?? "N/A";
-          String transport =
-              b["transport_mode"] ?? b["transport_type"] ?? "Standard";
-          int travelers = b["number_of_people"] ?? b["persons"] ?? 1;
+          String transport = b["transport_mode"] ?? "Standard";
+          int travelers = b["number_of_people"] ?? 1;
 
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          name,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+          return GestureDetector(
+            onTap: () {
+              if (b["payment_status"] == "Paid") {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        BookingSuccessPage(bookingId: b["id"].toString()),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("No receipt available yet")),
+                );
+              }
+            },
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    /// TITLE + STATUS
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            name,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            _statusChip(b["booking_status"] ?? "Pending"),
+                            const SizedBox(height: 4),
+                            Text(
+                              b["payment_status"] ?? "",
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    const Divider(height: 24),
+
+                    _infoRow(Icons.calendar_today, "Date", date),
+                    const SizedBox(height: 8),
+                    _infoRow(Icons.directions_bus, "Transport", transport),
+                    const SizedBox(height: 8),
+                    _infoRow(Icons.people, "Travelers", "$travelers"),
+
+                    const SizedBox(height: 16),
+
+                    /// CANCEL BUTTON
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: () => cancelBooking(b["id"]),
+                        icon: const Icon(
+                          Icons.cancel_outlined,
+                          color: Colors.redAccent,
+                          size: 18,
+                        ),
+                        label: const Text(
+                          "Cancel Trip",
+                          style: TextStyle(
+                            color: Colors.redAccent,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                      _statusChip(b["booking_status"] ?? "Pending"),
-                    ],
-                  ),
-                  const Divider(height: 24),
-                  _infoRow(Icons.calendar_today, "Date", date),
-                  const SizedBox(height: 8),
-                  _infoRow(Icons.directions_bus, "Transport", transport),
-                  const SizedBox(height: 8),
-                  _infoRow(Icons.people, "Travelers", "$travelers"),
-                  const SizedBox(height: 16),
-
-                  // Aligning the cancel action to the bottom right
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      onPressed: () => cancelBooking(b["id"]),
-                      icon: const Icon(
-                        Icons.cancel_outlined,
-                        color: Colors.redAccent,
-                        size: 18,
-                      ),
-                      label: const Text(
-                        "Cancel Trip",
-                        style: TextStyle(
-                          color: Colors.redAccent,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
@@ -230,6 +260,7 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
 
   Widget _statusChip(String status) {
     final bool isPending = status.toLowerCase() == 'pending';
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(

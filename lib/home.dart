@@ -43,9 +43,15 @@ class _HomePageState extends State<HomePage> {
 
     _linkSub = _appLinks.uriLinkStream.listen((uri) {
       if (uri.scheme == 'fypapp' && uri.host == 'booking-success') {
+        final bookingId = uri.queryParameters['booking_id'];
+
+        print("Deep Link Booking ID: $bookingId"); // DEBUG
+
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const BookingSuccessPage()),
+          MaterialPageRoute(
+            builder: (_) => BookingSuccessPage(bookingId: bookingId ?? "0"),
+          ),
         );
       }
     });
@@ -153,7 +159,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> fetchTours() async {
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/tours"),
+        Uri.parse("http://172.20.10.2:3000/api/tours"),
       );
 
       if (response.statusCode == 200) {
@@ -173,7 +179,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> fetchReligiousTours() async {
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/tours/category/religious"),
+        Uri.parse("http://172.20.10.2:3000/api/tours/category/religious"),
       );
 
       if (response.statusCode == 200) {
@@ -204,7 +210,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final response = await http.get(
         Uri.parse(
-          "http://192.168.18.11:3000/api/search/tours?q=${Uri.encodeComponent(query)}",
+          "http://172.20.10.2:3000/api/search/tours?q=${Uri.encodeComponent(query)}",
         ),
       );
 
@@ -240,211 +246,229 @@ class _HomePageState extends State<HomePage> {
     var recommended = tours.take(5).toList();
     var explore = tours.skip(5).toList();
 
-    return Stack(
+    return Column(
       children: [
-        /// MAIN SCROLL CONTENT (UNCHANGED)
-        SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              /// SEARCH BAR
-              SizedBox(
-                width: double.infinity,
-                child: TextField(
-                  onChanged: searchTours,
-                  decoration: InputDecoration(
-                    hintText: "Places to go, things to do",
-                    prefixIcon: const Icon(Icons.search),
-                    filled: true,
-                    fillColor: Theme.of(context).cardColor,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
+        /// 🔥 FIXED SEARCH BAR
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: TextField(
+            onChanged: searchTours,
+            decoration: InputDecoration(
+              hintText: "Places to go, things to do",
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: Theme.of(context).cardColor,
+              contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
               ),
-              const SizedBox(height: 16),
+            ),
+          ),
+        ),
 
-              /// FIND BY INTEREST
-              sectionTitle("Find things to do by interest"),
-              const SizedBox(height: 4),
-              const Text(
-                "Whatever you're into we have got you",
-                style: TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 140,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: const [
-                    InterestCard(
-                      title: "Outdoors",
-                      image: "assets/outdoor.jpg",
+        /// 🔥 SCROLLABLE CONTENT
+        Expanded(
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    /// FIND BY INTEREST
+                    sectionTitle("Find things to do by interest"),
+                    const SizedBox(height: 4),
+                    const Text(
+                      "Whatever you're into we have got you",
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
-                    InterestCard(title: "Food", image: "assets/food.jpg"),
-                    InterestCard(title: "Culture", image: "assets/culture.jpg"),
-                    InterestCard(title: "Water", image: "assets/water.jpg"),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      height: 140,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: const [
+                          InterestCard(
+                            title: "Outdoors",
+                            image: "assets/outdoor.jpg",
+                          ),
+                          InterestCard(title: "Food", image: "assets/food.jpg"),
+                          InterestCard(
+                            title: "Culture",
+                            image: "assets/culture.jpg",
+                          ),
+                          InterestCard(
+                            title: "Water",
+                            image: "assets/water.jpg",
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    /// WE MIGHT LIKE THESE
+                    sectionTitle("We might like these"),
+                    const SizedBox(height: 4),
+                    const Text(
+                      "More things to do in Nepal",
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 10),
+
+                    if (isSearching && tours.isEmpty)
+                      Container(
+                        height: 180,
+                        alignment: Alignment.center,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(
+                              Icons.search_off,
+                              size: 60,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(height: 10),
+                            Text(
+                              "No tours found",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              "Try another destination",
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      SizedBox(
+                        height: 290,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: recommended.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: 10),
+                          itemBuilder: (context, index) {
+                            final tour = recommended[index];
+
+                            return TourCard(
+                              title: tour["title"],
+                              image: tour["image"],
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        TourDetailPage(tourId: tour["id"]),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+
+                    const SizedBox(height: 12),
+
+                    /// EXPLORE MORE
+                    sectionTitle("Explore more of Nepal"),
+                    const SizedBox(height: 4),
+                    const Text(
+                      "Experience the trekking and Camps",
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 330,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: explore.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 16),
+                        itemBuilder: (context, index) {
+                          final tour = explore[index];
+
+                          return ExploreCard(
+                            title: tour["title"] ?? "",
+                            image: tour["image"] ?? "",
+                            price: tour["price"].toString(),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      TourDetailPage(tourId: tour["id"]),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    /// RELIGIOUS TEMPLES
+                    sectionTitle("Religious Temples"),
+                    const SizedBox(height: 4),
+                    const Text(
+                      "Explore the religious places of Nepal",
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 12),
+                    ListView.builder(
+                      itemCount: religiousTours.length,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemBuilder: (context, index) {
+                        final temple = religiousTours[index];
+
+                        return ReligiousTempleCard(
+                          title: temple["title"] ?? "",
+                          image: temple["image"] ?? "",
+                          price: temple["price"].toString(),
+                          reviews: "0",
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    TourDetailPage(tourId: temple["id"]),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 20),
-
-              /// WE MIGHT LIKE THESE
-              sectionTitle("We might like these"),
-              const SizedBox(height: 4),
-              const Text(
-                "More things to do in Nepal",
-                style: TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-              const SizedBox(height: 10),
-
-              if (isSearching && tours.isEmpty)
-                Container(
-                  height: 180,
-                  alignment: Alignment.center,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.search_off, size: 60, color: Colors.grey),
-                      SizedBox(height: 10),
-                      Text(
-                        "No tours found",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        "Try another destination",
-                        style: TextStyle(color: Colors.grey),
-                      ),
+              /// 🔥 POPUP CHAT HINT (UNCHANGED)
+              Positioned(
+                bottom: 100,
+                right: 20,
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black12, blurRadius: 5),
                     ],
                   ),
-                )
-              else
-                SizedBox(
-                  height: 255,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: recommended.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 16),
-                    itemBuilder: (context, index) {
-                      final tour = recommended[index];
-
-                      return TourCard(
-                        title: tour["title"],
-                        image: tour["image"],
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  TourDetailPage(tourId: tour["id"]),
-                            ),
-                          );
-                        },
-                      );
-                    },
+                  child: const Text(
+                    "Need help planning your trip?",
+                    style: TextStyle(fontSize: 12),
                   ),
                 ),
-
-              const SizedBox(height: 20),
-
-              /// EXPLORE MORE
-              sectionTitle("Explore more of Nepal"),
-              const SizedBox(height: 4),
-              const Text(
-                "Experience the trekking and Camps",
-                style: TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 330,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: explore.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 16),
-                  itemBuilder: (context, index) {
-                    final tour = explore[index];
-
-                    return ExploreCard(
-                      title: tour["title"]!,
-                      image: tour["image"]!,
-                      price: tour["price"]!,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => TourDetailPage(tourId: tour["id"]),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              /// RELIGIOUS TEMPLES
-              sectionTitle("Religious Temples"),
-              const SizedBox(height: 4),
-              const Text(
-                "Explore the religious places of Nepal",
-                style: TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-              const SizedBox(height: 12),
-              ListView.builder(
-                itemCount: religiousTours.length,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemBuilder: (context, index) {
-                  final temple = religiousTours[index];
-
-                  return ReligiousTempleCard(
-                    title: temple["title"] ?? "",
-                    image: temple["image"] ?? "",
-                    price: temple["price"].toString(),
-                    reviews: "0",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => TourDetailPage(tourId: temple["id"]),
-                        ),
-                      );
-                    },
-                  );
-                },
               ),
             ],
-          ),
-        ),
-
-        /// 🔥 POPUP CHAT HINT
-        Positioned(
-          bottom: 100,
-          right: 20,
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: const [
-                BoxShadow(color: Colors.black12, blurRadius: 5),
-              ],
-            ),
-            child: const Text(
-              "Need help planning your trip?",
-              style: TextStyle(fontSize: 12),
-            ),
           ),
         ),
       ],
@@ -530,7 +554,7 @@ class TourCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
-        width: 200,
+        width: 240,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -540,7 +564,7 @@ class TourCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   child: Image.asset(
                     image,
-                    height: 150,
+                    height: 180,
                     width: double.infinity,
                     fit: BoxFit.cover,
                   ),
@@ -564,7 +588,7 @@ class TourCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Text(
               title,
               maxLines: 2,
@@ -632,7 +656,7 @@ class ExploreCard extends StatelessWidget {
                 fit: BoxFit.cover,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             Text(
               title,
               maxLines: 2,

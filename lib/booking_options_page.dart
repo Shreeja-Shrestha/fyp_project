@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 //import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../services/hotel_service.dart';
@@ -201,6 +202,15 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   }
 
   Future<void> _handleBookingSave() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt("user_id");
+    print("SENDING USER ID: $userId");
+
+    if (userId == null) {
+      _showError("User not logged in");
+      setState(() => isProcessing = false);
+      return;
+    }
     setState(() => isProcessing = true);
 
     try {
@@ -208,7 +218,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         Uri.parse('http://172.20.10.2:3000/api/bookings/create'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "user_id": widget.userId,
+          "user_id": userId,
           "tour_id": widget.tourId,
           "travel_date": selectedDate!.toIso8601String().split("T")[0],
           "number_of_people": int.tryParse(personsController.text) ?? 1,

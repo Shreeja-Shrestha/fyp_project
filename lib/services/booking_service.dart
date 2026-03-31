@@ -48,7 +48,7 @@ class BookingService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        return data["bookings"] ?? [];
+        return data;
       }
 
       return [];
