@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class BookingService {
-  static const String baseUrl = "http://172.20.10.2:3000/api/bookings";
+  static const String baseUrl = "http://192.168.18.11:3000/api/bookings";
 
   // CREATE BOOKING
   static Future<int?> createBooking({

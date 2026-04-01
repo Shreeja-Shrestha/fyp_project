@@ -35,7 +35,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
   Future<List> fetchTours({String? category}) async {
     try {
-      String url = "http://172.20.10.2:3000/api/tours";
+      String url = "http://192.168.18.11:3000/api/tours";
       if (category != null) url += "/category/$category";
 
       final response = await http.get(Uri.parse(url));

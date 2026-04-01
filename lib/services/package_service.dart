@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class PackageService {
   // Backend API URL
-  static const String baseUrl = "http://172.20.10.2:3000/api/tours";
+  static const String baseUrl = "http://192.168.18.11:3000/api/tours";
 
   /// GET ALL PACKAGES
   static Future<List<dynamic>> getPackages() async {

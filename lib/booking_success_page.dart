@@ -44,11 +44,11 @@ class _BookingSuccessPageState extends State<BookingSuccessPage> {
     );
   }
 
-  /// 🔥 FETCH RECEIPT
+  ///  FETCH RECEIPT
   Future<void> fetchReceipt() async {
     try {
       final response = await http.get(
-        Uri.parse("http://172.20.10.2:3000/api/receipt/${widget.bookingId}"),
+        Uri.parse("http://192.168.18.11:3000/api/receipt/${widget.bookingId}"),
       );
 
       if (response.statusCode == 200) {

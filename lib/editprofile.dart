@@ -31,11 +31,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
     loadProfile();
   }
 
-  /// 🔥 LOAD USER DATA
+  /// LOAD USER DATA
   Future<void> loadProfile() async {
     try {
       final response = await http.get(
-        Uri.parse("http://172.20.10.2:3000/api/users/profile/${widget.userId}"),
+        Uri.parse(
+          "http://192.168.18.11:3000/api/users/profile/${widget.userId}",
+        ),
       );
 
       final data = jsonDecode(response.body);
@@ -86,7 +88,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     try {
       final response = await http.put(
-        Uri.parse("http://172.20.10.2:3000/api/users/update"),
+        Uri.parse("http://192.168.18.11:3000/api/users/update"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "id": widget.userId,
