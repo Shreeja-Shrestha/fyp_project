@@ -248,7 +248,7 @@ class _HomePageState extends State<HomePage> {
 
     return Column(
       children: [
-        /// 🔥 FIXED SEARCH BAR
+        ///  FIXED SEARCH BAR
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: TextField(
@@ -267,7 +267,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
 
-        /// 🔥 SCROLLABLE CONTENT
+        /// SCROLLABLE CONTENT
         Expanded(
           child: Stack(
             children: [
@@ -449,7 +449,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              /// 🔥 POPUP CHAT HINT (UNCHANGED)
+              /// POPUP CHAT HINT (UNCHANGED)
               Positioned(
                 bottom: 100,
                 right: 20,
@@ -709,7 +709,7 @@ class ReligiousTempleCard extends StatelessWidget {
     required this.image,
     required this.price,
     required this.reviews,
-    this.onTap, // ✅ ADD THIS
+    this.onTap, //ADD THIS
   });
 
   @override
