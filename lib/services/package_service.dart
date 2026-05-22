@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class PackageService {
-  // Backend API URL
   static const String baseUrl = "http://192.168.18.11:3000/api/tours";
 
   /// GET ALL PACKAGES
@@ -14,6 +13,24 @@ class PackageService {
     } else {
       throw Exception("Failed to load packages");
     }
+  }
+
+  /// GET PACKAGES BY CATEGORY AND SUBCATEGORY
+  static Future<List<dynamic>> getPackagesByCategoryAndSubcategory(
+    String category,
+    String subcategory,
+  ) async {
+    final allPackages = await getPackages();
+
+    return allPackages.where((package) {
+      final packageCategory =
+          package["category"]?.toString().toLowerCase().trim() ?? "";
+      final packageSubcategory =
+          package["subcategory"]?.toString().toLowerCase().trim() ?? "";
+
+      return packageCategory == category.toLowerCase().trim() &&
+          packageSubcategory == subcategory.toLowerCase().trim();
+    }).toList();
   }
 
   /// ADD PACKAGE
@@ -41,6 +58,7 @@ class PackageService {
     return response.statusCode == 200;
   }
 
+  /// DELETE PACKAGE
   static Future<bool> deletePackage(int id) async {
     final response = await http.delete(Uri.parse("$baseUrl/$id"));
 

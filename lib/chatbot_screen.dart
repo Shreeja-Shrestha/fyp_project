@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fyp_project/tour_detail_page.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'services/chat_service.dart';
 
 class ChatbotScreen extends StatefulWidget {
   const ChatbotScreen({super.key});
@@ -12,11 +11,14 @@ class ChatbotScreen extends StatefulWidget {
 
 class _ChatbotScreenState extends State<ChatbotScreen> {
   final TextEditingController _controller = TextEditingController();
-  final ScrollController _scrollController =
-      ScrollController(); // Added for auto-scroll
+  final ScrollController _scrollController = ScrollController();
 
   List<Map<String, dynamic>> messages = [
-    {"sender": "bot", "text": "Hi 👋 What are you looking for today?"},
+    {
+      "sender": "bot",
+      "text":
+          "Hi! I can help you find Nepal tours.\nTry: trekking, religious, adventure, or places like Pokhara or Lumbini.",
+    },
   ];
 
   bool isTyping = false;
@@ -33,25 +35,42 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     });
   }
 
-  Future<List> fetchTours({String? category}) async {
-    try {
-      String url = "http://192.168.18.11:3000/api/tours";
-      if (category != null) url += "/category/$category";
+  // 🔥 SUGGESTION CHIPS
+  Widget _buildSuggestions() {
+    final suggestions = [
+      "trekking",
+      "religious",
+      "adventure",
+      "cheap tours",
+      "pokhara",
+      "lumbini",
+    ];
 
-      final response = await http.get(Uri.parse(url));
-      return response.statusCode == 200 ? jsonDecode(response.body) : [];
-    } catch (e) {
-      return [];
-    }
+    return Container(
+      height: 50,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: suggestions.length,
+        itemBuilder: (context, index) {
+          final text = suggestions[index];
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: ActionChip(
+              label: Text(text),
+              onPressed: () {
+                _controller.text = text;
+                sendMessage();
+              },
+            ),
+          );
+        },
+      ),
+    );
   }
 
-  String? detectCategory(String text) {
-    if (text.contains("trek") || text.contains("mountain")) return "adventure";
-    if (text.contains("temple") || text.contains("religious"))
-      return "religious";
-    return null;
-  }
-
+  // 🔥 SEND MESSAGE
   void sendMessage() async {
     String text = _controller.text.trim();
     if (text.isEmpty) return;
@@ -64,37 +83,17 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     _controller.clear();
     _scrollToBottom();
 
-    await Future.delayed(const Duration(milliseconds: 1000));
-    String? category = detectCategory(text.toLowerCase());
+    final data = await ChatService.sendMessage(text);
 
-    if (category == null) {
-      setState(() {
-        messages.add({
-          "sender": "bot",
-          "text":
-              "I'm not sure I understand. Try asking about trekking or temples! 😊",
-        });
-        isTyping = false;
+    setState(() {
+      isTyping = false;
+      messages.add({
+        "sender": "bot",
+        "text": data["reply"] ?? "Something went wrong",
+        "tours": data["tours"] ?? [],
       });
-    } else {
-      List tours = await fetchTours(category: category);
-      setState(() {
-        isTyping = false;
-        if (tours.isEmpty) {
-          messages.add({
-            "sender": "bot",
-            "text": "Sorry, I couldn't find any tours in that category.",
-          });
-        } else {
-          messages.add({
-            "sender": "bot",
-            "text":
-                "Great choice! Here are some $category tours I found for you:",
-            "tours": tours,
-          });
-        }
-      });
-    }
+    });
+
     _scrollToBottom();
   }
 
@@ -106,7 +105,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           ? CrossAxisAlignment.end
           : CrossAxisAlignment.start,
       children: [
-        // Text Bubble
         Align(
           alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
           child: Container(
@@ -133,16 +131,15 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               style: TextStyle(
                 color: isUser ? Colors.white : Colors.black87,
                 fontSize: 15,
-                height: 1.3,
               ),
             ),
           ),
         ),
 
-        // Horizontal Tour Cards
-        if (message["tours"] != null)
+        // 🔥 TOUR CARDS
+        if (message["tours"] != null && (message["tours"] as List).isNotEmpty)
           Container(
-            height: 280,
+            height: 300,
             margin: const EdgeInsets.symmetric(vertical: 8),
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -154,18 +151,27 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               },
             ),
           ),
+
+        // 🔥 EMPTY RESULT MESSAGE
+        if (message["tours"] != null && (message["tours"] as List).isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(12),
+            child: Text("Try another keyword like trekking or Pokhara."),
+          ),
       ],
     );
   }
 
   Widget _buildTourCard(Map<String, dynamic> tour) {
+    final imagePath = tour["image"];
+
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => TourDetailPage(tourId: tour["id"])),
       ),
       child: Container(
-        width: 200,
+        width: 220,
         margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
@@ -185,12 +191,20 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(20),
               ),
-              child: Image.asset(
-                tour["image"],
-                height: 120,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
+              child: (imagePath != null && imagePath.toString().isNotEmpty)
+                  ? Image.asset(
+                      imagePath,
+                      height: 120,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    )
+                  : Container(
+                      height: 120,
+                      width: double.infinity,
+                      color: Colors.grey[300],
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.image, size: 40),
+                    ),
             ),
             Padding(
               padding: const EdgeInsets.all(12),
@@ -198,7 +212,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    tour["title"],
+                    tour["title"] ?? "",
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -206,28 +220,30 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                       fontSize: 14,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
+
                   Text(
-                    "Rs ${tour["price"]}",
+                    tour["destination"] ?? "",
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  Text(
+                    tour["duration"] ?? "",
+                    style: const TextStyle(fontSize: 12),
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  Text(
+                    "NPR ${tour["price"] ?? ""}",
                     style: const TextStyle(
                       color: Color(0xFF00B4D8),
                       fontWeight: FontWeight.w700,
-                      fontSize: 14,
                     ),
                   ),
                 ],
-              ),
-            ),
-            const Spacer(),
-            const Padding(
-              padding: EdgeInsets.only(left: 12, bottom: 12),
-              child: Text(
-                "View Details →",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
               ),
             ),
           ],
@@ -236,25 +252,38 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     );
   }
 
+  Widget _buildTypingIndicator() {
+    return const Padding(padding: EdgeInsets.all(12), child: Text("Typing..."));
+  }
+
+  Widget _buildInputBar() {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _controller,
+            decoration: const InputDecoration(
+              hintText: "Ask about tours, places, price...",
+            ),
+            onSubmitted: (_) => sendMessage(),
+          ),
+        ),
+        IconButton(icon: const Icon(Icons.send), onPressed: sendMessage),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F7F9),
-      appBar: AppBar(
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          "Travel AI",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        backgroundColor: const Color(0xFF00B4D8),
-      ),
+      appBar: AppBar(title: const Text("Travel Assistant")),
       body: Column(
         children: [
+          _buildSuggestions(),
+
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.symmetric(vertical: 20),
               itemCount: messages.length + (isTyping ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index == messages.length && isTyping) {
@@ -264,81 +293,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               },
             ),
           ),
+
           _buildInputBar(),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTypingIndicator() {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: const Text(
-          "Typing...",
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 12,
-            fontStyle: FontStyle.italic,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInputBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                decoration: InputDecoration(
-                  hintText: "Where to next?",
-                  hintStyle: TextStyle(color: Colors.grey[400]),
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                ),
-                onSubmitted: (_) => sendMessage(),
-              ),
-            ),
-            const SizedBox(width: 12),
-            GestureDetector(
-              onTap: sendMessage,
-              child: const CircleAvatar(
-                radius: 24,
-                backgroundColor: Color(0xFF00B4D8),
-                child: Icon(Icons.send_rounded, color: Colors.white, size: 20),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

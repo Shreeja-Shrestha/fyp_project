@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:fyp_project/services/package_service.dart';
 
 class AddPackagePage extends StatefulWidget {
-  final Map<String, dynamic>? package; // optional for editing
+  final Map<String, dynamic>? package;
 
-  //Remove 'const' here, allow package parameter
-  AddPackagePage({super.key, this.package});
+  const AddPackagePage({super.key, this.package});
 
   @override
   State<AddPackagePage> createState() => _AddPackagePageState();
@@ -20,10 +19,12 @@ class _AddPackagePageState extends State<AddPackagePage> {
   late TextEditingController durationController;
   late TextEditingController descriptionController;
 
-  String selectedCategory = "adventure";
+  String selectedCategory = "food";
+  String selectedSubcategory = "barista";
   String selectedDifficulty = "Beginner";
 
   final List<String> localImages = const [
+    // General / Culture / Tour images
     "assets/bouddha.jpg",
     "assets/everest.jpg",
     "assets/janakpur.jpg",
@@ -40,6 +41,21 @@ class _AddPackagePageState extends State<AddPackagePage> {
     "assets/pokhara.jpg",
     "assets/gumba.jpg",
     "assets/dhaulagiri.jpg",
+
+    // Outdoor images
+    "assets/rafting1.png",
+    "assets/rafting2.jpg",
+    "assets/junglesafri.jpg",
+    "assets/camping.jpg",
+    "assets/trek1.jpg",
+    "assets/outdoor.jpg",
+
+    // Food images
+    "assets/food.jpg",
+    "assets/cooking1.jpg",
+    "assets/cooking2.jpg",
+    "assets/cooking3.jpg",
+    "assets/barista1.jpg",
   ];
 
   late String selectedImage;
@@ -51,20 +67,113 @@ class _AddPackagePageState extends State<AddPackagePage> {
     titleController = TextEditingController(
       text: widget.package?['title'] ?? '',
     );
+
     destinationController = TextEditingController(
       text: widget.package?['destination'] ?? '',
     );
+
     priceController = TextEditingController(
       text: widget.package?['price']?.toString() ?? '',
     );
+
     durationController = TextEditingController(
       text: widget.package?['duration'] ?? '',
     );
+
     descriptionController = TextEditingController(
       text: widget.package?['description'] ?? '',
     );
-    selectedCategory = widget.package?['category'] ?? "adventure";
+
+    selectedCategory = widget.package?['category'] ?? "food";
+
+    selectedSubcategory =
+        widget.package?['subcategory'] ?? _defaultSubcategory(selectedCategory);
+
+    selectedDifficulty = widget.package?['difficulty'] ?? "Beginner";
+
     selectedImage = widget.package?['image'] ?? "assets/kanchan.jpg";
+
+    if (!localImages.contains(selectedImage)) {
+      selectedImage = "assets/kanchan.jpg";
+    }
+  }
+
+  String _defaultSubcategory(String category) {
+    if (category == "food") {
+      return "barista";
+    }
+
+    if (category == "outdoor") {
+      return "trekking";
+    }
+
+    if (category == "water") {
+      return "rafting";
+    }
+
+    return "";
+  }
+
+  bool _hasSubcategory(String category) {
+    return category == "food" || category == "outdoor" || category == "water";
+  }
+
+  void _onCategoryChanged(String value) {
+    setState(() {
+      selectedCategory = value;
+
+      if (value == "food") {
+        selectedSubcategory = "barista";
+      } else if (value == "outdoor") {
+        selectedSubcategory = "trekking";
+      } else if (value == "water") {
+        selectedSubcategory = "rafting";
+      } else {
+        selectedSubcategory = "";
+      }
+    });
+  }
+
+  List<DropdownMenuItem<String>> _subcategoryItems() {
+    if (selectedCategory == "food") {
+      return const [
+        DropdownMenuItem(value: "barista", child: Text("Barista")),
+        DropdownMenuItem(value: "cooking_class", child: Text("Cooking Class")),
+      ];
+    }
+
+    if (selectedCategory == "outdoor") {
+      return const [
+        DropdownMenuItem(value: "trekking", child: Text("Trekking")),
+        DropdownMenuItem(value: "camping", child: Text("Camping")),
+        DropdownMenuItem(value: "safari", child: Text("Safari")),
+      ];
+    }
+
+    if (selectedCategory == "water") {
+      return const [
+        DropdownMenuItem(value: "rafting", child: Text("Rafting")),
+        DropdownMenuItem(value: "boating", child: Text("Boating")),
+      ];
+    }
+
+    return const [];
+  }
+
+  String _subcategoryLabel() {
+    if (selectedCategory == "food") {
+      return "Food Subcategory";
+    }
+
+    if (selectedCategory == "outdoor") {
+      return "Outdoor Subcategory";
+    }
+
+    if (selectedCategory == "water") {
+      return "Water Subcategory";
+    }
+
+    return "Subcategory";
   }
 
   @override
@@ -79,16 +188,19 @@ class _AddPackagePageState extends State<AddPackagePage> {
 
   Future<void> savePackage() async {
     if (_formKey.currentState!.validate()) {
-      Map<String, dynamic> packageData = {
-        "title": titleController.text,
-        "destination": destinationController.text,
-        "price": priceController.text,
-        "duration": durationController.text,
+      final Map<String, dynamic> packageData = {
+        "title": titleController.text.trim(),
+        "destination": destinationController.text.trim(),
+        "price": priceController.text.trim(),
+        "duration": durationController.text.trim(),
         "category": selectedCategory,
-        "description": descriptionController.text,
+        "subcategory": _hasSubcategory(selectedCategory)
+            ? selectedSubcategory
+            : null,
+        "description": descriptionController.text.trim(),
         "image": selectedImage,
         "difficulty": selectedDifficulty,
-        "created_by": 1, // admin id placeholder
+        "created_by": 1,
       };
 
       bool success = false;
@@ -101,6 +213,8 @@ class _AddPackagePageState extends State<AddPackagePage> {
           packageData,
         );
       }
+
+      if (!mounted) return;
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -136,7 +250,7 @@ class _AddPackagePageState extends State<AddPackagePage> {
           key: _formKey,
           child: Column(
             children: [
-              // Image preview + dropdown
+              // IMAGE
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -151,7 +265,16 @@ class _AddPackagePageState extends State<AddPackagePage> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.asset(selectedImage, fit: BoxFit.cover),
+                      child: Image.asset(
+                        selectedImage,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey.shade300,
+                            child: const Icon(Icons.image_not_supported),
+                          );
+                        },
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -167,41 +290,53 @@ class _AddPackagePageState extends State<AddPackagePage> {
                         )
                         .toList(),
                     onChanged: (value) {
-                      setState(() {
-                        selectedImage = value!;
-                      });
+                      if (value != null) {
+                        setState(() {
+                          selectedImage = value;
+                        });
+                      }
                     },
                   ),
-
-                  const SizedBox(height: 12),
                 ],
               ),
+
               const SizedBox(height: 12),
-              // Title
+
+              // TITLE
               TextFormField(
                 controller: titleController,
                 decoration: const InputDecoration(
                   labelText: "Package Title",
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value == null || value.isEmpty
-                    ? "Please enter title"
-                    : null,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return "Enter title";
+                  }
+                  return null;
+                },
               ),
+
               const SizedBox(height: 12),
-              // Destination
+
+              // DESTINATION
               TextFormField(
                 controller: destinationController,
                 decoration: const InputDecoration(
                   labelText: "Destination",
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value == null || value.isEmpty
-                    ? "Please enter destination"
-                    : null,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return "Enter destination";
+                  }
+                  return null;
+                },
               ),
+
               const SizedBox(height: 12),
-              // Price
+
+              // PRICE
               TextFormField(
                 controller: priceController,
                 keyboardType: TextInputType.number,
@@ -209,26 +344,34 @@ class _AddPackagePageState extends State<AddPackagePage> {
                   labelText: "Price (Rs.)",
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value == null || value.isEmpty
-                    ? "Please enter price"
-                    : null,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return "Enter price";
+                  }
+                  return null;
+                },
               ),
+
               const SizedBox(height: 12),
-              // Duration
+
+              // DURATION
               TextFormField(
                 controller: durationController,
                 decoration: const InputDecoration(
-                  labelText: "Duration (e.g. 3 Days)",
+                  labelText: "Duration",
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value == null || value.isEmpty
-                    ? "Please enter duration"
-                    : null,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return "Enter duration";
+                  }
+                  return null;
+                },
               ),
+
               const SizedBox(height: 12),
-              // Category
-              // Category
-              // Category
+
+              // CATEGORY
               DropdownButtonFormField<String>(
                 value: selectedCategory,
                 decoration: const InputDecoration(
@@ -236,29 +379,41 @@ class _AddPackagePageState extends State<AddPackagePage> {
                   border: OutlineInputBorder(),
                 ),
                 items: const [
-                  DropdownMenuItem(
-                    value: "religious",
-                    child: Text("Religious"),
-                  ),
-                  DropdownMenuItem(value: "trekking", child: Text("Trekking")),
-                  DropdownMenuItem(
-                    value: "adventure",
-                    child: Text("Adventure"),
-                  ),
-                  DropdownMenuItem(value: "family", child: Text("Family")),
-                  DropdownMenuItem(value: "budget", child: Text("Budget")),
-                  DropdownMenuItem(value: "luxury", child: Text("Luxury")),
+                  DropdownMenuItem(value: "food", child: Text("Food")),
+                  DropdownMenuItem(value: "outdoor", child: Text("Outdoor")),
+                  DropdownMenuItem(value: "culture", child: Text("Culture")),
+                  DropdownMenuItem(value: "water", child: Text("Water")),
                 ],
                 onChanged: (value) {
-                  setState(() {
-                    selectedCategory = value ?? "adventure";
-                  });
+                  if (value != null) {
+                    _onCategoryChanged(value);
+                  }
                 },
               ),
 
               const SizedBox(height: 12),
 
-              // 🔥 Difficulty (ADDED CORRECTLY)
+              // SUBCATEGORY FOR FOOD AND OUTDOOR ONLY
+              if (_hasSubcategory(selectedCategory)) ...[
+                DropdownButtonFormField<String>(
+                  value: selectedSubcategory,
+                  decoration: InputDecoration(
+                    labelText: _subcategoryLabel(),
+                    border: const OutlineInputBorder(),
+                  ),
+                  items: _subcategoryItems(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedSubcategory = value;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              // DIFFICULTY
               DropdownButtonFormField<String>(
                 value: selectedDifficulty,
                 decoration: const InputDecoration(
@@ -271,15 +426,17 @@ class _AddPackagePageState extends State<AddPackagePage> {
                   DropdownMenuItem(value: "Expert", child: Text("Expert")),
                 ],
                 onChanged: (value) {
-                  setState(() {
-                    selectedDifficulty = value ?? "Beginner";
-                  });
+                  if (value != null) {
+                    setState(() {
+                      selectedDifficulty = value;
+                    });
+                  }
                 },
               ),
 
               const SizedBox(height: 12),
 
-              // Description
+              // DESCRIPTION
               TextFormField(
                 controller: descriptionController,
                 maxLines: 4,
@@ -287,14 +444,17 @@ class _AddPackagePageState extends State<AddPackagePage> {
                   labelText: "Description",
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value == null || value.isEmpty
-                    ? "Please enter description"
-                    : null,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return "Enter description";
+                  }
+                  return null;
+                },
               ),
-              const SizedBox(height: 12),
 
-              // Description
               const SizedBox(height: 20),
+
+              // SAVE BUTTON
               SizedBox(
                 width: double.infinity,
                 height: 50,

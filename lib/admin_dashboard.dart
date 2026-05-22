@@ -1,19 +1,129 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:fyp_project/admin_notification_page.dart';
+import 'package:fyp_project/admin_users_page.dart';
+import 'package:fyp_project/booking_detail_page.dart';
+import 'package:http/http.dart' as http;
 import 'admin_profile_page.dart';
 
-class AdminDashboardPage extends StatelessWidget {
+class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
 
+  @override
+  State<AdminDashboardPage> createState() => _AdminDashboardPageState();
+}
+
+class _AdminDashboardPageState extends State<AdminDashboardPage> {
   // Theme Colors
   static const Color primaryBlue = Color(0xFFE3F2FD);
   static const Color accentBlue = Color(0xFF1E88E5);
   static const Color darkBlueText = Color(0xFF0D47A1);
 
+  int unreadCount = 0;
+  int totalUsers = 0;
+  List notifications = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchNotifications();
+    fetchTotalUsers();
+  }
+
+  Future<void> fetchTotalUsers() async {
+    try {
+      final res = await http.get(
+        Uri.parse("http://192.168.18.11:3000/api/users/total"),
+      );
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+
+        setState(() {
+          totalUsers = data["total"];
+        });
+      }
+    } catch (e) {
+      print("Error fetching users: $e");
+    }
+  }
+
+  // 🔥 FETCH FROM BACKEND
+  Future<void> fetchNotifications() async {
+    try {
+      final res = await http.get(
+        Uri.parse("http://192.168.18.11:3000/api/notifications/10"),
+      );
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+
+        setState(() {
+          notifications = data;
+          unreadCount = data.where((n) => n["is_read"] == 0).length;
+        });
+      }
+    } catch (e) {
+      print("Error fetching notifications: $e");
+    }
+  }
+
+  // 🔔 SHOW NOTIFICATION LIST
+  void showNotifications() {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) {
+        return ListView.builder(
+          itemCount: notifications.length,
+          itemBuilder: (context, index) {
+            final n = notifications[index];
+
+            return ListTile(
+              leading: const Icon(Icons.notifications),
+              title: Text(n["title"]),
+              subtitle: Text(n["message"]),
+
+              onTap: () {
+                // ✅ mark as read
+                if (n["is_read"] == 0) {
+                  markAsRead(n["id"]);
+                }
+
+                // 🔥 CLOSE BOTTOM SHEET
+                Navigator.pop(context);
+
+                // 🚀 NAVIGATE TO BOOKING
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        BookingDetailPage(bookingId: n["reference_id"]),
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> markAsRead(int id) async {
+    try {
+      await http.put(
+        Uri.parse("http://192.168.18.11:3000/api/notifications/read/$id"),
+      );
+
+      fetchNotifications(); // 🔄 refresh list
+    } catch (e) {
+      print("Error marking read: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: primaryBlue,
-      // 1. ADDED: Navigation Drawer (Required for Side Menu)
       drawer: _buildDrawer(context),
       appBar: AppBar(
         title: const Text(
@@ -25,12 +135,44 @@ class AdminDashboardPage extends StatelessWidget {
         centerTitle: false,
         iconTheme: const IconThemeData(color: Colors.black),
         actions: [
-          // 2. ADDED: Essential Action Icons
           IconButton(icon: const Icon(Icons.search), onPressed: () {}),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
+
+          // 🔥 UPDATED NOTIFICATION ICON (NO UI CHANGE)
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined),
+                onPressed: showNotifications,
+              ),
+
+              if (unreadCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Text(
+                      '$unreadCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
+
           const SizedBox(width: 10),
         ],
       ),
@@ -54,12 +196,10 @@ class AdminDashboardPage extends StatelessWidget {
               ),
               const SizedBox(height: 25),
 
-              // Main Action Card (Your previous code with redirect)
               _buildMainActionCard(context),
 
               const SizedBox(height: 30),
 
-              // 3. ADDED: Key Stats Section
               const Text(
                 'System Performance',
                 style: TextStyle(
@@ -71,25 +211,49 @@ class AdminDashboardPage extends StatelessWidget {
               const SizedBox(height: 15),
               Row(
                 children: [
-                  _buildSmallStatCard(
-                    "Users",
-                    "1,240",
-                    Icons.people,
-                    Colors.orange,
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminUsersPage(),
+                          ),
+                        );
+                      },
+                      child: _buildSmallStatCard(
+                        "Users",
+                        "$totalUsers",
+                        Icons.people,
+                        Colors.orange,
+                      ),
+                    ),
                   ),
+
                   const SizedBox(width: 15),
-                  _buildSmallStatCard(
-                    "Alerts",
-                    "5 New",
-                    Icons.notifications,
-                    Colors.redAccent,
+
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminNotificationPage(),
+                          ),
+                        );
+                      },
+                      child: _buildSmallStatCard(
+                        "Alerts",
+                        "$unreadCount New",
+                        Icons.notifications,
+                        Colors.redAccent,
+                      ),
+                    ),
                   ),
                 ],
               ),
-
               const SizedBox(height: 30),
 
-              // 4. ADDED: Recent Activity List (Required for Admin Oversight)
               const Text(
                 'Recent Activity',
                 style: TextStyle(
@@ -100,10 +264,10 @@ class AdminDashboardPage extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               _buildActivityItem(
-                "New User Registered",
-                "2 mins ago",
-                Icons.person_add,
-                Colors.blue,
+                "New Booking Confirmed",
+                "Just now",
+                Icons.check_circle,
+                Colors.green,
               ),
               _buildActivityItem(
                 "System Update Complete",
@@ -124,7 +288,7 @@ class AdminDashboardPage extends StatelessWidget {
     );
   }
 
-  // --- UI COMPONENTS ---
+  // --- KEEP YOUR EXISTING UI BELOW (UNCHANGED) ---
 
   Widget _buildMainActionCard(BuildContext context) {
     return Container(
@@ -133,17 +297,8 @@ class AdminDashboardPage extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF64B5F6), Color(0xFF1E88E5)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: accentBlue.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
       ),
       child: Column(
         children: [
@@ -152,28 +307,17 @@ class AdminDashboardPage extends StatelessWidget {
           const Text(
             "Manage your system settings and user profiles with ease.",
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white, fontSize: 14),
+            style: TextStyle(color: Colors.white),
           ),
           const SizedBox(height: 20),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: accentBlue,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-            ),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const AdminProfilePage()),
               );
             },
-            child: const Text(
-              "View Admin Profile",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            child: const Text("View Admin Profile"),
           ),
         ],
       ),
@@ -184,7 +328,7 @@ class AdminDashboardPage extends StatelessWidget {
     String title,
     String value,
     IconData icon,
-    Color iconColor,
+    Color color,
   ) {
     return Expanded(
       child: Container(
@@ -192,23 +336,13 @@ class AdminDashboardPage extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: iconColor),
+            Icon(icon, color: color),
             const SizedBox(height: 10),
-            Text(
-              value,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
             Text(title, style: const TextStyle(color: Colors.grey)),
           ],
         ),
@@ -222,38 +356,13 @@ class AdminDashboardPage extends StatelessWidget {
     IconData icon,
     Color color,
   ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(12),
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: color.withOpacity(0.2),
+        child: Icon(icon, color: color),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: color.withOpacity(0.1),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 15),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-              Text(
-                time,
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-            ],
-          ),
-        ],
-      ),
+      title: Text(title),
+      subtitle: Text(time),
     );
   }
 
@@ -280,24 +389,82 @@ class AdminDashboardPage extends StatelessWidget {
               ],
             ),
           ),
+
+          // Dashboard
           ListTile(
             leading: const Icon(Icons.dashboard),
             title: const Text('Dashboard'),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+            },
           ),
+
+          // Profile
           ListTile(
             leading: const Icon(Icons.account_circle),
             title: const Text('Profile'),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AdminProfilePage()),
-            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminProfilePage()),
+              );
+            },
           ),
+
           const Divider(),
+
+          // 🔴 LOGOUT WITH POPUP
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text('Logout', style: TextStyle(color: Colors.red)),
-            onTap: () {},
+            onTap: () {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) {
+                  return AlertDialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    title: const Text(
+                      "Confirm Logout",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    content: const Text("Are you sure you want to logout?"),
+                    actions: [
+                      // ❌ NO
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text("No"),
+                      ),
+
+                      // ✅ YES (RED)
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () async {
+                          // 🔴 OPTIONAL: clear saved login
+                          // final prefs = await SharedPreferences.getInstance();
+                          // await prefs.clear();
+
+                          // 🔁 REDIRECT TO LOGIN PAGE
+                          Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            '/login',
+                            (route) => false,
+                          );
+                        },
+                        child: const Text("Yes"),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
           ),
         ],
       ),

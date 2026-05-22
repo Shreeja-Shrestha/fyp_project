@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
-import 'trekking_page.dart'; // Ensure this file exists in your project
+import 'outdoor_detail_page.dart';
 
 class OutdoorsPage extends StatelessWidget {
-  const OutdoorsPage({super.key});
+  final String category;
+  final String subCategory;
+
+  const OutdoorsPage({
+    super.key,
+    required this.category,
+    required this.subCategory,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // A very light grey/blue tint background keeps it looking clean
       backgroundColor: const Color(0xFFF8F9FA),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          /// 1. MINIMALIST APP BAR
           SliverAppBar(
-            pinned: true, // keeps the bar fixed while scrolling
+            pinned: true,
             backgroundColor: const Color(0xFFF8F9FA),
             elevation: 0,
-
             leading: IconButton(
               icon: const Icon(
                 Icons.arrow_back_ios_new_rounded,
@@ -27,7 +31,6 @@ class OutdoorsPage extends StatelessWidget {
                 Navigator.pop(context);
               },
             ),
-
             title: const Text(
               "Outdoor Adventures",
               style: TextStyle(
@@ -38,7 +41,6 @@ class OutdoorsPage extends StatelessWidget {
             ),
           ),
 
-          /// 2. HEADER & SEARCH SECTION
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             sliver: SliverList(
@@ -62,19 +64,13 @@ class OutdoorsPage extends StatelessWidget {
                     fontWeight: FontWeight.w400,
                   ),
                 ),
-                const SizedBox(height: 24),
 
-                /// THE SEARCH BAR
-                _buildSearchBar(),
+                const SizedBox(height: 28),
 
-                const SizedBox(height: 32),
-
-                /// HERO FEATURE
                 _buildModernHero(),
 
                 const SizedBox(height: 32),
 
-                /// CATEGORY HEADER
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -101,7 +97,6 @@ class OutdoorsPage extends StatelessWidget {
             ),
           ),
 
-          /// 3. THE ACTIVITY GRID
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             sliver: SliverGrid(
@@ -109,7 +104,7 @@ class OutdoorsPage extends StatelessWidget {
                 crossAxisCount: 2,
                 mainAxisSpacing: 24,
                 crossAxisSpacing: 18,
-                childAspectRatio: 0.8, // Slightly tall for a premium feel
+                childAspectRatio: 0.8,
               ),
               delegate: SliverChildListDelegate([
                 _activityCard(
@@ -146,42 +141,6 @@ class OutdoorsPage extends StatelessWidget {
     );
   }
 
-  /// SEARCH BAR WIDGET
-  Widget _buildSearchBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: TextField(
-        decoration: InputDecoration(
-          icon: Icon(
-            Icons.search_rounded,
-            color: Colors.grey.shade400,
-            size: 22,
-          ),
-          hintText: "Search your adventure...",
-          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
-          border: InputBorder.none,
-          suffixIcon: Icon(
-            Icons.tune_rounded,
-            color: Colors.blue.shade700,
-            size: 20,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// FEATURED HERO WIDGET
   Widget _buildModernHero() {
     return Container(
       height: 200,
@@ -231,7 +190,6 @@ class OutdoorsPage extends StatelessWidget {
     );
   }
 
-  /// REUSABLE ACTIVITY CARD
   Widget _activityCard(
     BuildContext context,
     String title,
@@ -239,10 +197,15 @@ class OutdoorsPage extends StatelessWidget {
     String image,
   ) {
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const TrekkingPage()),
-      ),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                OutdoorDetailPage(category: "outdoor", subCategory: title),
+          ),
+        );
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -264,7 +227,6 @@ class OutdoorsPage extends StatelessWidget {
                   image,
                   fit: BoxFit.cover,
                   width: double.infinity,
-                  // Error handling for missing assets
                   errorBuilder: (context, error, stackTrace) => Container(
                     color: Colors.grey.shade300,
                     child: const Icon(Icons.image),

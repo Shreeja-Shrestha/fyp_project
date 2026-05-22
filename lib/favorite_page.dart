@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:fyp_project/tour_detail_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -22,8 +23,11 @@ class _FavoritePageState extends State<FavoritePage> {
 
   // 🔹 Fetch favorites from backend
   Future<void> fetchFavorites() async {
-    if (userId == 0) return; // 🔥 prevent wrong API call
+    if (userId == 0) {
+      await loadUserId(); // 🔥 ensure userId is ready
+    }
 
+    if (userId == 0) return;
     try {
       final response = await http.get(
         Uri.parse("http://192.168.18.11:3000/api/favorites/user/$userId"),
@@ -50,13 +54,13 @@ class _FavoritePageState extends State<FavoritePage> {
         body: jsonEncode({"user_id": userId, "tour_id": tourId}),
       );
 
-      await fetchFavorites(); // 🔥 refresh after removal
+      await fetchFavorites(); // refresh after removal
     } catch (e) {
       print("Remove error: $e");
     }
   }
 
-  // 🔹 Init flow (NO race condition)
+  //  Init flow (NO race condition)
   @override
   void initState() {
     super.initState();
@@ -68,13 +72,18 @@ class _FavoritePageState extends State<FavoritePage> {
     await fetchFavorites();
   }
 
-  // 🔹 Refresh when page reopens
+  //  Refresh when page reopens
+  bool _isFirstLoad = true;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (userId != 0) {
-      fetchFavorites();
+
+    if (!_isFirstLoad) {
+      fetchFavorites(); // only refresh on return
     }
+
+    _isFirstLoad = false;
   }
 
   @override
@@ -113,112 +122,135 @@ class _FavoritePageState extends State<FavoritePage> {
                 itemBuilder: (context, index) {
                   final tour = favoriteTours[index];
 
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 18),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(22),
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 14,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        /// IMAGE
-                        ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(22),
-                            bottomLeft: Radius.circular(22),
-                          ),
-                          child: Image.asset(
-                            tour["image"].toString().startsWith("assets/")
-                                ? tour["image"]
-                                : "assets/${tour["image"]}",
-                            width: 120,
-                            height: 120,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
+                  return GestureDetector(
+                    onTap: () {
+                      print("CLICKED ITEM: $tour");
 
-                        /// DETAILS
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
+                      final tourId = tour["id"] ?? tour["tour_id"];
+
+                      if (tourId == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Error: Tour ID missing"),
+                          ),
+                        );
+                        return;
+                      }
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TourDetailPage(tourId: tourId),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 18),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(22),
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 14,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          /// IMAGE
+                          ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(22),
+                              bottomLeft: Radius.circular(22),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  tour["title"],
-                                  style: const TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.bold,
+                            child: Image.asset(
+                              tour["image"].toString().startsWith("assets/")
+                                  ? tour["image"]
+                                  : "assets/${tour["image"]}",
+                              width: 120,
+                              height: 120,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+
+                          /// DETAILS
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    tour["title"],
+                                    style: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
 
-                                const SizedBox(height: 6),
+                                  const SizedBox(height: 6),
 
-                                Text(
-                                  tour["country"] ?? "Nepal",
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey,
+                                  Text(
+                                    tour["country"] ?? "Nepal",
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey,
+                                    ),
                                   ),
-                                ),
 
-                                const SizedBox(height: 10),
+                                  const SizedBox(height: 10),
 
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.star,
-                                      color: Colors.orange,
-                                      size: 18,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      (tour["average_rating"] ?? "4.5")
-                                          .toString(),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.star,
+                                        color: Colors.orange,
+                                        size: 18,
                                       ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      "(${tour["total_reviews"] ?? 0} reviews)",
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        (tour["average_rating"] ?? "4.5")
+                                            .toString(),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        "(${tour["total_reviews"] ?? 0} reviews)",
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
 
-                        /// REMOVE BUTTON
-                        Padding(
-                          padding: const EdgeInsets.only(right: 10),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.favorite,
-                              color: Colors.red,
-                              size: 30,
+                          /// REMOVE BUTTON
+                          Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.favorite,
+                                color: Colors.red,
+                                size: 30,
+                              ),
+                              onPressed: () {
+                                removeFavorite(tour["id"]);
+                              },
                             ),
-                            onPressed: () {
-                              removeFavorite(tour["id"]);
-                            },
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },

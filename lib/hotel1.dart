@@ -104,7 +104,7 @@ class HotelPageUI extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-                  // -------------------- BOOK BUTTON --------------------
+                  //  BOOK BUTTON
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Container(

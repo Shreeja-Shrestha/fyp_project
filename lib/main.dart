@@ -40,7 +40,7 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
 
-    /// 🔥 HANDLE APP OPEN FROM CLOSED (IMPORTANT)
+    /// HANDLE APP OPEN FROM CLOSED (IMPORTANT)
     _appLinks.getInitialLink().then((uri) {
       if (uri != null &&
           uri.scheme == 'fypapp' &&

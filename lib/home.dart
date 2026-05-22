@@ -1,22 +1,21 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:ui';
 
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
 import 'package:fyp_project/booking_success_page.dart';
 import 'package:fyp_project/chatbot_page.dart';
-import 'package:fyp_project/mardi.dart';
+import 'package:fyp_project/food_page.dart';
 import 'package:fyp_project/outdoors_page.dart';
 import 'package:fyp_project/screens/notification_screen.dart';
 import 'package:fyp_project/tour_detail_page.dart';
 import 'package:fyp_project/user_profile_page.dart';
-import 'package:app_links/app_links.dart';
-import 'dart:async';
-import 'package:fyp_project/booking_success_page.dart';
-import 'mardi.dart'; // PlaceDetailsPage
-import 'user_profile_page.dart'; // Account page
-import 'favorite_page.dart';
-
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:fyp_project/water.dart';
+import 'package:fyp_project/favorite_page.dart';
+import 'package:fyp_project/culture.dart';
 
 /// HOME PAGE
 class HomePage extends StatefulWidget {
@@ -28,16 +27,25 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int selectedIndex = 0;
+
   List tours = [];
   List religiousTours = [];
+
+  final TextEditingController searchController = TextEditingController();
+
+  List searchResults = [];
   bool isSearching = false;
+  bool isSearchLoading = false;
+
   late final AppLinks _appLinks;
   StreamSubscription<Uri>? _linkSub;
+
   @override
   void initState() {
     super.initState();
+
     fetchTours();
-    fetchReligiousTours(); // ADD THIS
+    fetchReligiousTours();
 
     _appLinks = AppLinks();
 
@@ -45,7 +53,7 @@ class _HomePageState extends State<HomePage> {
       if (uri.scheme == 'fypapp' && uri.host == 'booking-success') {
         final bookingId = uri.queryParameters['booking_id'];
 
-        print("Deep Link Booking ID: $bookingId"); // DEBUG
+        print("Deep Link Booking ID: $bookingId");
 
         Navigator.push(
           context,
@@ -59,114 +67,33 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    searchController.dispose();
     _linkSub?.cancel();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+  List<dynamic> filterHomeTours(List<dynamic> data) {
+    return data.where((tour) {
+      final category = tour["category"]?.toString().toLowerCase().trim() ?? "";
 
-      /// APP BAR
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        title: const Text(
-          "Where to?",
-          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.notifications_none,
-              color: Theme.of(context).colorScheme.onBackground,
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => NotificationScreen(userId: 1),
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 16),
-        ],
-      ),
-
-      /// BODY
-      body: buildBody(),
-
-      /// BOTTOM NAV BAR
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: selectedIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Theme.of(context).iconTheme.color,
-        onTap: (index) {
-          if (index == 4) {
-            // Navigate to Account/UserProfilePage
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const UserProfilePage()),
-            );
-          } else {
-            setState(() => selectedIndex = index);
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.explore_outlined),
-            activeIcon: Icon(Icons.explore),
-            label: "Explore",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_long_outlined),
-            activeIcon: Icon(Icons.receipt_long),
-            label: "Trips",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border),
-            activeIcon: Icon(Icons.favorite),
-            label: "Favorites",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: "History",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: "Account",
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Color(0xFF00B4D8), // your blue theme
-        child: Icon(Icons.chat, color: Colors.white),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => ChatbotPage()),
-          );
-        },
-      ),
-    );
+      return category != "food" &&
+          category != "outdoor" &&
+          category != "culture" &&
+          category != "water";
+    }).toList();
   }
 
   Future<void> fetchTours() async {
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/tours"),
+        Uri.parse("http://192.168.18.11:3000/api/tours/home"),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
         setState(() {
-          tours = data;
+          tours = filterHomeTours(data);
         });
       } else {
         print("Failed to load tours");
@@ -195,22 +122,26 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> searchTours(String query) async {
-    if (query.isEmpty) {
+    final searchText = query.trim();
+
+    if (searchText.isEmpty) {
       setState(() {
         isSearching = false;
+        isSearchLoading = false;
+        searchResults = [];
       });
-      fetchTours();
       return;
     }
 
     setState(() {
       isSearching = true;
+      isSearchLoading = true;
     });
 
     try {
       final response = await http.get(
         Uri.parse(
-          "http://192.168.18.11:3000/api/search/tours?q=${Uri.encodeComponent(query)}",
+          "http://192.168.18.11:3000/api/search/tours?q=${Uri.encodeComponent(searchText)}",
         ),
       );
 
@@ -218,25 +149,45 @@ class _HomePageState extends State<HomePage> {
         final data = jsonDecode(response.body);
 
         setState(() {
-          tours = data;
+          searchResults = data;
+          isSearchLoading = false;
+        });
+      } else {
+        setState(() {
+          searchResults = [];
+          isSearchLoading = false;
         });
       }
     } catch (e) {
       print("Search error: $e");
+
+      setState(() {
+        searchResults = [];
+        isSearchLoading = false;
+      });
     }
   }
 
-  /// Build the body based on selected tab
+  void clearSearch() {
+    searchController.clear();
+
+    setState(() {
+      isSearching = false;
+      isSearchLoading = false;
+      searchResults = [];
+    });
+  }
+
   Widget buildBody() {
     switch (selectedIndex) {
       case 0:
-        return exploreBody(); // Your current home page
+        return exploreBody();
       case 1:
-        return const Center(child: Text("Trips page")); // placeholder
+        return const Center(child: Text("Trips page"));
       case 2:
-        return const FavoritePage(); // placeholder
+        return const FavoritePage();
       case 3:
-        return const Center(child: Text("History page")); // placeholder
+        return const Center(child: Text("History page"));
       default:
         return exploreBody();
     }
@@ -248,14 +199,21 @@ class _HomePageState extends State<HomePage> {
 
     return Column(
       children: [
-        ///  FIXED SEARCH BAR
+        /// FIXED SEARCH BAR
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: TextField(
+            controller: searchController,
             onChanged: searchTours,
             decoration: InputDecoration(
               hintText: "Places to go, things to do",
               prefixIcon: const Icon(Icons.search),
+              suffixIcon: isSearching
+                  ? IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: clearSearch,
+                    )
+                  : null,
               filled: true,
               fillColor: Theme.of(context).cardColor,
               contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -267,7 +225,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
 
-        /// SCROLLABLE CONTENT
+        /// SCROLLABLE CONTENT + SEARCH OVERLAY
         Expanded(
           child: Stack(
             children: [
@@ -317,62 +275,31 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 10),
 
-                    if (isSearching && tours.isEmpty)
-                      Container(
-                        height: 180,
-                        alignment: Alignment.center,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(
-                              Icons.search_off,
-                              size: 60,
-                              color: Colors.grey,
-                            ),
-                            SizedBox(height: 10),
-                            Text(
-                              "No tours found",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              "Try another destination",
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      SizedBox(
-                        height: 290,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: recommended.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(width: 10),
-                          itemBuilder: (context, index) {
-                            final tour = recommended[index];
+                    SizedBox(
+                      height: 290,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: recommended.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 10),
+                        itemBuilder: (context, index) {
+                          final tour = recommended[index];
 
-                            return TourCard(
-                              title: tour["title"],
-                              image: tour["image"],
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        TourDetailPage(tourId: tour["id"]),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
+                          return TourCard(
+                            title: tour["title"] ?? "",
+                            image: tour["image"] ?? "",
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      TourDetailPage(tourId: tour["id"]),
+                                ),
+                              );
+                            },
+                          );
+                        },
                       ),
+                    ),
 
                     const SizedBox(height: 12),
 
@@ -384,6 +311,7 @@ class _HomePageState extends State<HomePage> {
                       style: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
                     const SizedBox(height: 12),
+
                     SizedBox(
                       height: 330,
                       child: ListView.separated(
@@ -421,6 +349,7 @@ class _HomePageState extends State<HomePage> {
                       style: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
                     const SizedBox(height: 12),
+
                     ListView.builder(
                       itemCount: religiousTours.length,
                       shrinkWrap: true,
@@ -449,29 +378,207 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              /// POPUP CHAT HINT (UNCHANGED)
-              Positioned(
-                bottom: 100,
-                right: 20,
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: const [
-                      BoxShadow(color: Colors.black12, blurRadius: 5),
-                    ],
-                  ),
-                  child: const Text(
-                    "Need help planning your trip?",
-                    style: TextStyle(fontSize: 12),
+              /// BLUR BACKGROUND WHILE SEARCHING
+              if (isSearching)
+                Positioned.fill(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                    child: Container(color: Colors.black.withOpacity(0.25)),
                   ),
                 ),
-              ),
+
+              /// SEARCH RESULT OVERLAY
+              if (isSearching)
+                Positioned(
+                  top: 10,
+                  left: 0,
+                  right: 0,
+                  child: _buildSearchOverlay(),
+                ),
+
+              /// POPUP CHAT HINT
+              if (!isSearching)
+                Positioned(
+                  bottom: 100,
+                  right: 20,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black12, blurRadius: 5),
+                      ],
+                    ),
+                    child: const Text(
+                      "Need help planning your trip?",
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSearchOverlay() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      constraints: const BoxConstraints(maxHeight: 500),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.18),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: isSearchLoading
+          ? const Padding(
+              padding: EdgeInsets.all(30),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          : searchResults.isEmpty
+          ? const Padding(
+              padding: EdgeInsets.all(30),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.search_off, size: 54, color: Colors.grey),
+                  SizedBox(height: 10),
+                  Text(
+                    "No tour found",
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    "Try another destination or activity",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+            )
+          : ListView.separated(
+              shrinkWrap: true,
+              itemCount: searchResults.length,
+              separatorBuilder: (_, __) => const Divider(height: 18),
+              itemBuilder: (context, index) {
+                final tour = searchResults[index];
+
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: buildTourImage(
+                      tour["image"] ?? "",
+                      width: 62,
+                      height: 62,
+                    ),
+                  ),
+                  title: Text(
+                    tour["title"] ?? "No title",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
+                  subtitle: Text(
+                    "${tour["destination"] ?? "Nepal"} • NPR ${tour["price"] ?? ""}",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    final tourId = tour["id"];
+
+                    clearSearch();
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TourDetailPage(tourId: tourId),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+    );
+  }
+
+  Widget buildTourImage(
+    String image, {
+    required double width,
+    required double height,
+  }) {
+    if (image.isEmpty) {
+      return Container(
+        width: width,
+        height: height,
+        color: Colors.grey.shade200,
+        child: const Icon(Icons.image),
+      );
+    }
+
+    if (image.startsWith("http")) {
+      return Image.network(
+        image,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: width,
+            height: height,
+            color: Colors.grey.shade200,
+            child: const Icon(Icons.image),
+          );
+        },
+      );
+    }
+
+    if (image.startsWith("assets/")) {
+      return Image.asset(
+        image,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: width,
+            height: height,
+            color: Colors.grey.shade200,
+            child: const Icon(Icons.image),
+          );
+        },
+      );
+    }
+
+    return Image.network(
+      "http://192.168.18.11:3000/images/$image",
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          width: width,
+          height: height,
+          color: Colors.grey.shade200,
+          child: const Icon(Icons.image),
+        );
+      },
     );
   }
 
@@ -481,9 +588,102 @@ class _HomePageState extends State<HomePage> {
       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
     );
   }
-}
 
-// INTEREST CARD, TOUR CARD, EXPLORE CARD, RELIGIOUS CARD remain same
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
+      /// APP BAR
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
+        title: const Text(
+          "Where to?",
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.notifications_none,
+              color: Theme.of(context).colorScheme.onBackground,
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NotificationScreen(userId: 1),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 16),
+        ],
+      ),
+
+      /// BODY
+      body: buildBody(),
+
+      /// BOTTOM NAV BAR
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: selectedIndex,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Theme.of(context).iconTheme.color,
+        onTap: (index) {
+          if (index == 4) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const UserProfilePage()),
+            );
+          } else {
+            setState(() => selectedIndex = index);
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.explore_outlined),
+            activeIcon: Icon(Icons.explore),
+            label: "Explore",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long_outlined),
+            activeIcon: Icon(Icons.receipt_long),
+            label: "Trips",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite_border),
+            activeIcon: Icon(Icons.favorite),
+            label: "Favorites",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history_outlined),
+            activeIcon: Icon(Icons.history),
+            label: "History",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: "Account",
+          ),
+        ],
+      ),
+
+      floatingActionButton: isSearching
+          ? null
+          : FloatingActionButton(
+              backgroundColor: const Color(0xFF00B4D8),
+              child: const Icon(Icons.chat, color: Colors.white),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ChatbotPage()),
+                );
+              },
+            ),
+    );
+  }
+}
 
 /// INTEREST CARD
 class InterestCard extends StatelessWidget {
@@ -496,7 +696,24 @@ class InterestCard extends StatelessWidget {
     if (title == "Outdoors") {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const OutdoorsPage()),
+        MaterialPageRoute(
+          builder: (_) => OutdoorsPage(category: "outdoor", subCategory: ""),
+        ),
+      );
+    } else if (title == "Food") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const FoodPage()),
+      );
+    } else if (title == "Culture") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CulturePage()),
+      );
+    } else if (title == "Water") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const WaterPage()),
       );
     }
   }
@@ -517,7 +734,7 @@ class InterestCard extends StatelessWidget {
           alignment: Alignment.bottomLeft,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
               begin: Alignment.bottomCenter,
               end: Alignment.topCenter,
               colors: [Colors.black54, Colors.transparent],
@@ -549,6 +766,57 @@ class TourCard extends StatelessWidget {
     this.onTap,
   });
 
+  Widget _cardImage() {
+    if (image.startsWith("http")) {
+      return Image.network(
+        image,
+        height: 180,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            height: 180,
+            width: double.infinity,
+            color: Colors.grey.shade200,
+            child: const Icon(Icons.image),
+          );
+        },
+      );
+    }
+
+    if (image.startsWith("assets/")) {
+      return Image.asset(
+        image,
+        height: 180,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            height: 180,
+            width: double.infinity,
+            color: Colors.grey.shade200,
+            child: const Icon(Icons.image),
+          );
+        },
+      );
+    }
+
+    return Image.network(
+      "http://192.168.18.11:3000/images/$image",
+      height: 180,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          height: 180,
+          width: double.infinity,
+          color: Colors.grey.shade200,
+          child: const Icon(Icons.image),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -562,12 +830,7 @@ class TourCard extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.asset(
-                    image,
-                    height: 180,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
+                  child: _cardImage(),
                 ),
                 Positioned(
                   top: 10,
@@ -601,8 +864,8 @@ class TourCard extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             const SizedBox(height: 2),
-            Row(
-              children: const [
+            const Row(
+              children: [
                 Text(
                   "0 reviews",
                   style: TextStyle(fontSize: 12, color: Colors.grey),
@@ -635,8 +898,59 @@ class ExploreCard extends StatelessWidget {
     required this.title,
     required this.image,
     required this.price,
-    this.onTap, // ✅ ADD
+    this.onTap,
   });
+
+  Widget _cardImage() {
+    if (image.startsWith("http")) {
+      return Image.network(
+        image,
+        height: 220,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            height: 220,
+            width: double.infinity,
+            color: Colors.grey.shade200,
+            child: const Icon(Icons.image),
+          );
+        },
+      );
+    }
+
+    if (image.startsWith("assets/")) {
+      return Image.asset(
+        image,
+        height: 220,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            height: 220,
+            width: double.infinity,
+            color: Colors.grey.shade200,
+            child: const Icon(Icons.image),
+          );
+        },
+      );
+    }
+
+    return Image.network(
+      "http://192.168.18.11:3000/images/$image",
+      height: 220,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          height: 220,
+          width: double.infinity,
+          color: Colors.grey.shade200,
+          child: const Icon(Icons.image),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -649,12 +963,7 @@ class ExploreCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(22),
-              child: Image.asset(
-                image,
-                height: 220,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
+              child: _cardImage(),
             ),
             const SizedBox(height: 6),
             Text(
@@ -664,8 +973,8 @@ class ExploreCard extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             const SizedBox(height: 6),
-            Row(
-              children: const [
+            const Row(
+              children: [
                 Text(
                   "5.0",
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
@@ -701,7 +1010,7 @@ class ReligiousTempleCard extends StatelessWidget {
   final String image;
   final String price;
   final String reviews;
-  final VoidCallback? onTap; // ✅ ADD THIS
+  final VoidCallback? onTap;
 
   const ReligiousTempleCard({
     super.key,
@@ -709,8 +1018,59 @@ class ReligiousTempleCard extends StatelessWidget {
     required this.image,
     required this.price,
     required this.reviews,
-    this.onTap, //ADD THIS
+    this.onTap,
   });
+
+  Widget _cardImage() {
+    if (image.startsWith("http")) {
+      return Image.network(
+        image,
+        height: 180,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            height: 180,
+            width: double.infinity,
+            color: Colors.grey.shade200,
+            child: const Icon(Icons.image),
+          );
+        },
+      );
+    }
+
+    if (image.startsWith("assets/")) {
+      return Image.asset(
+        image,
+        height: 180,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            height: 180,
+            width: double.infinity,
+            color: Colors.grey.shade200,
+            child: const Icon(Icons.image),
+          );
+        },
+      );
+    }
+
+    return Image.network(
+      "http://192.168.18.11:3000/images/$image",
+      height: 180,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          height: 180,
+          width: double.infinity,
+          color: Colors.grey.shade200,
+          child: const Icon(Icons.image),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -719,7 +1079,7 @@ class ReligiousTempleCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
@@ -738,12 +1098,7 @@ class ReligiousTempleCard extends StatelessWidget {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(18),
                   ),
-                  child: Image.asset(
-                    image,
-                    height: 180,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
+                  child: _cardImage(),
                 ),
                 Positioned(
                   top: 12,

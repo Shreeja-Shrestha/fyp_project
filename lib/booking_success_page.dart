@@ -48,7 +48,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage> {
   Future<void> fetchReceipt() async {
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/receipt/${widget.bookingId}"),
+        Uri.parse("http://192.168.18.11:3000/api/receipts/${widget.bookingId}"),
       );
 
       if (response.statusCode == 200) {
@@ -64,6 +64,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage> {
   }
 
   Future<void> generatePdf() async {
+    if (receiptData == null) return;
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -84,13 +85,12 @@ class _BookingSuccessPageState extends State<BookingSuccessPage> {
 
                 pw.SizedBox(height: 20),
 
-                pw.Text("Tour: ${receiptData!['title']}"),
-                pw.Text("User: ${receiptData!['name']}"),
-
+                pw.Text("Tour: ${receiptData!['tour_name']}"),
+                pw.Text("User: ${receiptData!['user_name']}"),
                 pw.SizedBox(height: 10),
 
                 pw.Text(
-                  "Amount: Rs ${receiptData!['amount']}",
+                  "Amount: Rs ${receiptData!['amount_paid']}",
                   style: pw.TextStyle(
                     fontSize: 18,
                     fontWeight: pw.FontWeight.bold,
@@ -182,10 +182,10 @@ class _BookingSuccessPageState extends State<BookingSuccessPage> {
 
                           const Divider(),
 
-                          buildRow("Tour", receiptData!['title']),
-                          buildRow("User", receiptData!['name']),
+                          buildRow("Tour", receiptData!['tour_name']),
+                          buildRow("User", receiptData!['user_name']),
 
-                          /// 🔥 HIGHLIGHTED AMOUNT
+                          ///  HIGHLIGHTED AMOUNT
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             child: Row(
@@ -199,7 +199,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage> {
                                   ),
                                 ),
                                 Text(
-                                  "Rs ${receiptData!['amount']}",
+                                  "Rs ${receiptData!['amount_paid']}",
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
@@ -229,7 +229,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage> {
                     label: const Text("Download Receipt"),
                   ),
 
-                  /// 🔥 BUTTON
+                  ///  BUTTON
                   ElevatedButton(
                     onPressed: () {
                       Navigator.pushAndRemoveUntil(

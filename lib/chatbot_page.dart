@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'services/ai_service.dart';
+import 'services/chat_service.dart';
 
 class ChatbotPage extends StatefulWidget {
   const ChatbotPage({super.key});
@@ -10,11 +10,12 @@ class ChatbotPage extends StatefulWidget {
 
 class _ChatbotPageState extends State<ChatbotPage> {
   final TextEditingController controller = TextEditingController();
-  List<Map<String, String>> messages = [];
+
+  // 🔥 FIXED TYPE (IMPORTANT)
+  List<Map<String, dynamic>> messages = [];
 
   void sendMessage() async {
-    String userMessage = controller.text;
-
+    String userMessage = controller.text.trim();
     if (userMessage.isEmpty) return;
 
     setState(() {
@@ -22,10 +23,14 @@ class _ChatbotPageState extends State<ChatbotPage> {
       controller.clear();
     });
 
-    String reply = await AIService.sendMessage(userMessage);
+    final data = await ChatService.sendMessage(userMessage);
 
     setState(() {
-      messages.add({"role": "bot", "text": reply});
+      messages.add({
+        "role": "bot",
+        "text": data["reply"] ?? "No response",
+        "tours": data["tours"], // ✅ store tours
+      });
     });
   }
 
@@ -41,33 +46,94 @@ class _ChatbotPageState extends State<ChatbotPage> {
               itemBuilder: (context, index) {
                 final msg = messages[index];
 
-                return Align(
-                  alignment: msg["role"] == "user"
-                      ? Alignment.centerRight
-                      : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.all(8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: msg["role"] == "user"
-                          ? Colors.blue
-                          : Colors.grey[300],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      msg["text"]!,
-                      style: TextStyle(
-                        color: msg["role"] == "user"
-                            ? Colors.white
-                            : Colors.black,
+                // -------------------------------
+                // USER MESSAGE
+                // -------------------------------
+                if (msg["role"] == "user") {
+                  return Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                      margin: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        msg["text"],
+                        style: const TextStyle(color: Colors.white),
                       ),
                     ),
-                  ),
+                  );
+                }
+
+                // -------------------------------
+                // BOT MESSAGE + TOURS
+                // -------------------------------
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Bot text
+                    Container(
+                      margin: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        msg["text"],
+                        style: const TextStyle(color: Colors.black),
+                      ),
+                    ),
+
+                    // 🔥 TOUR CARDS
+                    if (msg["tours"] != null)
+                      ...List.generate(msg["tours"].length, (i) {
+                        final tour = msg["tours"][i];
+
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          elevation: 3,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ListTile(
+                            title: Text(
+                              tour["title"],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text(
+                              "${tour["destination"]} • ${tour["duration"]}",
+                            ),
+                            trailing: Text(
+                              "Rs ${tour["price"]}",
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            onTap: () {
+                              // 🔥 NEXT STEP: NAVIGATE
+                              print("Clicked: ${tour["title"]}");
+                            },
+                          ),
+                        );
+                      }),
+                  ],
                 );
               },
             ),
           ),
 
+          // -------------------------------
+          // INPUT BOX
+          // -------------------------------
           Row(
             children: [
               Expanded(
@@ -75,6 +141,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
                   controller: controller,
                   decoration: const InputDecoration(
                     hintText: "Ask something...",
+                    contentPadding: EdgeInsets.all(12),
                   ),
                 ),
               ),

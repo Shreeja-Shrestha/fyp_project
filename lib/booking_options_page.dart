@@ -84,41 +84,51 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   void initState() {
     super.initState();
     personsController.addListener(_updateTotalPrice);
-    fetchTourEvents();
+    fetchTourEvents("Lumbini");
   }
 
   //Restored fetchTourEvents with full logic
-  Future<void> fetchTourEvents() async {
+  Future<void> fetchTourEvents(String place) async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.18.11:3000/nepal-holidays'),
+        Uri.parse("http://192.168.18.11:3000/api/events"),
       );
 
       if (response.statusCode == 200) {
-        List data = json.decode(response.body);
+        List data = jsonDecode(response.body);
+
         Map<DateTime, List<Map<String, dynamic>>> temp = {};
 
         for (var item in data) {
-          DateTime parsedDate = DateTime.parse(item['date']).toLocal();
+          // parse date from backend
+          DateTime parsedDate = DateTime.parse(item['date']);
+
+          // normalize date (important for TableCalendar)
           DateTime cleanDate = DateTime(
             parsedDate.year,
             parsedDate.month,
             parsedDate.day,
           );
+
+          // group events by date
           temp.putIfAbsent(cleanDate, () => []);
           temp[cleanDate]!.add(item);
         }
 
         setState(() {
           eventMap = temp;
+
+          // optional: auto focus first event date
           if (temp.isNotEmpty) {
             final firstEventDate = temp.keys.toList()..sort();
             focusedDay = firstEventDate.first;
           }
         });
+      } else {
+        print("API ERROR: ${response.body}");
       }
     } catch (e) {
-      dev.log("Error fetching events: $e");
+      print("FETCH ERROR: $e");
     }
   }
 
@@ -198,7 +208,16 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       _showError("Please select a travel date first.");
       return;
     }
-    await _handleBookingSave();
+
+    final today = DateTime.now();
+    final cleanToday = DateTime(today.year, today.month, today.day);
+
+    if (selectedDate!.isBefore(cleanToday)) {
+      _showError("You cannot book a past date.");
+      return;
+    }
+
+    await _handleBookingSave(); // ADD THIS LINE
   }
 
   Future<void> _handleBookingSave() async {
@@ -432,14 +451,27 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       ),
       clipBehavior: Clip.antiAlias,
       child: FutureBuilder<List<dynamic>>(
-        future: HotelService.fetchNearbyHotels(lat, lng),
+        future: HotelService.fetchNearbyHotels(widget.tourId),
         builder: (context, snapshot) {
+          // =========================
+          // LOADING
+          // =========================
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
+          // =========================
+          // ERROR
+          // =========================
           if (snapshot.hasError) {
             return const Center(child: Text("Failed to load hotels"));
+          }
+
+          // =========================
+          // EMPTY DATA
+          // =========================
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text("No nearby hotels found"));
           }
 
           List<Marker> markers = [];
@@ -458,16 +490,19 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
             ),
           );
 
-          //Hotel Markers
-
           int hotelCount = 0;
+          int validHotels = 0;
 
           for (var hotel in snapshot.data!) {
-            if (hotelCount >= 6) break; // show only 6 hotels
+            if (hotelCount >= 6) break;
 
-            // Skip unnamed hotels
+            // =========================
+            // VALIDATE NAME
+            // =========================
             if (hotel['name'] == null ||
-                hotel['name'].toString().trim().isEmpty) {
+                hotel['name'].toString().trim().isEmpty ||
+                hotel['name'] == "Hotel data unavailable" ||
+                hotel['name'] == "No hotels found nearby") {
               continue;
             }
 
@@ -476,10 +511,12 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
             if (latValue == null || lngValue == null) continue;
 
-            final double hotelLat = double.tryParse(latValue.toString()) ?? 0.0;
-            final double hotelLng = double.tryParse(lngValue.toString()) ?? 0.0;
+            final double hotelLat = double.tryParse(latValue.toString()) ?? -1;
+            final double hotelLng = double.tryParse(lngValue.toString()) ?? -1;
 
-            if (hotelLat == 0.0 && hotelLng == 0.0) continue;
+            if (hotelLat <= 0 || hotelLng <= 0) continue;
+
+            validHotels++;
 
             markers.add(
               Marker(
@@ -502,6 +539,19 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
             hotelCount++;
           }
+
+          // =========================
+          // NO VALID HOTELS AFTER FILTER
+          // =========================
+          if (validHotels == 0) {
+            return const Center(
+              child: Text("No valid hotels found for this location"),
+            );
+          }
+
+          // =========================
+          // MAP RENDER
+          // =========================
           return FlutterMap(
             options: MapOptions(
               initialCenter: LatLng(lat, lng),
@@ -651,14 +701,51 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onPressed: () {
-                Navigator.pop(context); // close dialog
-                Navigator.pop(context); // close bottom sheet
+              onPressed: () async {
+                final prefs = await SharedPreferences.getInstance();
+                final userId = prefs.getInt("user_id");
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Hotel Booking Confirmed!")),
-                );
+                if (userId == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("User not logged in")),
+                  );
+                  return;
+                }
+
+                try {
+                  final response = await http.post(
+                    Uri.parse(
+                      "http://192.168.18.11:3000/api/hotel-confirm/confirm",
+                    ),
+                    headers: {"Content-Type": "application/json"},
+                    body: jsonEncode({
+                      "user_id": userId,
+                      "tour_id": widget.tourId,
+                      "hotel_name": hotel["name"],
+                      "hotel_lat": hotel["latitude"],
+                      "hotel_lng": hotel["longitude"],
+                    }),
+                  );
+
+                  if (response.statusCode == 200) {
+                    Navigator.pop(context); // close dialog
+                    Navigator.pop(context); // close bottom sheet
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Hotel confirmed & saved!")),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Failed to confirm hotel")),
+                    );
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text("Error: $e")));
+                }
               },
+
               child: const Text("Confirm"),
             ),
           ],
@@ -778,6 +865,15 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
                     firstDay: DateTime(2020),
                     lastDay: DateTime(2030),
                     focusedDay: focusedDay,
+                    enabledDayPredicate: (day) {
+                      final today = DateTime.now();
+                      final cleanToday = DateTime(
+                        today.year,
+                        today.month,
+                        today.day,
+                      );
+                      return !day.isBefore(cleanToday);
+                    },
                     onPageChanged: (newFocusedDay) {
                       focusedDay = newFocusedDay;
                     },
@@ -824,14 +920,33 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
       // Restored the Cultural Event Dialog Logic
       DateTime clean = DateTime(selected.year, selected.month, selected.day);
-      if (eventMap.containsKey(clean)) {
-        var events = eventMap[clean]!;
+      var events = eventMap.entries
+          .firstWhere(
+            (entry) => isSameDay(entry.key, clean),
+            orElse: () => MapEntry(DateTime(0), []),
+          )
+          .value;
+
+      if (events.isNotEmpty) {
         await showDialog(
           context: context,
           builder: (_) => AlertDialog(
             title: const Text("Major Cultural Events"),
             content: SingleChildScrollView(
-              child: Text(events.map((e) => "${e['title']}").join("\n\n")),
+              child: Text(
+                events
+                    .map((e) {
+                      final title = e['title'] ?? "Event";
+                      final desc =
+                          (e['description'] != null &&
+                              e['description'].toString().trim().isNotEmpty)
+                          ? e['description']
+                          : "No description available";
+
+                      return "$title\n$desc";
+                    })
+                    .join("\n\n"),
+              ),
             ),
           ),
         );

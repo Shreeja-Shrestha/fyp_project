@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fyp_project/add_package_page.dart';
 import 'package:fyp_project/admin_manage_packages_page.dart';
 import 'package:fyp_project/login.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fyp_project/admin_users_page.dart';
 
 class AdminProfilePage extends StatefulWidget {
   const AdminProfilePage({super.key});
@@ -15,6 +18,11 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   String name = "";
   String email = "";
 
+  int totalUsers = 0;
+  bool isLoadingUsers = true;
+
+  final String baseUrl = "http://192.168.18.11:3000/api";
+
   // Color Palette
   final Color lightBgBlue = const Color(0xFFE3F2FD); // Light background blue
   final Color vibrantBlueTop = const Color(0xFF42A5F5); // Top of gradient
@@ -24,6 +32,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   void initState() {
     super.initState();
     loadAdminData();
+    fetchTotalUsers();
   }
 
   Future<void> loadAdminData() async {
@@ -32,6 +41,36 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
       name = prefs.getString("user_name") ?? "Admin";
       email = prefs.getString("user_email") ?? "";
     });
+  }
+
+  Future<void> fetchTotalUsers() async {
+    try {
+      final response = await http.get(
+        Uri.parse("$baseUrl/users/total"),
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          totalUsers = data["total"] ?? 0;
+          isLoadingUsers = false;
+        });
+      } else {
+        setState(() {
+          isLoadingUsers = false;
+        });
+
+        debugPrint("Failed to fetch total users: ${response.statusCode}");
+      }
+    } catch (e) {
+      setState(() {
+        isLoadingUsers = false;
+      });
+
+      debugPrint("Error fetching total users: $e");
+    }
   }
 
   @override
@@ -120,7 +159,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
               "User Directory",
               "Moderate app members",
               Colors.cyan,
-              null,
+              const AdminUsersPage(),
             ),
 
             const SizedBox(height: 20),
@@ -245,7 +284,11 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   Widget _buildStatRow() {
     return Row(
       children: [
-        _buildSmallStatCard("Total Users", "1,240", Icons.people_outline),
+        _buildSmallStatCard(
+          "Total Users",
+          isLoadingUsers ? "..." : totalUsers.toString(),
+          Icons.people_outline,
+        ),
         const SizedBox(width: 15),
         _buildSmallStatCard(
           "Revenue",

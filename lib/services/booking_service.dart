@@ -69,4 +69,13 @@ class BookingService {
       return false;
     }
   }
+
+  static Future<int> getBookingCount(int userId) async {
+    try {
+      final bookings = await fetchUserBookings(userId);
+      return bookings.length;
+    } catch (e) {
+      return 0;
+    }
+  }
 }

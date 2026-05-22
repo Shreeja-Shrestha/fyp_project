@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fyp_project/booking_history.dart';
 import 'package:fyp_project/editprofile.dart';
+import 'package:fyp_project/favorite_page.dart';
+import 'package:fyp_project/services/booking_service.dart';
+import 'package:fyp_project/services/favorite_service.dart';
 import 'package:fyp_project/trip_history.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -26,14 +29,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
   int wishlist = 0;
   String phone = "";
   String bio = "";
-
+  int favoriteCount = 0;
+  bool isLoadingFav = true;
   bool isLoading = true;
   bool hasError = false;
+  int bookingCount = 0;
+  bool isLoadingBookings = true;
 
   @override
   void initState() {
     super.initState();
     loadUserProfile();
+    loadFavoriteCount();
+    loadBookingCount();
   }
 
   Future<void> loadUserProfile() async {
@@ -67,7 +75,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           bio = data["tagline"] ?? "";
           trips = data["trips"] ?? 0;
           bookings = data["bookings"] ?? 0;
-          wishlist = data["wishlist"] ?? 0;
+
           isLoading = false;
         });
       } else {
@@ -80,6 +88,48 @@ class _UserProfilePageState extends State<UserProfilePage> {
       setState(() {
         hasError = true;
         isLoading = false;
+      });
+    }
+  }
+
+  void loadFavoriteCount() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt("user_id");
+
+      if (userId == null) return;
+
+      final count = await FavoriteService.getFavoriteCount(userId);
+
+      setState(() {
+        favoriteCount = count;
+        isLoadingFav = false;
+      });
+    } catch (e) {
+      setState(() {
+        favoriteCount = 0;
+        isLoadingFav = false;
+      });
+    }
+  }
+
+  void loadBookingCount() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt("user_id");
+
+      if (userId == null) return;
+
+      final count = await BookingService.getBookingCount(userId);
+
+      setState(() {
+        bookingCount = count;
+        isLoadingBookings = false;
+      });
+    } catch (e) {
+      setState(() {
+        bookingCount = 0;
+        isLoadingBookings = false;
       });
     }
   }
@@ -212,8 +262,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
             Row(
               children: [
                 _statCard("Trips", trips),
-                _statCard("Bookings", bookings),
-                _statCard("Wishlist", wishlist),
+                isLoadingBookings
+                    ? _statCard("Bookings", 0)
+                    : _statCard("Bookings", bookingCount),
+                _statCard("Wishlist", favoriteCount),
               ],
             ),
 
@@ -225,20 +277,28 @@ class _UserProfilePageState extends State<UserProfilePage> {
               icon: Icons.confirmation_number_outlined,
               title: "My Bookings",
               subtitle: "Your booked tickets",
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const BookingHistoryPage()),
-              ),
+              onTap: () =>
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const BookingHistoryPage(),
+                    ),
+                  ).then((_) {
+                    loadBookingCount();
+                  }),
             ),
 
             _menuTile(
               icon: Icons.favorite_border,
               title: "Wishlist",
               subtitle: "Saved places & locations",
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const WishlistPage()),
-              ),
+              onTap: () =>
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const FavoritePage()),
+                  ).then((value) {
+                    loadFavoriteCount(); // already correct 👍
+                  }),
             ),
 
             _menuTile(
