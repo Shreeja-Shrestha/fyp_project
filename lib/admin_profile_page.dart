@@ -31,16 +31,9 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   final Color vibrantBlueTop = const Color(0xFF42A5F5);
   final Color deepBlueBottom = const Color(0xFF1976D2);
 
-  // Static graph data for now.
-  // Later this can be connected to backend monthly booking API.
-  final List<Map<String, dynamic>> monthlyBookings = [
-    {"month": "Jan", "count": 2},
-    {"month": "Feb", "count": 4},
-    {"month": "Mar", "count": 6},
-    {"month": "Apr", "count": 3},
-    {"month": "May", "count": 8},
-    {"month": "Jun", "count": 5},
-  ];
+  // Dynamic graph data from backend
+  List<Map<String, dynamic>> monthlyBookings = [];
+  bool isLoadingMonthlyBookings = true;
 
   @override
   void initState() {
@@ -48,6 +41,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     loadAdminData();
     fetchTotalUsers();
     fetchTotalBookings();
+    fetchMonthlyBookingStats();
   }
 
   Future<void> loadAdminData() async {
@@ -133,9 +127,54 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     }
   }
 
+  Future<void> fetchMonthlyBookingStats() async {
+    try {
+      final response = await http.get(
+        Uri.parse("$baseUrl/bookings/monthly-stats"),
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body);
+
+        if (!mounted) return;
+
+        setState(() {
+          monthlyBookings = data.map((item) {
+            return {
+              "month": item["month"].toString(),
+              "count": int.tryParse(item["count"].toString()) ?? 0,
+            };
+          }).toList();
+
+          isLoadingMonthlyBookings = false;
+        });
+      } else {
+        if (!mounted) return;
+
+        setState(() {
+          isLoadingMonthlyBookings = false;
+        });
+
+        debugPrint(
+          "Failed to fetch monthly booking stats: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        isLoadingMonthlyBookings = false;
+      });
+
+      debugPrint("Error fetching monthly booking stats: $e");
+    }
+  }
+
   Future<void> refreshDashboard() async {
     await fetchTotalUsers();
     await fetchTotalBookings();
+    await fetchMonthlyBookingStats();
   }
 
   @override
@@ -433,6 +472,43 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   }
 
   Widget _buildBookingGraph() {
+    if (isLoadingMonthlyBookings) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: lightBgBlue.withOpacity(0.35),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: lightBgBlue.withOpacity(0.5)),
+        ),
+        child: const SizedBox(
+          height: 150,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    if (monthlyBookings.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: lightBgBlue.withOpacity(0.35),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: lightBgBlue.withOpacity(0.5)),
+        ),
+        child: const SizedBox(
+          height: 150,
+          child: Center(
+            child: Text(
+              "No booking data available yet",
+              style: TextStyle(color: Colors.black54, fontSize: 13),
+            ),
+          ),
+        ),
+      );
+    }
+
     final int maxValue = monthlyBookings
         .map((item) => item["count"] as int)
         .reduce((a, b) => a > b ? a : b);
