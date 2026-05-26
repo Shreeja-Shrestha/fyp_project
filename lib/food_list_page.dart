@@ -35,7 +35,7 @@ class _FoodListPageState extends State<FoodListPage> {
 
     try {
       final url =
-          "http://192.168.18.11:3000/api/tours/category/food/subcategory/${widget.subcategory}";
+          "https://backend-production-551c.up.railway.app/api/tours/category/food/subcategory/${widget.subcategory}";
 
       final response = await http.get(Uri.parse(url));
 

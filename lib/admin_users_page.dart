@@ -26,7 +26,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
   Future<void> fetchUsers() async {
     try {
       final res = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/users"),
+        Uri.parse("https://backend-production-551c.up.railway.app/api/users"),
       );
 
       if (res.statusCode == 200) {

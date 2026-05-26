@@ -36,7 +36,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     try {
       final response = await http.get(
         Uri.parse(
-          "http://192.168.18.11:3000/api/users/profile/${widget.userId}",
+          "https://backend-production-551c.up.railway.app/api/users/profile/${widget.userId}",
         ),
       );
 
@@ -88,7 +88,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     try {
       final response = await http.put(
-        Uri.parse("http://192.168.18.11:3000/api/users/update"),
+        Uri.parse(
+          "https://backend-production-551c.up.railway.app/api/users/update",
+        ),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "id": widget.userId,

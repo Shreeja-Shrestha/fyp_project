@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class BookingService {
-  static const String baseUrl = "http://192.168.18.11:3000/api/bookings";
+  static const String baseUrl =
+      "https://backend-production-551c.up.railway.app/api/bookings";
 
   // CREATE BOOKING
   static Future<int?> createBooking({
@@ -29,8 +30,7 @@ class BookingService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
-        return data["booking_id"]; // return booking id
+        return data["booking_id"];
       }
 
       return null;
@@ -47,7 +47,6 @@ class BookingService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
         return data;
       }
 
@@ -61,7 +60,10 @@ class BookingService {
   // CANCEL BOOKING
   static Future<bool> cancelBooking(int id) async {
     try {
-      final response = await http.delete(Uri.parse("$baseUrl/cancel/$id"));
+      final response = await http.put(Uri.parse("$baseUrl/cancel-admin/$id"));
+
+      print("Cancel Response: ${response.statusCode}");
+      print("Cancel Body: ${response.body}");
 
       return response.statusCode == 200;
     } catch (e) {

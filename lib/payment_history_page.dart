@@ -27,7 +27,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   Future<void> fetchPaymentHistory() async {
     try {
       final url = Uri.parse(
-        "http://192.168.18.11:3000/api/receipts/user/${widget.userId}",
+        "https://backend-production-551c.up.railway.app/api/receipts/user/${widget.userId}",
       );
 
       print("PAYMENT HISTORY URL: $url");

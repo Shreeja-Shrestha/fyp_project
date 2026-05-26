@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 
 class ApiService {
-  static const String baseUrl = "http://192.168.18.11:3000/api";
+  static const String baseUrl =
+      "https://backend-production-551c.up.railway.app/api";
 
   static Future<UserModel> fetchUserProfile() async {
     final prefs = await SharedPreferences.getInstance();

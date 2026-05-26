@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class FavoriteService {
-  static const String baseUrl = "http://192.168.18.11:3000/api/favorites";
+  static const String baseUrl =
+      "https://backend-production-551c.up.railway.app/api/favorites";
 
   // ADD FAVORITE
   static Future<bool> addFavorite(int userId, int tourId) async {

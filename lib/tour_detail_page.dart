@@ -56,7 +56,9 @@ class _TourDetailPageState extends State<TourDetailPage> {
   Future<void> fetchTour() async {
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/tours/${widget.tourId}"),
+        Uri.parse(
+          "https://backend-production-551c.up.railway.app/api/tours/${widget.tourId}",
+        ),
       );
 
       print("API RESPONSE: ${response.body}");
@@ -86,7 +88,9 @@ class _TourDetailPageState extends State<TourDetailPage> {
   Future<void> fetchReviews() async {
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/reviews/${widget.tourId}"),
+        Uri.parse(
+          "https://backend-production-551c.up.railway.app/api/reviews/${widget.tourId}",
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -160,7 +164,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
     }
 
     final url = Uri.parse(
-      'http://192.168.18.11:3000/api/reviews/submit',
+      'https://backend-production-551c.up.railway.app/api/reviews/submit',
     ); // change IP if using real device
     try {
       final response = await http.post(
@@ -200,7 +204,9 @@ class _TourDetailPageState extends State<TourDetailPage> {
   }
 
   Future<void> deleteReview(int reviewId) async {
-    final url = Uri.parse("http://192.168.18.11:3000/api/reviews/delete");
+    final url = Uri.parse(
+      "https://backend-production-551c.up.railway.app/api/reviews/delete",
+    );
 
     try {
       final response = await http.delete(
@@ -318,8 +324,12 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
   Future<void> _toggleFavorite() async {
     final url = isFavorite
-        ? Uri.parse("http://192.168.18.11:3000/api/favorites/remove")
-        : Uri.parse("http://192.168.18.11:3000/api/favorites/add");
+        ? Uri.parse(
+            "https://backend-production-551c.up.railway.app/api/favorites/remove",
+          )
+        : Uri.parse(
+            "https://backend-production-551c.up.railway.app/api/favorites/add",
+          );
 
     try {
       final response = await http.post(
@@ -357,7 +367,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
   Future<void> _checkFavorite() async {
     final url = Uri.parse(
-      "http://192.168.18.11:3000/api/favorites/check?user_id=$currentUserId&tour_id=${widget.tourId}",
+      "https://backend-production-551c.up.railway.app/api/favorites/check?user_id=$currentUserId&tour_id=${widget.tourId}",
     );
 
     try {

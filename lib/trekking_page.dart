@@ -32,7 +32,9 @@ class _TrekkingPageState extends State<TrekkingPage> {
   Future<void> fetchTrekkingTours() async {
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/tours/category/trekking"),
+        Uri.parse(
+          "https://backend-production-551c.up.railway.app/api/tours/category/trekking",
+        ),
       );
 
       if (response.statusCode == 200) {

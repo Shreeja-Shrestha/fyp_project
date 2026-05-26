@@ -17,6 +17,57 @@ import 'package:fyp_project/water.dart';
 import 'package:fyp_project/favorite_page.dart';
 import 'package:fyp_project/culture.dart';
 
+const String apiBaseUrl = "https://backend-production-551c.up.railway.app/api";
+
+Widget appImage(String image, {required double width, required double height}) {
+  final cleanImage = image.trim();
+
+  if (cleanImage.isEmpty) {
+    return Container(
+      width: width,
+      height: height,
+      color: Colors.grey.shade200,
+      child: const Icon(Icons.image),
+    );
+  }
+
+  if (cleanImage.startsWith("http")) {
+    return Image.network(
+      cleanImage,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          width: width,
+          height: height,
+          color: Colors.grey.shade200,
+          child: const Icon(Icons.image),
+        );
+      },
+    );
+  }
+
+  final assetPath = cleanImage.startsWith("assets/")
+      ? cleanImage
+      : "assets/images/$cleanImage";
+
+  return Image.asset(
+    assetPath,
+    width: width,
+    height: height,
+    fit: BoxFit.cover,
+    errorBuilder: (context, error, stackTrace) {
+      return Container(
+        width: width,
+        height: height,
+        color: Colors.grey.shade200,
+        child: const Icon(Icons.image),
+      );
+    },
+  );
+}
+
 /// HOME PAGE
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -85,9 +136,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> fetchTours() async {
     try {
-      final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/tours/home"),
-      );
+      final response = await http.get(Uri.parse("$apiBaseUrl/tours/home"));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -106,7 +155,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> fetchReligiousTours() async {
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/tours/category/religious"),
+        Uri.parse("$apiBaseUrl/tours/category/religious"),
       );
 
       if (response.statusCode == 200) {
@@ -141,7 +190,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final response = await http.get(
         Uri.parse(
-          "http://192.168.18.11:3000/api/search/tours?q=${Uri.encodeComponent(searchText)}",
+          "$apiBaseUrl/search/tours?q=${Uri.encodeComponent(searchText)}",
         ),
       );
 
@@ -523,63 +572,7 @@ class _HomePageState extends State<HomePage> {
     required double width,
     required double height,
   }) {
-    if (image.isEmpty) {
-      return Container(
-        width: width,
-        height: height,
-        color: Colors.grey.shade200,
-        child: const Icon(Icons.image),
-      );
-    }
-
-    if (image.startsWith("http")) {
-      return Image.network(
-        image,
-        width: width,
-        height: height,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: width,
-            height: height,
-            color: Colors.grey.shade200,
-            child: const Icon(Icons.image),
-          );
-        },
-      );
-    }
-
-    if (image.startsWith("assets/")) {
-      return Image.asset(
-        image,
-        width: width,
-        height: height,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: width,
-            height: height,
-            color: Colors.grey.shade200,
-            child: const Icon(Icons.image),
-          );
-        },
-      );
-    }
-
-    return Image.network(
-      "http://192.168.18.11:3000/images/$image",
-      width: width,
-      height: height,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          width: width,
-          height: height,
-          color: Colors.grey.shade200,
-          child: const Icon(Icons.image),
-        );
-      },
-    );
+    return appImage(image, width: width, height: height);
   }
 
   Widget sectionTitle(String title) {
@@ -767,54 +760,7 @@ class TourCard extends StatelessWidget {
   });
 
   Widget _cardImage() {
-    if (image.startsWith("http")) {
-      return Image.network(
-        image,
-        height: 180,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            height: 180,
-            width: double.infinity,
-            color: Colors.grey.shade200,
-            child: const Icon(Icons.image),
-          );
-        },
-      );
-    }
-
-    if (image.startsWith("assets/")) {
-      return Image.asset(
-        image,
-        height: 180,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            height: 180,
-            width: double.infinity,
-            color: Colors.grey.shade200,
-            child: const Icon(Icons.image),
-          );
-        },
-      );
-    }
-
-    return Image.network(
-      "http://192.168.18.11:3000/images/$image",
-      height: 180,
-      width: double.infinity,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          height: 180,
-          width: double.infinity,
-          color: Colors.grey.shade200,
-          child: const Icon(Icons.image),
-        );
-      },
-    );
+    return appImage(image, height: 180, width: double.infinity);
   }
 
   @override
@@ -902,54 +848,7 @@ class ExploreCard extends StatelessWidget {
   });
 
   Widget _cardImage() {
-    if (image.startsWith("http")) {
-      return Image.network(
-        image,
-        height: 220,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            height: 220,
-            width: double.infinity,
-            color: Colors.grey.shade200,
-            child: const Icon(Icons.image),
-          );
-        },
-      );
-    }
-
-    if (image.startsWith("assets/")) {
-      return Image.asset(
-        image,
-        height: 220,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            height: 220,
-            width: double.infinity,
-            color: Colors.grey.shade200,
-            child: const Icon(Icons.image),
-          );
-        },
-      );
-    }
-
-    return Image.network(
-      "http://192.168.18.11:3000/images/$image",
-      height: 220,
-      width: double.infinity,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          height: 220,
-          width: double.infinity,
-          color: Colors.grey.shade200,
-          child: const Icon(Icons.image),
-        );
-      },
-    );
+    return appImage(image, height: 220, width: double.infinity);
   }
 
   @override
@@ -1022,54 +921,7 @@ class ReligiousTempleCard extends StatelessWidget {
   });
 
   Widget _cardImage() {
-    if (image.startsWith("http")) {
-      return Image.network(
-        image,
-        height: 180,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            height: 180,
-            width: double.infinity,
-            color: Colors.grey.shade200,
-            child: const Icon(Icons.image),
-          );
-        },
-      );
-    }
-
-    if (image.startsWith("assets/")) {
-      return Image.asset(
-        image,
-        height: 180,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            height: 180,
-            width: double.infinity,
-            color: Colors.grey.shade200,
-            child: const Icon(Icons.image),
-          );
-        },
-      );
-    }
-
-    return Image.network(
-      "http://192.168.18.11:3000/images/$image",
-      height: 180,
-      width: double.infinity,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          height: 180,
-          width: double.infinity,
-          color: Colors.grey.shade200,
-          child: const Icon(Icons.image),
-        );
-      },
-    );
+    return appImage(image, height: 180, width: double.infinity);
   }
 
   @override

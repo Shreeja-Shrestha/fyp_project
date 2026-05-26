@@ -19,27 +19,45 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   String email = "";
 
   int totalUsers = 0;
-  bool isLoadingUsers = true;
+  int totalBookings = 0;
 
-  final String baseUrl = "http://192.168.18.11:3000/api";
+  bool isLoadingUsers = true;
+  bool isLoadingBookings = true;
+
+  final String baseUrl = "https://backend-production-551c.up.railway.app/api";
 
   // Color Palette
-  final Color lightBgBlue = const Color(0xFFE3F2FD); // Light background blue
-  final Color vibrantBlueTop = const Color(0xFF42A5F5); // Top of gradient
-  final Color deepBlueBottom = const Color(0xFF1976D2); // Bottom of gradient
+  final Color lightBgBlue = const Color(0xFFE3F2FD);
+  final Color vibrantBlueTop = const Color(0xFF42A5F5);
+  final Color deepBlueBottom = const Color(0xFF1976D2);
+
+  // Static graph data for now.
+  // Later this can be connected to backend monthly booking API.
+  final List<Map<String, dynamic>> monthlyBookings = [
+    {"month": "Jan", "count": 2},
+    {"month": "Feb", "count": 4},
+    {"month": "Mar", "count": 6},
+    {"month": "Apr", "count": 3},
+    {"month": "May", "count": 8},
+    {"month": "Jun", "count": 5},
+  ];
 
   @override
   void initState() {
     super.initState();
     loadAdminData();
     fetchTotalUsers();
+    fetchTotalBookings();
   }
 
   Future<void> loadAdminData() async {
     final prefs = await SharedPreferences.getInstance();
+
+    if (!mounted) return;
+
     setState(() {
       name = prefs.getString("user_name") ?? "Admin";
-      email = prefs.getString("user_email") ?? "";
+      email = prefs.getString("user_email") ?? "admin@gmail.com";
     });
   }
 
@@ -53,11 +71,15 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
+        if (!mounted) return;
+
         setState(() {
-          totalUsers = data["total"] ?? 0;
+          totalUsers = int.tryParse(data["total"].toString()) ?? 0;
           isLoadingUsers = false;
         });
       } else {
+        if (!mounted) return;
+
         setState(() {
           isLoadingUsers = false;
         });
@@ -65,12 +87,55 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
         debugPrint("Failed to fetch total users: ${response.statusCode}");
       }
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         isLoadingUsers = false;
       });
 
       debugPrint("Error fetching total users: $e");
     }
+  }
+
+  Future<void> fetchTotalBookings() async {
+    try {
+      final response = await http.get(
+        Uri.parse("$baseUrl/bookings/total"),
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (!mounted) return;
+
+        setState(() {
+          totalBookings = int.tryParse(data["total"].toString()) ?? 0;
+          isLoadingBookings = false;
+        });
+      } else {
+        if (!mounted) return;
+
+        setState(() {
+          isLoadingBookings = false;
+        });
+
+        debugPrint("Failed to fetch total bookings: ${response.statusCode}");
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        isLoadingBookings = false;
+      });
+
+      debugPrint("Error fetching total bookings: $e");
+    }
+  }
+
+  Future<void> refreshDashboard() async {
+    await fetchTotalUsers();
+    await fetchTotalBookings();
   }
 
   @override
@@ -104,81 +169,113 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildLightHeader(),
-            const SizedBox(height: 25),
+      body: RefreshIndicator(
+        onRefresh: refreshDashboard,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildLightHeader(),
 
-            _buildSystemStatus(),
-            const SizedBox(height: 25),
+              const SizedBox(height: 25),
 
-            const Text(
-              "Business Insights",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Colors.black,
+              _buildSystemStatus(),
+
+              const SizedBox(height: 25),
+
+              const Text(
+                "Business Insights",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black,
+                ),
               ),
-            ),
-            const SizedBox(height: 15),
-            _buildStatRow(),
-            const SizedBox(height: 30),
 
-            const Text(
-              "Management Tools",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Colors.black,
+              const SizedBox(height: 15),
+
+              _buildStatRow(),
+
+              const SizedBox(height: 25),
+
+              const Text(
+                "Booking Overview",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black,
+                ),
               ),
-            ),
-            const SizedBox(height: 15),
 
-            _buildActionTile(
-              context,
-              Icons.add_location_alt_rounded,
-              "Add New Packages",
-              "Create new travel deals",
-              vibrantBlueTop,
-              const AdminManagePackagesPage(),
-            ),
-            _buildActionTile(
-              context,
-              Icons.collections_bookmark_rounded,
-              "Manage Inventory",
-              "Edit or delete current packages",
-              Colors.lightBlueAccent,
-              const AdminManagePackagesPage(),
-            ),
-            _buildActionTile(
-              context,
-              Icons.supervised_user_circle_rounded,
-              "User Directory",
-              "Moderate app members",
-              Colors.cyan,
-              const AdminUsersPage(),
-            ),
+              const SizedBox(height: 15),
 
-            const SizedBox(height: 20),
-            const Text(
-              "Recent Activity",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+              _buildBookingGraph(),
+
+              const SizedBox(height: 30),
+
+              const Text(
+                "Management Tools",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black,
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            _buildActivityItem("New booking from User #204", "2 mins ago"),
-            _buildActivityItem("Package 'Mardi Trek' updated", "1 hour ago"),
 
-            const SizedBox(height: 40),
-            _buildLogoutButton(),
-            const SizedBox(height: 20),
-          ],
+              const SizedBox(height: 15),
+
+              _buildActionTile(
+                context,
+                Icons.add_location_alt_rounded,
+                "Add New Packages",
+                "Create new travel deals",
+                vibrantBlueTop,
+                const AddPackagePage(),
+              ),
+
+              _buildActionTile(
+                context,
+                Icons.collections_bookmark_rounded,
+                "Manage Inventory",
+                "Edit or delete current packages",
+                Colors.lightBlueAccent,
+                const AdminManagePackagesPage(),
+              ),
+
+              _buildActionTile(
+                context,
+                Icons.supervised_user_circle_rounded,
+                "User Directory",
+                "Moderate app members",
+                Colors.cyan,
+                const AdminUsersPage(),
+              ),
+
+              const SizedBox(height: 20),
+
+              const Text(
+                "Recent Activity",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              _buildActivityItem("New booking activity detected", "Recently"),
+              _buildActivityItem("Package inventory updated", "Today"),
+
+              const SizedBox(height: 40),
+
+              _buildLogoutButton(),
+
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -291,9 +388,9 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
         ),
         const SizedBox(width: 15),
         _buildSmallStatCard(
-          "Revenue",
-          "\$4.5k",
-          Icons.account_balance_wallet_outlined,
+          "Total Bookings",
+          isLoadingBookings ? "..." : totalBookings.toString(),
+          Icons.calendar_month_outlined,
         ),
       ],
     );
@@ -331,6 +428,101 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildBookingGraph() {
+    final int maxValue = monthlyBookings
+        .map((item) => item["count"] as int)
+        .reduce((a, b) => a > b ? a : b);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: lightBgBlue.withOpacity(0.35),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: lightBgBlue.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Monthly Booking Trends",
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
+          const Text(
+            "Overview of bookings by month",
+            style: TextStyle(color: Colors.black54, fontSize: 12),
+          ),
+
+          const SizedBox(height: 22),
+
+          SizedBox(
+            height: 150,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: monthlyBookings.map((item) {
+                final String month = item["month"];
+                final int count = item["count"];
+
+                final double barHeight = maxValue == 0
+                    ? 0
+                    : (count / maxValue) * 100;
+
+                return Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        count.toString(),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 500),
+                        height: barHeight,
+                        width: 18,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              vibrantBlueTop.withOpacity(0.65),
+                              deepBlueBottom,
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        month,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.black54,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -395,20 +587,29 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
         onPressed: () {
           showDialog(
             context: context,
-            builder: (context) => AlertDialog(
+            barrierDismissible: false,
+            builder: (dialogContext) => AlertDialog(
               title: const Text("Sign Out"),
               content: const Text("Are you sure you want to sign out?"),
               actions: [
                 TextButton(
                   onPressed: () {
-                    Navigator.pop(context); // Cancel
+                    Navigator.pop(dialogContext);
                   },
                   child: const Text("Cancel"),
                 ),
                 TextButton(
                   onPressed: () async {
                     final prefs = await SharedPreferences.getInstance();
-                    await prefs.clear();
+
+                    await prefs.remove("user_id");
+                    await prefs.remove("user_name");
+                    await prefs.remove("user_email");
+                    await prefs.remove("user_role");
+
+                    if (!mounted) return;
+
+                    Navigator.pop(dialogContext);
 
                     Navigator.pushAndRemoveUntil(
                       context,

@@ -62,7 +62,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/users/profile/$userId"),
+        Uri.parse(
+          "https://backend-production-551c.up.railway.app/api/users/profile/$userId",
+        ),
       );
 
       if (response.statusCode == 200) {

@@ -2,14 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app_links/app_links.dart';
-
+import 'package:fyp_project/admin_dashboard.dart';
 import 'package:fyp_project/login.dart';
 import 'package:fyp_project/booking_success_page.dart';
 
-/// 🔥 GLOBAL THEME CONTROLLER
+///  GLOBAL THEME CONTROLLER
 ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
 
-/// 🔥 GLOBAL NAVIGATOR KEY (IMPORTANT FOR DEEP LINK)
+///  GLOBAL NAVIGATOR KEY (IMPORTANT FOR DEEP LINK)
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
@@ -115,6 +115,11 @@ class _MyAppState extends State<MyApp> {
 
           /// START SCREEN
           home: LoginPage(),
+
+          routes: {
+            '/login': (context) => LoginPage(),
+            '/admin-dashboard': (context) => const AdminDashboardPage(),
+          },
         );
       },
     );

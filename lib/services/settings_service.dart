@@ -3,7 +3,8 @@ import 'package:http/http.dart' as http;
 import '../models/user_settings.dart';
 
 class SettingsService {
-  static const String baseUrl = "http://192.168.18.11:3000/api/users";
+  static const String baseUrl =
+      "https://backend-production-551c.up.railway.app/api/users";
 
   static Future<UserSettings?> fetchSettings(int userId) async {
     try {
@@ -75,7 +76,9 @@ class SettingsService {
 
   static Future<int> fetchWishlistCount(int userId) async {
     final res = await http.get(
-      Uri.parse("http://192.168.18.11:3000/api/favorites/count/$userId"),
+      Uri.parse(
+        "https://backend-production-551c.up.railway.app/api/favorites/count/$userId",
+      ),
     );
 
     if (res.statusCode == 200) {

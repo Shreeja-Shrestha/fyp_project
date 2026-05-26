@@ -34,7 +34,9 @@ class _WishlistPageState extends State<WishlistPage> {
 
     try {
       final res = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/favorites/user/$userId"),
+        Uri.parse(
+          "https://backend-production-551c.up.railway.app/api/favorites/user/$userId",
+        ),
       );
 
       if (res.statusCode == 200) {
@@ -62,7 +64,9 @@ class _WishlistPageState extends State<WishlistPage> {
     if (userId == null) return;
 
     await http.post(
-      Uri.parse("http://192.168.18.11:3000/api/favorites/remove"),
+      Uri.parse(
+        "https://backend-production-551c.up.railway.app/api/favorites/remove",
+      ),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"user_id": userId, "tour_id": tourId}),
     );
@@ -100,7 +104,7 @@ class _WishlistPageState extends State<WishlistPage> {
     // normalize path (ensures correct package image)
     final fileName = img.toString().split('/').last;
 
-    return "http://192.168.18.11:3000/images/$fileName";
+    return "assets/$fileName";
   }
 
   @override

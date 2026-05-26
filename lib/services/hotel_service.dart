@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class HotelService {
-  static const String baseUrl = "http://192.168.18.11:3000/api";
+  static const String baseUrl =
+      "https://backend-production-551c.up.railway.app/api";
 
   static Future<List<dynamic>> fetchNearbyHotels(int tourId) async {
     try {

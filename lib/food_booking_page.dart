@@ -97,7 +97,9 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://192.168.18.11:3000/api/bookings/create"),
+        Uri.parse(
+          "https://backend-production-551c.up.railway.app/api/bookings/create",
+        ),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "user_id": userId,

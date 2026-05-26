@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class PackageService {
-  static const String baseUrl = "http://192.168.18.11:3000/api/tours";
+  static const String baseUrl =
+      "https://backend-production-551c.up.railway.app/api/tours";
 
   /// GET ALL PACKAGES
   static Future<List<dynamic>> getPackages() async {

@@ -36,7 +36,9 @@ class _CulturePageState extends State<CulturePage>
   Future<void> fetchReligiousTours() async {
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/tours/category/religious"),
+        Uri.parse(
+          "https://backend-production-551c.up.railway.app/api/tours/category/religious",
+        ),
       );
 
       if (response.statusCode == 200) {

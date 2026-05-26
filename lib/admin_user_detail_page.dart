@@ -25,7 +25,7 @@ class _AdminUserDetailPageState extends State<AdminUserDetailPage> {
     try {
       final res = await http.get(
         Uri.parse(
-          "http://192.168.18.11:3000/api/users/profile/${widget.userId}",
+          "https://backend-production-551c.up.railway.app/api/users/profile/${widget.userId}",
         ),
       );
 

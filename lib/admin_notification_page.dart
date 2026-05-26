@@ -23,7 +23,9 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
   Future<void> fetchNotifications() async {
     try {
       final res = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/notifications/10"),
+        Uri.parse(
+          "https://backend-production-551c.up.railway.app/api/notifications/10",
+        ),
       );
 
       if (res.statusCode == 200) {
@@ -49,7 +51,9 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
   Future<void> markAsRead(int id) async {
     try {
       await http.put(
-        Uri.parse("http://192.168.18.11:3000/api/notifications/read/$id"),
+        Uri.parse(
+          "https://backend-production-551c.up.railway.app/api/notifications/read/$id",
+        ),
       );
       fetchNotifications();
     } catch (e) {

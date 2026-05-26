@@ -48,7 +48,9 @@ class _BookingSuccessPageState extends State<BookingSuccessPage> {
   Future<void> fetchReceipt() async {
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/receipts/${widget.bookingId}"),
+        Uri.parse(
+          "https://backend-production-551c.up.railway.app/api/receipts/${widget.bookingId}",
+        ),
       );
 
       if (response.statusCode == 200) {

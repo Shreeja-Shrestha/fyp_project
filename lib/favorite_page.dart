@@ -30,7 +30,9 @@ class _FavoritePageState extends State<FavoritePage> {
     if (userId == 0) return;
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.18.11:3000/api/favorites/user/$userId"),
+        Uri.parse(
+          "https://backend-production-551c.up.railway.app/api/favorites/user/$userId",
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -49,7 +51,9 @@ class _FavoritePageState extends State<FavoritePage> {
   Future<void> removeFavorite(int tourId) async {
     try {
       await http.post(
-        Uri.parse("http://192.168.18.11:3000/api/favorites/remove"),
+        Uri.parse(
+          "https://backend-production-551c.up.railway.app/api/favorites/remove",
+        ),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"user_id": userId, "tour_id": tourId}),
       );

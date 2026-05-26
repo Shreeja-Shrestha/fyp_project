@@ -5,7 +5,9 @@ import '../models/event_model.dart';
 class EventService {
   static Future<List<Event>> fetchEvents(int tourId) async {
     final response = await http.get(
-      Uri.parse('http://192.168.18.11:3000/tours/$tourId/events'),
+      Uri.parse(
+        'https://backend-production-551c.up.railway.app/api/tours/$tourId/events',
+      ),
     );
 
     if (response.statusCode == 200) {
