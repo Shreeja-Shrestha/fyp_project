@@ -68,14 +68,22 @@ class _ReceiptDetailPageState extends State<ReceiptDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Text(label, style: const TextStyle(color: Colors.grey)),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodySmall?.color,
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.onBackground,
+              ),
             ),
           ),
         ],
@@ -90,12 +98,16 @@ class _ReceiptDetailPageState extends State<ReceiptDetailPage> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "Receipt",
-          style: TextStyle(fontWeight: FontWeight.w700),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.onBackground,
+          ),
         ),
         elevation: 0,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).colorScheme.onBackground,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -129,17 +141,20 @@ class _ReceiptDetailPageState extends State<ReceiptDetailPage> {
                         size: 64,
                       ),
                       const SizedBox(height: 10),
-                      const Text(
+                      Text(
                         "Payment Successful",
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
+                          color: Theme.of(context).colorScheme.onBackground,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         "Booking ID: ${data["id"]}",
-                        style: const TextStyle(color: Colors.grey),
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodySmall?.color,
+                        ),
                       ),
                       const SizedBox(height: 22),
                       const Divider(),

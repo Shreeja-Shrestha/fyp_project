@@ -111,13 +111,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // --- HEADER TEXT ---
-                      const Text(
+                      Text(
                         "Sign Up to Explore and",
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
-                          color: Colors.black,
+                          color: Theme.of(context).colorScheme.onBackground,
                         ),
                       ),
                       const Text(
@@ -167,15 +167,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         children: [
                           Checkbox(
                             value: _rememberMe,
-                            activeColor: Colors.black,
+                            activeColor: Theme.of(context).colorScheme.primary,
                             onChanged: (value) {
                               setState(() => _rememberMe = value!);
                             },
                           ),
-                          const Text(
+                          Text(
                             "Remember me",
                             style: TextStyle(
-                              color: Colors.grey,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.color,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -189,7 +191,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         height: 55,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
                             ),
@@ -212,9 +216,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
+                          Text(
                             "Already have an account? ",
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.color,
+                            ),
                           ),
                           GestureDetector(
                             onTap: () {
@@ -258,35 +266,45 @@ class _SignUpScreenState extends State<SignUpScreen> {
       controller: controller,
       obscureText: isPassword && !_isPasswordVisible,
       textAlign: TextAlign.start,
+      style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: Colors.grey.shade600),
+        prefixIcon: Icon(
+          icon,
+          color: Theme.of(context).textTheme.bodySmall?.color,
+        ),
         suffixIcon: showVisibilityToggle
             ? IconButton(
                 icon: Icon(
                   _isPasswordVisible
                       ? Icons.visibility
                       : Icons.visibility_off_outlined,
-                  color: Colors.grey,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
                 ),
                 onPressed: () =>
                     setState(() => _isPasswordVisible = !_isPasswordVisible),
               )
             : null,
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.grey, fontSize: 15),
+        hintStyle: TextStyle(
+          color: Theme.of(context).textTheme.bodySmall?.color,
+          fontSize: 15,
+        ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Theme.of(context).cardColor,
         contentPadding: const EdgeInsets.symmetric(
           vertical: 16,
           horizontal: 20,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide(color: Colors.grey.shade400),
+          borderSide: BorderSide(color: Theme.of(context).dividerColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: const BorderSide(color: Colors.black, width: 1.5),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.primary,
+            width: 1.5,
+          ),
         ),
       ),
     );

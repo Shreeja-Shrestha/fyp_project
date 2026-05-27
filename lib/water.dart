@@ -97,21 +97,25 @@ class _WaterPageState extends State<WaterPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FBFD),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "Water",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onBackground,
+          ),
         ),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).colorScheme.onBackground,
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: primarySkyBlue,
           indicatorWeight: 3,
           labelColor: primarySkyBlue,
-          unselectedLabelColor: Colors.grey,
+          unselectedLabelColor: Theme.of(context).textTheme.bodySmall?.color,
           labelStyle: const TextStyle(fontWeight: FontWeight.bold),
           tabs: const [
             Tab(text: "Experiences"),
@@ -145,16 +149,20 @@ class _WaterPageState extends State<WaterPage>
 
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
+          children: [
             Text(
               "Choose Experience",
-              style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onBackground,
+              ),
             ),
             Text(
               "Water Tours",
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey,
+                color: Theme.of(context).textTheme.bodySmall?.color,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -252,7 +260,9 @@ class _WaterPageState extends State<WaterPage>
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.12),
+              color: Colors.black.withOpacity(
+                Theme.of(context).brightness == Brightness.dark ? 0.20 : 0.12,
+              ),
               blurRadius: 14,
               offset: const Offset(0, 8),
             ),
@@ -270,7 +280,7 @@ class _WaterPageState extends State<WaterPage>
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      color: softSkyBlue,
+                      color: Theme.of(context).cardColor,
                       child: Icon(
                         Icons.water_drop,
                         color: primarySkyBlue,
@@ -471,9 +481,12 @@ class _WaterPageState extends State<WaterPage>
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Theme.of(context).dividerColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.07),
+              color: Colors.black.withOpacity(
+                Theme.of(context).brightness == Brightness.dark ? 0.18 : 0.07,
+              ),
               blurRadius: 14,
               offset: const Offset(0, 7),
             ),
@@ -500,7 +513,11 @@ class _WaterPageState extends State<WaterPage>
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: softSkyBlue.withOpacity(0.55),
+                        color: softSkyBlue.withOpacity(
+                          Theme.of(context).brightness == Brightness.dark
+                              ? 0.18
+                              : 0.55,
+                        ),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -518,9 +535,10 @@ class _WaterPageState extends State<WaterPage>
                       title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15.5,
+                        color: Theme.of(context).colorScheme.onBackground,
                       ),
                     ),
                     const SizedBox(height: 7),
@@ -536,9 +554,11 @@ class _WaterPageState extends State<WaterPage>
                           child: Text(
                             destination,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: Colors.black54,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.color,
                             ),
                           ),
                         ),
@@ -555,9 +575,9 @@ class _WaterPageState extends State<WaterPage>
                         const SizedBox(width: 3),
                         Text(
                           duration,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Colors.black54,
+                            color: Theme.of(context).textTheme.bodySmall?.color,
                           ),
                         ),
                       ],
@@ -609,7 +629,9 @@ class _WaterPageState extends State<WaterPage>
     return Container(
       width: 118,
       height: 140,
-      color: softSkyBlue,
+      color: softSkyBlue.withOpacity(
+        Theme.of(context).brightness == Brightness.dark ? 0.18 : 0.55,
+      ),
       child: Icon(Icons.water_drop, color: primarySkyBlue, size: 35),
     );
   }
@@ -620,12 +642,18 @@ class _WaterPageState extends State<WaterPage>
       children: [
         Text(
           title,
-          style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 19,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onBackground,
+          ),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: softSkyBlue.withOpacity(0.6),
+            color: softSkyBlue.withOpacity(
+              Theme.of(context).brightness == Brightness.dark ? 0.18 : 0.6,
+            ),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -645,7 +673,9 @@ class _WaterPageState extends State<WaterPage>
       width: double.infinity,
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: softSkyBlue.withOpacity(0.32),
+        color: softSkyBlue.withOpacity(
+          Theme.of(context).brightness == Brightness.dark ? 0.16 : 0.32,
+        ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: softSkyBlue.withOpacity(0.7)),
       ),
@@ -656,7 +686,10 @@ class _WaterPageState extends State<WaterPage>
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(color: Colors.black54, fontSize: 13),
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodySmall?.color,
+                fontSize: 13,
+              ),
             ),
           ),
         ],
@@ -674,16 +707,22 @@ class _WaterPageState extends State<WaterPage>
           SizedBox(height: MediaQuery.of(context).size.height * 0.18),
           Icon(Icons.water_drop, size: 72, color: primarySkyBlue),
           const SizedBox(height: 14),
-          const Text(
+          Text(
             "No Water Packages Yet",
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 21,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onBackground,
+            ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             "Add rafting or boating packages from the admin panel.",
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodySmall?.color,
+            ),
           ),
         ],
       ),
@@ -715,7 +754,9 @@ class _WaterPageState extends State<WaterPage>
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: softSkyBlue.withOpacity(0.35),
+            color: softSkyBlue.withOpacity(
+              Theme.of(context).brightness == Brightness.dark ? 0.16 : 0.35,
+            ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: softSkyBlue),
           ),
@@ -723,10 +764,14 @@ class _WaterPageState extends State<WaterPage>
             children: [
               Icon(Icons.lightbulb_outline, color: primarySkyBlue, size: 30),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Text(
                   "Water category is divided into adventure and leisure experiences.",
-                  style: TextStyle(fontWeight: FontWeight.w600, height: 1.4),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                    color: Theme.of(context).colorScheme.onBackground,
+                  ),
                 ),
               ),
             ],
@@ -737,31 +782,36 @@ class _WaterPageState extends State<WaterPage>
 
         ...highlights.map((item) {
           return Card(
+            color: Theme.of(context).cardColor,
             margin: const EdgeInsets.only(bottom: 14),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(18),
+              side: BorderSide(color: Theme.of(context).dividerColor),
             ),
             elevation: 1.5,
             child: ListTile(
               contentPadding: const EdgeInsets.all(16),
               leading: CircleAvatar(
-                backgroundColor: softSkyBlue,
+                backgroundColor: softSkyBlue.withOpacity(
+                  Theme.of(context).brightness == Brightness.dark ? 0.18 : 1,
+                ),
                 child: Icon(item["icon"] as IconData, color: primarySkyBlue),
               ),
               title: Text(
                 item["title"] as String,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 16,
+                  color: Theme.of(context).colorScheme.onBackground,
                 ),
               ),
               subtitle: Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
                   item["desc"] as String,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                     height: 1.35,
                   ),
                 ),

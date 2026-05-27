@@ -2,12 +2,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-// Ensure this import matches your actual project structure
 import 'package:fyp_project/booking_options_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fyp_project/booking_options_page.dart';
 
 class TourDetailPage extends StatefulWidget {
   final int tourId;
@@ -35,6 +34,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
   int _userSelectedRating = 5;
   Timer? _timer;
   List<String> images = [];
+
   final Color primarySkyBlue = const Color(0xFF00B4D8);
   final Color softSkyBlue = const Color(0xFFCAF0F8);
 
@@ -49,8 +49,44 @@ class _TourDetailPageState extends State<TourDetailPage> {
     _timer?.cancel();
     _pageController.dispose();
     _reviewController.dispose();
-
     super.dispose();
+  }
+
+  double getAverageRating() {
+    if (reviews.isNotEmpty) {
+      double total = 0;
+
+      for (final review in reviews) {
+        total += double.tryParse(review["rating"].toString()) ?? 0;
+      }
+
+      return total / reviews.length;
+    }
+
+    return double.tryParse(
+          tour?["average_rating"]?.toString() ??
+              tour?["rating"]?.toString() ??
+              "0",
+        ) ??
+        0.0;
+  }
+
+  int getReviewCount() {
+    if (reviews.isNotEmpty) {
+      return reviews.length;
+    }
+
+    return int.tryParse(
+          tour?["review_count"]?.toString() ??
+              tour?["reviews"]?.toString() ??
+              "0",
+        ) ??
+        0;
+  }
+
+  String getPricePerPerson() {
+    final price = tour?["price"]?.toString() ?? "0";
+    return "NPR $price per person";
   }
 
   Future<void> fetchTour() async {
@@ -66,6 +102,8 @@ class _TourDetailPageState extends State<TourDetailPage> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
+        if (!mounted) return;
+
         setState(() {
           tour = data;
           final img = tour?["image"];
@@ -75,6 +113,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
                 ? img.toString()
                 : "assets/mardi2.jpg",
           ];
+
           isLoading = false;
         });
       } else {
@@ -96,6 +135,8 @@ class _TourDetailPageState extends State<TourDetailPage> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
+        if (!mounted) return;
+
         setState(() {
           reviews = List<Map<String, dynamic>>.from(data);
         });
@@ -107,24 +148,27 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
   Future<void> loadUserId() async {
     final prefs = await SharedPreferences.getInstance();
+
+    if (!mounted) return;
+
     setState(() {
       currentUserId = prefs.getInt("user_id") ?? 0;
     });
   }
 
   Future<void> initPage() async {
-    await loadUserId(); // 🔥 wait for user_id
+    await loadUserId();
     await fetchTour();
-    await fetchReviews(); // 🔥 now reviews will come
+    await fetchReviews();
     _startImageTimer();
     _checkFavorite();
   }
 
   void _startImageTimer() {
     _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
-      if (_pageController.hasClients && tour != null) {
-        int nextPage =
-            (_currentPage + 1) % images.length; // only 1 image for now
+      if (_pageController.hasClients && tour != null && images.isNotEmpty) {
+        int nextPage = (_currentPage + 1) % images.length;
+
         _pageController.animateToPage(
           nextPage,
           duration: const Duration(milliseconds: 900),
@@ -134,8 +178,22 @@ class _TourDetailPageState extends State<TourDetailPage> {
     });
   }
 
-  // Navigate to booking page
   void _navigateToBooking() {
+    final double tourLat =
+        double.tryParse(tour?["latitude"]?.toString() ?? "") ?? 0.0;
+
+    final double tourLng =
+        double.tryParse(tour?["longitude"]?.toString() ?? "") ?? 0.0;
+
+    if (tourLat == 0.0 || tourLng == 0.0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Tour location is not available for this package"),
+        ),
+      );
+      return;
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -144,16 +202,16 @@ class _TourDetailPageState extends State<TourDetailPage> {
           userId: currentUserId,
           role: 'user',
           tourId: widget.tourId,
-          lat: 28.37, // example latitude
-          lng: 83.92, // example longitude
+          lat: tourLat,
+          lng: tourLng,
         ),
       ),
     );
   }
 
-  // Submit review to backend
   Future<void> _submitReview() async {
     final String comment = _reviewController.text.trim();
+
     if (comment.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -165,13 +223,14 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
     final url = Uri.parse(
       'https://backend-production-551c.up.railway.app/api/reviews/submit',
-    ); // change IP if using real device
+    );
+
     try {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "user_id": currentUserId, // Replace with logged-in user ID
+          "user_id": currentUserId,
           "tour_id": widget.tourId,
           "rating": _userSelectedRating,
           "comment": comment,
@@ -182,12 +241,15 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
       if (response.statusCode == 200 && data['status'] == 'success') {
         await fetchReviews();
-        // Add new review to UI
+        await fetchTour();
+
+        if (!mounted) return;
+
         setState(() {
-          // reload from backend
           _reviewController.clear();
           _userSelectedRating = 5;
         });
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Review submitted successfully")),
         );
@@ -219,9 +281,80 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
       if (data["status"] == "success") {
         await fetchReviews();
+        await fetchTour();
+
+        if (!mounted) return;
+
+        setState(() {});
       }
     } catch (e) {
       print("Delete error: $e");
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    final url = isFavorite
+        ? Uri.parse(
+            "https://backend-production-551c.up.railway.app/api/favorites/remove",
+          )
+        : Uri.parse(
+            "https://backend-production-551c.up.railway.app/api/favorites/add",
+          );
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"user_id": currentUserId, "tour_id": widget.tourId}),
+      );
+
+      print("Response status: ${response.statusCode}");
+      print("Response body: ${response.body}");
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data["status"] == "success") {
+        if (!mounted) return;
+
+        setState(() {
+          isFavorite = !isFavorite;
+        });
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(data["message"])));
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Failed: ${data["message"]}")));
+      }
+    } catch (e) {
+      print("Error: $e");
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+    }
+  }
+
+  Future<void> _checkFavorite() async {
+    final url = Uri.parse(
+      "https://backend-production-551c.up.railway.app/api/favorites/check?user_id=$currentUserId&tour_id=${widget.tourId}",
+    );
+
+    try {
+      final response = await http.get(url);
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        if (!mounted) return;
+
+        setState(() {
+          isFavorite = data["isFavorite"];
+        });
+      }
+    } catch (e) {
+      print("Check favorite error: $e");
     }
   }
 
@@ -230,6 +363,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
     if (isLoading || tour == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
@@ -239,7 +373,6 @@ class _TourDetailPageState extends State<TourDetailPage> {
             height: MediaQuery.of(context).size.height * 0.5,
             child: Stack(
               alignment: Alignment.bottomCenter,
-
               children: [
                 PageView.builder(
                   controller: _pageController,
@@ -260,6 +393,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
                     }
                   },
                 ),
+
                 Positioned(
                   top: 0,
                   left: 0,
@@ -278,6 +412,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
                     ),
                   ),
                 ),
+
                 // SLIDESHOW INDICATOR
                 Positioned(
                   bottom: 60,
@@ -322,74 +457,15 @@ class _TourDetailPageState extends State<TourDetailPage> {
     );
   }
 
-  Future<void> _toggleFavorite() async {
-    final url = isFavorite
-        ? Uri.parse(
-            "https://backend-production-551c.up.railway.app/api/favorites/remove",
-          )
-        : Uri.parse(
-            "https://backend-production-551c.up.railway.app/api/favorites/add",
-          );
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"user_id": currentUserId, "tour_id": widget.tourId}),
-      );
-
-      print("Response status: ${response.statusCode}");
-      print("Response body: ${response.body}");
-
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200 && data["status"] == "success") {
-        setState(() {
-          isFavorite = !isFavorite;
-        });
-
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(data["message"])));
-      } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Failed: ${data["message"]}")));
-      }
-    } catch (e) {
-      print("Error: $e");
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
-    }
-  }
-
-  Future<void> _checkFavorite() async {
-    final url = Uri.parse(
-      "https://backend-production-551c.up.railway.app/api/favorites/check?user_id=$currentUserId&tour_id=${widget.tourId}",
-    );
-
-    try {
-      final response = await http.get(url);
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        setState(() {
-          isFavorite = data["isFavorite"];
-        });
-      }
-    } catch (e) {
-      print("Check favorite error: $e");
-    }
-  }
-
   Widget _buildTourContent() {
+    final double averageRating = getAverageRating();
+    final int reviewCount = getReviewCount();
+
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
-        boxShadow: [
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
+        boxShadow: const [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 15,
@@ -411,7 +487,9 @@ class _TourDetailPageState extends State<TourDetailPage> {
               ),
             ),
           ),
+
           const SizedBox(height: 25),
+
           Text(
             tour?["title"] ?? "",
             style: const TextStyle(
@@ -420,7 +498,9 @@ class _TourDetailPageState extends State<TourDetailPage> {
               letterSpacing: 0.5,
             ),
           ),
+
           const SizedBox(height: 8),
+
           Row(
             children: [
               Icon(Icons.location_on, color: primarySkyBlue, size: 18),
@@ -428,6 +508,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
               Text(tour?["destination"] ?? ""),
             ],
           ),
+
           const SizedBox(height: 25),
 
           // QUICK INFO TILES
@@ -439,8 +520,30 @@ class _TourDetailPageState extends State<TourDetailPage> {
                 "Duration",
               ),
               const SizedBox(width: 15),
-              _infoTile(Icons.star_rounded, "4.5", "Rating"),
+              _infoTile(
+                Icons.star_rounded,
+                averageRating.toStringAsFixed(1),
+                "Rating",
+              ),
             ],
+          ),
+
+          const SizedBox(height: 12),
+
+          Text(
+            getPricePerPerson(),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: primarySkyBlue,
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
+          Text(
+            "Based on $reviewCount review${reviewCount == 1 ? "" : "s"}",
+            style: const TextStyle(fontSize: 12, color: Colors.blueGrey),
           ),
 
           const SizedBox(height: 35),
@@ -477,7 +580,9 @@ class _TourDetailPageState extends State<TourDetailPage> {
               ),
             ],
           ),
+
           const SizedBox(height: 12),
+
           Text(tour?["description"] ?? ""),
 
           const SizedBox(height: 40),
@@ -487,16 +592,20 @@ class _TourDetailPageState extends State<TourDetailPage> {
             "Reviews",
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
+
           const SizedBox(height: 15),
+
           reviews.isEmpty
               ? const Text("No reviews yet. Be the first!")
               : Column(children: reviews.map((r) => _reviewCard(r)).toList()),
 
           const SizedBox(height: 20),
+
           const Text(
             "Write a Review",
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
+
           const SizedBox(height: 12),
 
           // Star Rating Selector
@@ -553,6 +662,7 @@ class _TourDetailPageState extends State<TourDetailPage> {
               ),
             ),
           ),
+
           const SizedBox(height: 20),
         ],
       ),
@@ -593,7 +703,8 @@ class _TourDetailPageState extends State<TourDetailPage> {
   }
 
   Widget _reviewCard(Map<String, dynamic> r) {
-    final bool isOwner = r["user_id"] == currentUserId;
+    final bool isOwner = int.tryParse(r["user_id"].toString()) == currentUserId;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(18),
@@ -611,19 +722,27 @@ class _TourDetailPageState extends State<TourDetailPage> {
                 backgroundColor: softSkyBlue,
                 child: Icon(Icons.person, color: primarySkyBlue),
               ),
+
               const SizedBox(width: 12),
+
               if (isOwner)
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.blue,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text(
+                  child: const Text(
                     "Your Review",
                     style: TextStyle(color: Colors.white, fontSize: 10),
                   ),
                 ),
+
+              const SizedBox(width: 6),
+
               Expanded(
                 child: Text(
                   r["user_name"] ?? "User",
@@ -641,9 +760,11 @@ class _TourDetailPageState extends State<TourDetailPage> {
               Text(" ${r["rating"]}"),
             ],
           ),
+
           const SizedBox(height: 10),
+
           Text(
-            r["comment"],
+            r["comment"] ?? "",
             style: TextStyle(
               color: Theme.of(context).textTheme.bodyMedium!.color,
             ),

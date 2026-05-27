@@ -63,7 +63,7 @@ class _CulturePageState extends State<CulturePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : CustomScrollView(
@@ -72,7 +72,7 @@ class _CulturePageState extends State<CulturePage>
                 SliverAppBar(
                   pinned: true,
                   expandedHeight: 250,
-                  backgroundColor: const Color(0xFFF8F9FA),
+                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                   elevation: 0,
                   leading: IconButton(
                     icon: const Icon(
@@ -167,7 +167,9 @@ class _CulturePageState extends State<CulturePage>
                         TabBar(
                           controller: _tabController,
                           labelColor: primarySkyBlue,
-                          unselectedLabelColor: Colors.grey,
+                          unselectedLabelColor: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.color,
                           indicatorColor: primarySkyBlue,
                           tabs: const [
                             Tab(text: "Religious Places"),
@@ -217,7 +219,7 @@ class _CulturePageState extends State<CulturePage>
         decoration: BoxDecoration(
           color: softSkyBlue.withOpacity(0.25),
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: softSkyBlue),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -228,9 +230,13 @@ class _CulturePageState extends State<CulturePage>
               color: primarySkyBlue,
             ),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               "No religious packages found",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onBackground,
+              ),
             ),
             const SizedBox(height: 6),
             Text(
@@ -302,10 +308,10 @@ class _CulturePageState extends State<CulturePage>
                       title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF1A1A1A),
+                        color: Theme.of(context).colorScheme.onBackground,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -324,7 +330,9 @@ class _CulturePageState extends State<CulturePage>
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: Colors.grey.shade600,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.color,
                               fontSize: 13,
                             ),
                           ),
@@ -359,10 +367,10 @@ class _CulturePageState extends State<CulturePage>
                       children: [
                         Text(
                           "NPR $price",
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF111111),
+                            color: Theme.of(context).colorScheme.onBackground,
                           ),
                         ),
                         Container(
@@ -419,10 +427,10 @@ class _CulturePageState extends State<CulturePage>
     return Container(
       height: 135,
       width: 120,
-      color: Colors.grey.shade300,
-      child: const Icon(
+      color: Theme.of(context).cardColor,
+      child: Icon(
         Icons.image_not_supported_outlined,
-        color: Colors.black45,
+        color: Theme.of(context).textTheme.bodySmall?.color,
       ),
     );
   }
@@ -488,18 +496,18 @@ class _CulturePageState extends State<CulturePage>
                   children: [
                     Text(
                       story["title"]!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 15,
+                        color: Theme.of(context).colorScheme.onBackground,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       story["desc"]!,
                       style: TextStyle(
-                        fontSize: 13,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
                         height: 1.4,
-                        color: Colors.grey.shade600,
                       ),
                     ),
                   ],

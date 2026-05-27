@@ -37,7 +37,19 @@ class _ChatbotPageState extends State<ChatbotPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Travel Assistant")),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(
+          "Travel Assistant",
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onBackground,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).colorScheme.onBackground,
+        elevation: 0,
+      ),
       body: Column(
         children: [
           Expanded(
@@ -56,12 +68,14 @@ class _ChatbotPageState extends State<ChatbotPage> {
                       margin: const EdgeInsets.all(8),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.blue,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         msg["text"],
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onBackground,
+                        ),
                       ),
                     ),
                   );
@@ -104,12 +118,20 @@ class _ChatbotPageState extends State<ChatbotPage> {
                           child: ListTile(
                             title: Text(
                               tour["title"],
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onBackground,
                               ),
                             ),
                             subtitle: Text(
                               "${tour["destination"]} • ${tour["duration"]}",
+                              style: TextStyle(
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.color,
+                              ),
                             ),
                             trailing: Text(
                               "Rs ${tour["price"]}",
@@ -139,13 +161,25 @@ class _ChatbotPageState extends State<ChatbotPage> {
               Expanded(
                 child: TextField(
                   controller: controller,
-                  decoration: const InputDecoration(
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onBackground,
+                  ),
+                  decoration: InputDecoration(
                     hintText: "Ask something...",
-                    contentPadding: EdgeInsets.all(12),
+                    hintStyle: TextStyle(
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
                   ),
                 ),
               ),
-              IconButton(icon: const Icon(Icons.send), onPressed: sendMessage),
+              IconButton(
+                icon: Icon(
+                  Icons.send,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                onPressed: sendMessage,
+              ),
             ],
           ),
         ],

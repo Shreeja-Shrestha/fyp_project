@@ -6,7 +6,6 @@ class FoodPage extends StatelessWidget {
 
   final Color primarySkyBlue = const Color(0xFF00B4D8);
   final Color softSkyBlue = const Color(0xFFCAF0F8);
-  final Color backgroundColor = const Color(0xFFF7FBFD);
 
   final List<Map<String, dynamic>> foodCategories = const [
     {
@@ -37,19 +36,21 @@ class FoodPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: false,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        title: const Text(
+        iconTheme: IconThemeData(
+          color: Theme.of(context).colorScheme.onBackground,
+        ),
+        title: Text(
           "Food Experiences",
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: Theme.of(context).colorScheme.onBackground,
           ),
         ),
       ),
@@ -57,7 +58,7 @@ class FoodPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
         children: [
-          _headerSection(),
+          _headerSection(context),
           const SizedBox(height: 20),
 
           ...foodCategories.map((item) {
@@ -68,12 +69,14 @@ class FoodPage extends StatelessWidget {
     );
   }
 
-  Widget _headerSection() {
+  Widget _headerSection(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: softSkyBlue.withOpacity(0.35),
+        color: softSkyBlue.withOpacity(
+          Theme.of(context).brightness == Brightness.dark ? 0.16 : 0.35,
+        ),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: softSkyBlue),
       ),
@@ -82,12 +85,12 @@ class FoodPage extends StatelessWidget {
         children: [
           Icon(Icons.local_dining, color: primarySkyBlue, size: 34),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             "Choose your experience",
             style: TextStyle(
               fontSize: 21,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Theme.of(context).colorScheme.onBackground,
             ),
           ),
           const SizedBox(height: 6),
@@ -96,7 +99,7 @@ class FoodPage extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               height: 1.45,
-              color: Colors.grey[700],
+              color: Theme.of(context).textTheme.bodySmall?.color,
             ),
           ),
         ],
@@ -111,12 +114,14 @@ class FoodPage extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(color: softSkyBlue.withOpacity(0.75)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.045),
+              color: Colors.black.withOpacity(
+                Theme.of(context).brightness == Brightness.dark ? 0.18 : 0.045,
+              ),
               blurRadius: 14,
               offset: const Offset(0, 7),
             ),
@@ -137,7 +142,11 @@ class FoodPage extends StatelessWidget {
                     height: 92,
                     width: 92,
                     decoration: BoxDecoration(
-                      color: softSkyBlue.withOpacity(0.55),
+                      color: softSkyBlue.withOpacity(
+                        Theme.of(context).brightness == Brightness.dark
+                            ? 0.18
+                            : 0.55,
+                      ),
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: Icon(item["icon"], color: primarySkyBlue, size: 36),
@@ -154,10 +163,10 @@ class FoodPage extends StatelessWidget {
                 children: [
                   Text(
                     item["title"],
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 17.5,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Theme.of(context).colorScheme.onBackground,
                     ),
                   ),
 
@@ -170,7 +179,7 @@ class FoodPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13.5,
                       height: 1.35,
-                      color: Colors.grey[700],
+                      color: Theme.of(context).textTheme.bodySmall?.color,
                     ),
                   ),
 
@@ -184,7 +193,7 @@ class FoodPage extends StatelessWidget {
                         "Bookable experience",
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[800],
+                          color: Theme.of(context).textTheme.bodySmall?.color,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -200,7 +209,9 @@ class FoodPage extends StatelessWidget {
               height: 36,
               width: 36,
               decoration: BoxDecoration(
-                color: softSkyBlue.withOpacity(0.65),
+                color: softSkyBlue.withOpacity(
+                  Theme.of(context).brightness == Brightness.dark ? 0.18 : 0.65,
+                ),
                 shape: BoxShape.circle,
               ),
               child: Icon(

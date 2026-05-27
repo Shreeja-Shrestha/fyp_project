@@ -5,7 +5,7 @@ import 'dart:ui';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:fyp_project/trips_page.dart';
 import 'package:fyp_project/booking_success_page.dart';
 import 'package:fyp_project/chatbot_page.dart';
 import 'package:fyp_project/food_page.dart';
@@ -16,6 +16,7 @@ import 'package:fyp_project/user_profile_page.dart';
 import 'package:fyp_project/water.dart';
 import 'package:fyp_project/favorite_page.dart';
 import 'package:fyp_project/culture.dart';
+import 'package:fyp_project/booking_history.dart';
 
 const String apiBaseUrl = "https://backend-production-551c.up.railway.app/api";
 
@@ -134,6 +135,20 @@ class _HomePageState extends State<HomePage> {
     }).toList();
   }
 
+  double getTourRating(dynamic tour) {
+    return double.tryParse(
+          (tour["average_rating"] ?? tour["rating"] ?? "0").toString(),
+        ) ??
+        0.0;
+  }
+
+  int getTourReviewCount(dynamic tour) {
+    return int.tryParse(
+          (tour["review_count"] ?? tour["reviews"] ?? "0").toString(),
+        ) ??
+        0;
+  }
+
   Future<void> fetchTours() async {
     try {
       final response = await http.get(Uri.parse("$apiBaseUrl/tours/home"));
@@ -231,12 +246,16 @@ class _HomePageState extends State<HomePage> {
     switch (selectedIndex) {
       case 0:
         return exploreBody();
+
       case 1:
-        return const Center(child: Text("Trips page"));
+        return const TripsPage();
+
       case 2:
         return const FavoritePage();
+
       case 3:
-        return const Center(child: Text("History page"));
+        return const BookingHistoryPage();
+
       default:
         return exploreBody();
     }
@@ -336,6 +355,9 @@ class _HomePageState extends State<HomePage> {
                           return TourCard(
                             title: tour["title"] ?? "",
                             image: tour["image"] ?? "",
+                            rating: getTourRating(tour),
+                            reviewCount: getTourReviewCount(tour),
+                            duration: tour["duration"]?.toString() ?? "5 days",
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -374,6 +396,8 @@ class _HomePageState extends State<HomePage> {
                             title: tour["title"] ?? "",
                             image: tour["image"] ?? "",
                             price: tour["price"].toString(),
+                            rating: getTourRating(tour),
+                            reviewCount: getTourReviewCount(tour),
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -410,7 +434,8 @@ class _HomePageState extends State<HomePage> {
                           title: temple["title"] ?? "",
                           image: temple["image"] ?? "",
                           price: temple["price"].toString(),
-                          reviews: "0",
+                          rating: getTourRating(temple),
+                          reviews: getTourReviewCount(temple),
                           onTap: () {
                             Navigator.push(
                               context,
@@ -544,7 +569,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   subtitle: Text(
-                    "${tour["destination"] ?? "Nepal"} • NPR ${tour["price"] ?? ""}",
+                    "${tour["destination"] ?? "Nepal"} • NPR ${tour["price"] ?? ""} per person",
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -750,12 +775,18 @@ class InterestCard extends StatelessWidget {
 class TourCard extends StatelessWidget {
   final String title;
   final String image;
+  final double rating;
+  final int reviewCount;
+  final String duration;
   final VoidCallback? onTap;
 
   const TourCard({
     super.key,
     required this.title,
     required this.image,
+    required this.rating,
+    required this.reviewCount,
+    required this.duration,
     this.onTap,
   });
 
@@ -765,6 +796,8 @@ class TourCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayRating = rating.toStringAsFixed(1);
+
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
@@ -810,18 +843,18 @@ class TourCard extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             const SizedBox(height: 2),
-            const Row(
+            Row(
               children: [
                 Text(
-                  "0 reviews",
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  "$displayRating rating",
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
-                SizedBox(width: 6),
-                Text("•", style: TextStyle(color: Colors.grey)),
-                SizedBox(width: 6),
+                const SizedBox(width: 6),
+                const Text("•", style: TextStyle(color: Colors.grey)),
+                const SizedBox(width: 6),
                 Text(
-                  "5 days",
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  duration,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ),
@@ -838,12 +871,16 @@ class ExploreCard extends StatelessWidget {
   final String title;
   final String image;
   final String price;
+  final double rating;
+  final int reviewCount;
 
   const ExploreCard({
     super.key,
     required this.title,
     required this.image,
     required this.price,
+    required this.rating,
+    required this.reviewCount,
     this.onTap,
   });
 
@@ -853,6 +890,8 @@ class ExploreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayRating = rating.toStringAsFixed(1);
+
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
@@ -872,28 +911,38 @@ class ExploreCard extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             const SizedBox(height: 6),
-            const Row(
+            Row(
               children: [
                 Text(
-                  "5.0",
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  displayRating,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                SizedBox(width: 4),
-                Icon(Icons.circle, size: 6, color: Colors.green),
-                Icon(Icons.circle, size: 6, color: Colors.green),
-                Icon(Icons.circle, size: 6, color: Colors.green),
-                Icon(Icons.circle, size: 6, color: Colors.green),
-                Icon(Icons.circle, size: 6, color: Colors.green),
-                SizedBox(width: 6),
+                const SizedBox(width: 4),
+                Row(
+                  children: List.generate(
+                    5,
+                    (index) => Icon(
+                      Icons.circle,
+                      size: 6,
+                      color: index < rating.round()
+                          ? Colors.green
+                          : Colors.grey.shade300,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
                 Text(
-                  "Reviews(123)",
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  "Reviews($reviewCount)",
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ),
             const SizedBox(height: 4),
             Text(
-              price,
+              "NPR $price per person",
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
@@ -908,7 +957,8 @@ class ReligiousTempleCard extends StatelessWidget {
   final String title;
   final String image;
   final String price;
-  final String reviews;
+  final double rating;
+  final int reviews;
   final VoidCallback? onTap;
 
   const ReligiousTempleCard({
@@ -916,6 +966,7 @@ class ReligiousTempleCard extends StatelessWidget {
     required this.title,
     required this.image,
     required this.price,
+    required this.rating,
     required this.reviews,
     this.onTap,
   });
@@ -926,6 +977,8 @@ class ReligiousTempleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayRating = rating.toStringAsFixed(1);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -982,18 +1035,20 @@ class ReligiousTempleCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Text(
-                        "5.0",
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                      Text(
+                        displayRating,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(width: 6),
                       Row(
                         children: List.generate(
                           5,
-                          (index) => const Icon(
+                          (index) => Icon(
                             Icons.circle,
                             size: 6,
-                            color: Colors.green,
+                            color: index < rating.round()
+                                ? Colors.green
+                                : Colors.grey.shade300,
                           ),
                         ),
                       ),
@@ -1009,7 +1064,7 @@ class ReligiousTempleCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    price,
+                    "NPR $price per person",
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,

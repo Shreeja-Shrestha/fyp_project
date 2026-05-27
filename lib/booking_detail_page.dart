@@ -30,13 +30,27 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
       );
 
       if (res.statusCode == 200) {
+        if (!mounted) return;
+
         setState(() {
           booking = jsonDecode(res.body);
+          loading = false;
+        });
+      } else {
+        if (!mounted) return;
+
+        setState(() {
           loading = false;
         });
       }
     } catch (e) {
       print("Error: $e");
+
+      if (!mounted) return;
+
+      setState(() {
+        loading = false;
+      });
     }
   }
 
@@ -45,10 +59,23 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: Colors.blueGrey),
+          Icon(icon, size: 18, color: const Color(0xFF00B4D8)),
           const SizedBox(width: 10),
-          Text("$label: ", style: const TextStyle(fontWeight: FontWeight.w500)),
-          Expanded(child: Text(value)),
+          Text(
+            "$label: ",
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onBackground,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -60,11 +87,14 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 15),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).dividerColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(
+              Theme.of(context).brightness == Brightness.dark ? 0.18 : 0.05,
+            ),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -75,7 +105,11 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
         children: [
           Text(
             title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Theme.of(context).colorScheme.onBackground,
+            ),
           ),
           const SizedBox(height: 10),
           ...children,
@@ -87,17 +121,33 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
       appBar: AppBar(
-        title: const Text("Booking Details"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        title: Text(
+          "Booking Details",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onBackground,
+          ),
+        ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).colorScheme.onBackground,
         elevation: 0,
       ),
 
       body: loading
           ? const Center(child: CircularProgressIndicator())
+          : booking.isEmpty
+          ? Center(
+              child: Text(
+                "Booking details not found",
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -123,6 +173,7 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
 
                         Text(
                           booking["tour_name"] ?? "Tour",
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
@@ -161,7 +212,7 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
                     buildRow(
                       Icons.money,
                       "Amount",
-                      "NPR ${booking["amount_paid"]}",
+                      "NPR ${booking["amount_paid"] ?? 0}",
                     ),
                     buildRow(
                       Icons.payment,
@@ -180,7 +231,7 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
                     ),
                   ]),
 
-                  // 📦 BOOKING STATUS
+                  // BOOKING STATUS
                   buildCard("Booking Status", [
                     buildRow(
                       Icons.info,
@@ -191,12 +242,13 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
 
                   const SizedBox(height: 20),
 
-                  // 🔴 OPTIONAL ACTION
+                  // OPTIONAL ACTION
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

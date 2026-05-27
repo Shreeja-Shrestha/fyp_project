@@ -185,11 +185,11 @@ class FoodDetailPage extends StatelessWidget {
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
-                  color: Colors.grey[300],
-                  child: const Icon(
+                  color: Theme.of(context).cardColor,
+                  child: Icon(
                     Icons.broken_image,
                     size: 90,
-                    color: Colors.grey,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                   ),
                 );
               },
@@ -265,11 +265,13 @@ class FoodDetailPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Colors.black12,
+            color: Colors.black.withOpacity(
+              Theme.of(context).brightness == Brightness.dark ? 0.20 : 0.12,
+            ),
             blurRadius: 15,
-            offset: Offset(0, -5),
+            offset: const Offset(0, -5),
           ),
         ],
       ),
@@ -282,7 +284,7 @@ class FoodDetailPage extends StatelessWidget {
               width: 52,
               height: 5,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: Theme.of(context).dividerColor,
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
@@ -293,7 +295,9 @@ class FoodDetailPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
-              color: softSkyBlue.withOpacity(0.65),
+              color: softSkyBlue.withOpacity(
+                Theme.of(context).brightness == Brightness.dark ? 0.20 : 0.65,
+              ),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -305,9 +309,9 @@ class FoodDetailPage extends StatelessWidget {
                   color: primarySkyBlue,
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  formatSubcategory(subcategory),
-                  style: const TextStyle(
+                const Text(
+                  "Food Experience",
+                  style: TextStyle(
                     color: primarySkyBlue,
                     fontWeight: FontWeight.bold,
                   ),
@@ -320,10 +324,11 @@ class FoodDetailPage extends StatelessWidget {
 
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.3,
+              color: Theme.of(context).colorScheme.onBackground,
             ),
           ),
 
@@ -336,7 +341,10 @@ class FoodDetailPage extends StatelessWidget {
               Expanded(
                 child: Text(
                   destination,
-                  style: TextStyle(color: Colors.grey[700], fontSize: 15),
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ],
@@ -346,9 +354,9 @@ class FoodDetailPage extends StatelessWidget {
 
           Row(
             children: [
-              _infoTile(Icons.timer_outlined, duration, "Duration"),
+              _infoTile(context, Icons.timer_outlined, duration, "Duration"),
               const SizedBox(width: 12),
-              _infoTile(Icons.school_outlined, difficulty, "Level"),
+              _infoTile(context, Icons.school_outlined, difficulty, "Level"),
             ],
           ),
 
@@ -356,17 +364,21 @@ class FoodDetailPage extends StatelessWidget {
 
           Row(
             children: [
-              _infoTile(Icons.payments_outlined, "Rs $price", "Price"),
+              _infoTile(context, Icons.payments_outlined, "Rs $price", "Price"),
               const SizedBox(width: 12),
-              _infoTile(Icons.groups_outlined, "Guided", "Type"),
+              _infoTile(context, Icons.groups_outlined, "Guided", "Type"),
             ],
           ),
 
           const SizedBox(height: 32),
 
-          const Text(
+          Text(
             "About this experience",
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onBackground,
+            ),
           ),
 
           const SizedBox(height: 12),
@@ -374,7 +386,7 @@ class FoodDetailPage extends StatelessWidget {
           Text(
             description,
             style: TextStyle(
-              color: Colors.grey[800],
+              color: Theme.of(context).textTheme.bodyMedium?.color,
               height: 1.55,
               fontSize: 15,
             ),
@@ -382,25 +394,33 @@ class FoodDetailPage extends StatelessWidget {
 
           const SizedBox(height: 30),
 
-          const Text(
+          Text(
             "What you will experience",
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onBackground,
+            ),
           ),
 
           const SizedBox(height: 14),
 
-          ...experiencePoints.map((point) => _bulletPoint(point)),
+          ...experiencePoints.map((point) => _bulletPoint(context, point)),
 
           const SizedBox(height: 30),
 
-          const Text(
+          Text(
             "Includes",
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onBackground,
+            ),
           ),
 
           const SizedBox(height: 14),
 
-          ...includes.map((item) => _bulletPoint(item)),
+          ...includes.map((item) => _bulletPoint(context, item)),
 
           const SizedBox(height: 30),
 
@@ -408,22 +428,41 @@ class FoodDetailPage extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: softSkyBlue.withOpacity(0.35),
+              color: softSkyBlue.withOpacity(
+                Theme.of(context).brightness == Brightness.dark ? 0.18 : 0.35,
+              ),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: softSkyBlue),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   "Important notes",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Theme.of(context).colorScheme.onBackground,
+                  ),
                 ),
-                SizedBox(height: 8),
-                Text("• Arrive 10 minutes before the session."),
-                Text("• Suitable for beginners and travelers."),
+                const SizedBox(height: 8),
+                Text(
+                  "• Arrive 10 minutes before the session.",
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
+                ),
+                Text(
+                  "• Suitable for beginners and travelers.",
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
+                ),
                 Text(
                   "• Food preferences can be discussed before the experience.",
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
                 ),
               ],
             ),
@@ -466,12 +505,19 @@ class FoodDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _infoTile(IconData icon, String value, String label) {
+  Widget _infoTile(
+    BuildContext context,
+    IconData icon,
+    String value,
+    String label,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 14),
         decoration: BoxDecoration(
-          color: softSkyBlue.withOpacity(0.28),
+          color: softSkyBlue.withOpacity(
+            Theme.of(context).brightness == Brightness.dark ? 0.16 : 0.28,
+          ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: softSkyBlue),
         ),
@@ -487,16 +533,17 @@ class FoodDetailPage extends StatelessWidget {
                     value,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
+                      color: Theme.of(context).colorScheme.onBackground,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     label,
-                    style: const TextStyle(
-                      color: Colors.blueGrey,
+                    style: TextStyle(
+                      color: Theme.of(context).textTheme.bodySmall?.color,
                       fontSize: 10,
                     ),
                   ),
@@ -509,7 +556,7 @@ class FoodDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _bulletPoint(String text) {
+  Widget _bulletPoint(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 11),
       child: Row(
@@ -520,7 +567,11 @@ class FoodDetailPage extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 15, height: 1.35),
+              style: TextStyle(
+                fontSize: 15,
+                height: 1.35,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
             ),
           ),
         ],

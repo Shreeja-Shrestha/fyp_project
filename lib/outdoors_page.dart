@@ -14,27 +14,27 @@ class OutdoorsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
           SliverAppBar(
             pinned: true,
-            backgroundColor: const Color(0xFFF8F9FA),
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.arrow_back_ios_new_rounded,
-                color: Colors.black,
+                color: Theme.of(context).colorScheme.onBackground,
               ),
               onPressed: () {
                 Navigator.pop(context);
               },
             ),
-            title: const Text(
+            title: Text(
               "Outdoor Adventures",
               style: TextStyle(
-                color: Colors.black,
+                color: Theme.of(context).colorScheme.onBackground,
                 fontWeight: FontWeight.w600,
                 fontSize: 18,
               ),
@@ -45,26 +45,25 @@ class OutdoorsPage extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                const Text(
+                Text(
                   "Escape the\nOrdinary",
                   style: TextStyle(
                     fontSize: 34,
                     fontWeight: FontWeight.w900,
                     height: 1.1,
                     letterSpacing: -1.2,
-                    color: Color(0xFF1A1A1A),
+                    color: Theme.of(context).colorScheme.onBackground,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   "Handpicked outdoor experiences for you.",
                   style: TextStyle(
-                    color: Colors.grey.shade600,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                     fontSize: 15,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
-
                 const SizedBox(height: 28),
 
                 _buildModernHero(),
@@ -74,18 +73,19 @@ class OutdoorsPage extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       "Adventure Categories",
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         letterSpacing: -0.5,
+                        color: Theme.of(context).colorScheme.onBackground,
                       ),
                     ),
                     Text(
                       "See all",
                       style: TextStyle(
-                        color: Colors.blue.shade700,
+                        color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
@@ -215,7 +215,11 @@ class OutdoorsPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withOpacity(
+                      Theme.of(context).brightness == Brightness.dark
+                          ? 0.20
+                          : 0.05,
+                    ),
                     blurRadius: 15,
                     offset: const Offset(0, 8),
                   ),
@@ -228,8 +232,11 @@ class OutdoorsPage extends StatelessWidget {
                   fit: BoxFit.cover,
                   width: double.infinity,
                   errorBuilder: (context, error, stackTrace) => Container(
-                    color: Colors.grey.shade300,
-                    child: const Icon(Icons.image),
+                    color: Theme.of(context).cardColor,
+                    child: Icon(
+                      Icons.image,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
                   ),
                 ),
               ),
@@ -243,17 +250,17 @@ class OutdoorsPage extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D2D2D),
+                    color: Theme.of(context).colorScheme.onBackground,
                   ),
                 ),
                 Text(
                   info,
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey.shade500,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

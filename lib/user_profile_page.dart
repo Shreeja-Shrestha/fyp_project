@@ -5,13 +5,12 @@ import 'package:fyp_project/editprofile.dart';
 import 'package:fyp_project/favorite_page.dart';
 import 'package:fyp_project/services/booking_service.dart';
 import 'package:fyp_project/services/favorite_service.dart';
-import 'package:fyp_project/trip_history.dart';
+import 'package:fyp_project/trips_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
 import 'login.dart';
 import 'settings_page.dart';
-import 'wishlist_page.dart';
 import 'support_page.dart';
 
 class UserProfilePage extends StatefulWidget {
@@ -29,12 +28,18 @@ class _UserProfilePageState extends State<UserProfilePage> {
   int wishlist = 0;
   String phone = "";
   String bio = "";
+
   int favoriteCount = 0;
   bool isLoadingFav = true;
+
   bool isLoading = true;
   bool hasError = false;
+
   int bookingCount = 0;
   bool isLoadingBookings = true;
+
+  int activeTripCount = 0;
+  bool isLoadingTrips = true;
 
   @override
   void initState() {
@@ -42,6 +47,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     loadUserProfile();
     loadFavoriteCount();
     loadBookingCount();
+    loadActiveTripCount();
   }
 
   Future<void> loadUserProfile() async {
@@ -49,6 +55,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       isLoading = true;
       hasError = false;
     });
+
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getInt("user_id");
 
@@ -70,6 +77,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
+        if (!mounted) return;
+
         setState(() {
           name = data["name"] ?? "";
           email = data["email"] ?? "";
@@ -81,12 +90,16 @@ class _UserProfilePageState extends State<UserProfilePage> {
           isLoading = false;
         });
       } else {
+        if (!mounted) return;
+
         setState(() {
           hasError = true;
           isLoading = false;
         });
       }
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         hasError = true;
         isLoading = false;
@@ -103,11 +116,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
       final count = await FavoriteService.getFavoriteCount(userId);
 
+      if (!mounted) return;
+
       setState(() {
         favoriteCount = count;
         isLoadingFav = false;
       });
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         favoriteCount = 0;
         isLoadingFav = false;
@@ -124,11 +141,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
       final count = await BookingService.getBookingCount(userId);
 
+      if (!mounted) return;
+
       setState(() {
         bookingCount = count;
         isLoadingBookings = false;
       });
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         bookingCount = 0;
         isLoadingBookings = false;
@@ -136,9 +157,94 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
   }
 
+  void loadActiveTripCount() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt("user_id");
+
+      if (userId == null) {
+        if (!mounted) return;
+
+        setState(() {
+          activeTripCount = 0;
+          isLoadingTrips = false;
+        });
+        return;
+      }
+
+      final response = await http.get(
+        Uri.parse(
+          "https://backend-production-551c.up.railway.app/api/bookings/user/$userId",
+        ),
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body);
+
+        final today = DateTime.now();
+        final todayOnly = DateTime(today.year, today.month, today.day);
+
+        final activeTrips = data.where((booking) {
+          final status =
+              booking["booking_status"]?.toString().toLowerCase() ?? "";
+
+          final travelDateRaw = booking["travel_date"]?.toString();
+
+          if (travelDateRaw == null || travelDateRaw.isEmpty) {
+            return false;
+          }
+
+          DateTime travelDate;
+
+          try {
+            final parsed = DateTime.parse(travelDateRaw);
+            travelDate = DateTime(parsed.year, parsed.month, parsed.day);
+          } catch (e) {
+            return false;
+          }
+
+          final isFutureOrToday =
+              travelDate.isAtSameMomentAs(todayOnly) ||
+              travelDate.isAfter(todayOnly);
+
+          final isActive =
+              status != "cancelled" &&
+              status != "rejected" &&
+              status != "completed";
+
+          return isFutureOrToday && isActive;
+        }).length;
+
+        if (!mounted) return;
+
+        setState(() {
+          activeTripCount = activeTrips;
+          isLoadingTrips = false;
+        });
+      } else {
+        if (!mounted) return;
+
+        setState(() {
+          activeTripCount = 0;
+          isLoadingTrips = false;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        activeTripCount = 0;
+        isLoadingTrips = false;
+      });
+    }
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
+
+    if (!mounted) return;
 
     Navigator.pushReplacement(
       context,
@@ -226,6 +332,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 ),
               ),
             ),
+
             if (phone.isNotEmpty)
               Text(
                 phone,
@@ -259,14 +366,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   ),
                 ),
               ),
+
             const SizedBox(height: 25),
 
             Row(
               children: [
-                _statCard("Trips", trips),
+                isLoadingTrips
+                    ? _statCard("Trips", 0)
+                    : _statCard("Trips", activeTripCount),
+
                 isLoadingBookings
                     ? _statCard("Bookings", 0)
                     : _statCard("Bookings", bookingCount),
+
                 _statCard("Wishlist", favoriteCount),
               ],
             ),
@@ -287,6 +399,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     ),
                   ).then((_) {
                     loadBookingCount();
+                    loadActiveTripCount();
                   }),
             ),
 
@@ -299,18 +412,22 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     context,
                     MaterialPageRoute(builder: (_) => const FavoritePage()),
                   ).then((value) {
-                    loadFavoriteCount(); // already correct 👍
+                    loadFavoriteCount();
                   }),
             ),
 
             _menuTile(
-              icon: Icons.history,
+              icon: Icons.card_travel,
               title: "Travel History",
-              subtitle: "All past trips",
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const TripHistoryPage()),
-              ),
+              subtitle: "View your active and upcoming trips",
+              onTap: () =>
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const TripsPage()),
+                  ).then((_) {
+                    loadActiveTripCount();
+                    loadBookingCount();
+                  }),
             ),
 
             const SizedBox(height: 25),
@@ -333,7 +450,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 );
 
                 if (updated == true) {
-                  loadUserProfile(); // 🔥 refresh UI after edit
+                  loadUserProfile();
                 }
               },
             ),
@@ -369,7 +486,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
             const SizedBox(height: 30),
 
-            /// SIGN OUT BUTTON
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(

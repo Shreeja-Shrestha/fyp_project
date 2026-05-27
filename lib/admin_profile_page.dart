@@ -6,6 +6,7 @@ import 'package:fyp_project/login.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fyp_project/admin_users_page.dart';
+import 'package:fyp_project/admin_notification_page.dart';
 
 class AdminProfilePage extends StatefulWidget {
   const AdminProfilePage({super.key});
@@ -26,12 +27,10 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
 
   final String baseUrl = "https://backend-production-551c.up.railway.app/api";
 
-  // Color Palette
   final Color lightBgBlue = const Color(0xFFE3F2FD);
   final Color vibrantBlueTop = const Color(0xFF42A5F5);
   final Color deepBlueBottom = const Color(0xFF1976D2);
 
-  // Dynamic graph data from backend
   List<Map<String, dynamic>> monthlyBookings = [];
   bool isLoadingMonthlyBookings = true;
 
@@ -217,11 +216,8 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildLightHeader(),
-
               const SizedBox(height: 25),
-
               _buildSystemStatus(),
-
               const SizedBox(height: 25),
 
               const Text(
@@ -234,9 +230,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
               ),
 
               const SizedBox(height: 15),
-
               _buildStatRow(),
-
               const SizedBox(height: 25),
 
               const Text(
@@ -249,9 +243,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
               ),
 
               const SizedBox(height: 15),
-
               _buildBookingGraph(),
-
               const SizedBox(height: 30),
 
               const Text(
@@ -309,9 +301,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
               _buildActivityItem("Package inventory updated", "Today"),
 
               const SizedBox(height: 40),
-
               _buildLogoutButton(),
-
               const SizedBox(height: 20),
             ],
           ),
@@ -424,48 +414,68 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
           "Total Users",
           isLoadingUsers ? "..." : totalUsers.toString(),
           Icons.people_outline,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AdminUsersPage()),
+            );
+          },
         ),
         const SizedBox(width: 15),
         _buildSmallStatCard(
           "Total Bookings",
           isLoadingBookings ? "..." : totalBookings.toString(),
           Icons.calendar_month_outlined,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AdminNotificationPage()),
+            );
+          },
         ),
       ],
     );
   }
 
-  Widget _buildSmallStatCard(String label, String value, IconData icon) {
+  Widget _buildSmallStatCard(
+    String label,
+    String value,
+    IconData icon, {
+    VoidCallback? onTap,
+  }) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: lightBgBlue.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: lightBgBlue.withOpacity(0.3)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: Colors.black, size: 24),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: lightBgBlue.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: lightBgBlue.withOpacity(0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: Colors.black, size: 24),
+              const SizedBox(height: 12),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
               ),
-            ),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.black87,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

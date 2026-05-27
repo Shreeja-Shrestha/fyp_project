@@ -15,7 +15,6 @@ class FoodBookingPage extends StatefulWidget {
 class _FoodBookingPageState extends State<FoodBookingPage> {
   final Color primarySkyBlue = const Color(0xFF00B4D8);
   final Color softSkyBlue = const Color(0xFFCAF0F8);
-  final Color backgroundColor = const Color(0xFFF7FBFD);
 
   DateTime? selectedDate;
   int people = 1;
@@ -140,21 +139,28 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
       barrierDismissible: false,
       builder: (_) {
         return AlertDialog(
+          backgroundColor: Theme.of(context).cardColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: const Text(
+          title: Text(
             "Booking Request Sent",
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onBackground,
+            ),
           ),
           content: Text(
             "Your $title booking has been submitted successfully. Please wait for admin approval.",
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // close dialog
-                Navigator.pop(context); // back to detail page
+                Navigator.pop(context);
+                Navigator.pop(context);
               },
               child: const Text("OK"),
             ),
@@ -175,15 +181,20 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
     final int totalPrice = price * people;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        title: const Text(
+        iconTheme: IconThemeData(
+          color: Theme.of(context).colorScheme.onBackground,
+        ),
+        title: Text(
           "Book Food Experience",
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onBackground,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -192,6 +203,7 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _summaryCard(
+              context: context,
               title: title,
               destination: destination,
               duration: duration,
@@ -201,9 +213,13 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
 
             const SizedBox(height: 20),
 
-            const Text(
+            Text(
               "Select Date",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onBackground,
+              ),
             ),
 
             const SizedBox(height: 10),
@@ -214,7 +230,7 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: softSkyBlue),
                 ),
@@ -226,9 +242,9 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
                       selectedDate == null
                           ? "Choose booking date"
                           : formatDateForApi(selectedDate!),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
-                        color: Colors.black87,
+                        color: Theme.of(context).colorScheme.onBackground,
                       ),
                     ),
                   ],
@@ -238,9 +254,13 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
 
             const SizedBox(height: 22),
 
-            const Text(
+            Text(
               "Number of People",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onBackground,
+              ),
             ),
 
             const SizedBox(height: 10),
@@ -248,16 +268,20 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: softSkyBlue),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     "People",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onBackground,
+                    ),
                   ),
 
                   Row(
@@ -276,9 +300,10 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           people.toString(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onBackground,
                           ),
                         ),
                       ),
@@ -298,7 +323,12 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
 
             const SizedBox(height: 22),
 
-            _priceBox(price: price, people: people, totalPrice: totalPrice),
+            _priceBox(
+              context: context,
+              price: price,
+              people: people,
+              totalPrice: totalPrice,
+            ),
 
             const SizedBox(height: 30),
 
@@ -340,6 +370,7 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
   }
 
   Widget _summaryCard({
+    required BuildContext context,
     required String title,
     required String destination,
     required String duration,
@@ -350,12 +381,14 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: softSkyBlue),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(
+              Theme.of(context).brightness == Brightness.dark ? 0.18 : 0.04,
+            ),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -367,7 +400,9 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: softSkyBlue.withOpacity(0.55),
+              color: softSkyBlue.withOpacity(
+                Theme.of(context).brightness == Brightness.dark ? 0.18 : 0.55,
+              ),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -384,10 +419,10 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
 
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Theme.of(context).colorScheme.onBackground,
             ),
           ),
 
@@ -395,16 +430,19 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
 
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.location_on_outlined,
-                color: Colors.grey,
+                color: Theme.of(context).textTheme.bodySmall?.color,
                 size: 18,
               ),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   "$destination • $duration",
-                  style: TextStyle(color: Colors.grey[700], fontSize: 14),
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ],
@@ -414,8 +452,8 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
 
           Text(
             "Rs $price per person",
-            style: const TextStyle(
-              color: Colors.black87,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onBackground,
               fontWeight: FontWeight.bold,
               fontSize: 17,
             ),
@@ -426,6 +464,7 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
   }
 
   Widget _priceBox({
+    required BuildContext context,
     required int price,
     required int people,
     required int totalPrice,
@@ -433,30 +472,37 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: softSkyBlue.withOpacity(0.35),
+        color: softSkyBlue.withOpacity(
+          Theme.of(context).brightness == Brightness.dark ? 0.16 : 0.35,
+        ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: softSkyBlue),
       ),
       child: Column(
         children: [
-          _priceRow("Price per person", "Rs $price"),
+          _priceRow(context, "Price per person", "Rs $price"),
           const SizedBox(height: 8),
-          _priceRow("People", people.toString()),
-          const Divider(height: 24),
-          _priceRow("Total", "Rs $totalPrice", isTotal: true),
+          _priceRow(context, "People", people.toString()),
+          Divider(height: 24, color: Theme.of(context).dividerColor),
+          _priceRow(context, "Total", "Rs $totalPrice", isTotal: true),
         ],
       ),
     );
   }
 
-  Widget _priceRow(String label, String value, {bool isTotal = false}) {
+  Widget _priceRow(
+    BuildContext context,
+    String label,
+    String value, {
+    bool isTotal = false,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
           style: TextStyle(
-            color: Colors.grey[800],
+            color: Theme.of(context).textTheme.bodySmall?.color,
             fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
             fontSize: isTotal ? 17 : 14,
           ),
@@ -464,7 +510,7 @@ class _FoodBookingPageState extends State<FoodBookingPage> {
         Text(
           value,
           style: TextStyle(
-            color: Colors.black87,
+            color: Theme.of(context).colorScheme.onBackground,
             fontWeight: FontWeight.bold,
             fontSize: isTotal ? 18 : 14,
           ),

@@ -118,7 +118,7 @@ class _OutdoorDetailPageState extends State<OutdoorDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Stack(
@@ -251,10 +251,11 @@ class _OutdoorDetailPageState extends State<OutdoorDetailPage> {
 
           Text(
             "${widget.subCategory} Packages",
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               letterSpacing: -0.5,
+              color: Theme.of(context).colorScheme.onBackground,
             ),
           ),
           const SizedBox(height: 8),
@@ -263,7 +264,7 @@ class _OutdoorDetailPageState extends State<OutdoorDetailPage> {
             style: TextStyle(
               fontSize: 14,
               height: 1.4,
-              color: Colors.grey.shade600,
+              color: Theme.of(context).textTheme.bodySmall?.color,
             ),
           ),
           const SizedBox(height: 24),
@@ -294,15 +295,22 @@ class _OutdoorDetailPageState extends State<OutdoorDetailPage> {
         children: [
           Icon(getHeaderIcon(), size: 42, color: primarySkyBlue),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             "No packages found",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onBackground,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             "Add package from admin with category '${widget.category.toLowerCase()}' and subcategory '${widget.subCategory.toLowerCase()}'.",
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade600, height: 1.4),
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodySmall?.color,
+              height: 1.4,
+            ),
           ),
         ],
       ),
@@ -339,7 +347,7 @@ class _OutdoorDetailPageState extends State<OutdoorDetailPage> {
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.grey.shade100),
+          border: Border.all(color: Theme.of(context).dividerColor),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -367,10 +375,10 @@ class _OutdoorDetailPageState extends State<OutdoorDetailPage> {
                       title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF1A1A1A),
+                        color: Theme.of(context).colorScheme.onBackground,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -389,7 +397,9 @@ class _OutdoorDetailPageState extends State<OutdoorDetailPage> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: Colors.grey.shade600,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.color,
                               fontSize: 13,
                             ),
                           ),
@@ -424,10 +434,10 @@ class _OutdoorDetailPageState extends State<OutdoorDetailPage> {
                       children: [
                         Text(
                           "NPR $price",
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF111111),
+                            color: Theme.of(context).colorScheme.onBackground,
                           ),
                         ),
                         Container(
@@ -484,10 +494,10 @@ class _OutdoorDetailPageState extends State<OutdoorDetailPage> {
     return Container(
       height: 135,
       width: 120,
-      color: Colors.grey.shade300,
-      child: const Icon(
+      color: Theme.of(context).cardColor,
+      child: Icon(
         Icons.image_not_supported_outlined,
-        color: Colors.black45,
+        color: Theme.of(context).textTheme.bodySmall?.color,
       ),
     );
   }

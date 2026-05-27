@@ -143,7 +143,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgCanvas,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           CustomScrollView(
@@ -300,19 +300,19 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(
+        icon: Icon(
           Icons.arrow_back_ios_new,
-          color: Colors.black,
+          color: Theme.of(context).colorScheme.onBackground,
           size: 20,
         ),
         onPressed: () => Navigator.pop(context),
       ),
-      flexibleSpace: const FlexibleSpaceBar(
-        titlePadding: EdgeInsets.only(left: 24, bottom: 10),
+      flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.only(left: 24, bottom: 10),
         title: Text(
           "Booking Details",
           style: TextStyle(
-            color: Colors.black,
+            color: Theme.of(context).colorScheme.onBackground,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -327,9 +327,19 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       children: [
         Text(
           title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onBackground,
+          ),
         ),
-        Text(sub, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+        Text(
+          sub,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).textTheme.bodySmall?.color,
+          ),
+        ),
       ],
     );
   }
@@ -346,7 +356,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.grey.withOpacity(0.1)),
         ),
@@ -359,11 +369,17 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onBackground,
+                  ),
                 ),
                 Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
                 ),
               ],
             ),
@@ -379,13 +395,14 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.withOpacity(0.1)),
       ),
       child: TextField(
         controller: personsController,
         keyboardType: TextInputType.number,
+        style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
         decoration: InputDecoration(
           icon: Icon(Icons.people, color: primarySkyBlue),
           border: InputBorder.none,
@@ -418,7 +435,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
         width: MediaQuery.of(context).size.width * 0.26,
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
-          color: isSelected ? primarySkyBlue : Colors.white,
+          color: isSelected ? primarySkyBlue : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? primarySkyBlue : Colors.grey.withOpacity(0.1),
@@ -435,7 +452,9 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
             Text(
               type,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black,
+                color: isSelected
+                    ? Colors.white
+                    : Theme.of(context).colorScheme.onBackground,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
@@ -764,7 +783,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 30),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -780,9 +799,12 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   "Total Pay",
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                    fontSize: 12,
+                  ),
                 ),
                 Text(
                   "Rs. ${totalPrice.toStringAsFixed(0)}",

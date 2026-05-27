@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:fyp_project/splash.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app_links/app_links.dart';
 import 'package:fyp_project/admin_dashboard.dart';
@@ -114,8 +115,7 @@ class _MyAppState extends State<MyApp> {
           themeMode: currentMode,
 
           /// START SCREEN
-          home: LoginPage(),
-
+          home: const SplashScreen(),
           routes: {
             '/login': (context) => LoginPage(),
             '/admin-dashboard': (context) => const AdminDashboardPage(),

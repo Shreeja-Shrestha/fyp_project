@@ -24,10 +24,11 @@ class _FavoritePageState extends State<FavoritePage> {
   // 🔹 Fetch favorites from backend
   Future<void> fetchFavorites() async {
     if (userId == 0) {
-      await loadUserId(); // 🔥 ensure userId is ready
+      await loadUserId();
     }
 
     if (userId == 0) return;
+
     try {
       final response = await http.get(
         Uri.parse(
@@ -37,6 +38,8 @@ class _FavoritePageState extends State<FavoritePage> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+
+        if (!mounted) return;
 
         setState(() {
           favoriteTours = data;
@@ -58,13 +61,12 @@ class _FavoritePageState extends State<FavoritePage> {
         body: jsonEncode({"user_id": userId, "tour_id": tourId}),
       );
 
-      await fetchFavorites(); // refresh after removal
+      await fetchFavorites();
     } catch (e) {
       print("Remove error: $e");
     }
   }
 
-  //  Init flow (NO race condition)
   @override
   void initState() {
     super.initState();
@@ -76,7 +78,6 @@ class _FavoritePageState extends State<FavoritePage> {
     await fetchFavorites();
   }
 
-  //  Refresh when page reopens
   bool _isFirstLoad = true;
 
   @override
@@ -84,179 +85,221 @@ class _FavoritePageState extends State<FavoritePage> {
     super.didChangeDependencies();
 
     if (!_isFirstLoad) {
-      fetchFavorites(); // only refresh on return
+      fetchFavorites();
     }
 
     _isFirstLoad = false;
   }
 
+  Widget _emptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.favorite_border,
+            size: 80,
+            color: Theme.of(context).textTheme.bodySmall?.color,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            "No favorite tours yet",
+            style: TextStyle(
+              fontSize: 18,
+              color: Theme.of(context).textTheme.bodySmall?.color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _favoriteImage(dynamic tour) {
+    final image = tour["image"]?.toString() ?? "";
+
+    final imagePath = image.startsWith("assets/") ? image : "assets/$image";
+
+    return Image.asset(
+      imagePath,
+      width: 120,
+      height: 120,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          width: 120,
+          height: 120,
+          color: Theme.of(context).cardColor,
+          child: Icon(
+            Icons.image_not_supported_outlined,
+            color: Theme.of(context).textTheme.bodySmall?.color,
+            size: 34,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _favoriteCard(dynamic tour) {
+    return GestureDetector(
+      onTap: () {
+        print("CLICKED ITEM: $tour");
+
+        final tourId = tour["id"] ?? tour["tour_id"];
+
+        if (tourId == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Error: Tour ID missing")),
+          );
+          return;
+        }
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TourDetailPage(tourId: tourId),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          color: Theme.of(context).cardColor,
+          border: Border.all(color: Theme.of(context).dividerColor),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(
+                Theme.of(context).brightness == Brightness.dark ? 0.18 : 0.08,
+              ),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            /// IMAGE
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(22),
+                bottomLeft: Radius.circular(22),
+              ),
+              child: _favoriteImage(tour),
+            ),
+
+            /// DETAILS
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tour["title"]?.toString() ?? "Tour Package",
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onBackground,
+                      ),
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Text(
+                      tour["country"]?.toString() ?? "Nepal",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.orange, size: 18),
+                        const SizedBox(width: 4),
+                        Text(
+                          (tour["average_rating"] ?? "4.5").toString(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onBackground,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            "(${tour["total_reviews"] ?? 0} reviews)",
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.color,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            /// REMOVE BUTTON
+            Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: IconButton(
+                icon: const Icon(Icons.favorite, color: Colors.red, size: 30),
+                onPressed: () {
+                  final tourId = tour["id"] ?? tour["tour_id"];
+
+                  if (tourId != null) {
+                    removeFavorite(int.parse(tourId.toString()));
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).colorScheme.onBackground,
         centerTitle: true,
-        title: const Text(
+        title: Text(
           "Saved Favorites",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onBackground,
+          ),
         ),
       ),
 
       body: favoriteTours.isEmpty
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.favorite_border, size: 80, color: Colors.grey),
-                  SizedBox(height: 10),
-                  Text(
-                    "No favorite tours yet",
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
-                  ),
-                ],
-              ),
-            )
+          ? _emptyState()
           : RefreshIndicator(
-              onRefresh: fetchFavorites, // 🔥 pull to refresh
+              onRefresh: fetchFavorites,
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: favoriteTours.length,
                 itemBuilder: (context, index) {
                   final tour = favoriteTours[index];
-
-                  return GestureDetector(
-                    onTap: () {
-                      print("CLICKED ITEM: $tour");
-
-                      final tourId = tour["id"] ?? tour["tour_id"];
-
-                      if (tourId == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Error: Tour ID missing"),
-                          ),
-                        );
-                        return;
-                      }
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TourDetailPage(tourId: tourId),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 18),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(22),
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 14,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          /// IMAGE
-                          ClipRRect(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(22),
-                              bottomLeft: Radius.circular(22),
-                            ),
-                            child: Image.asset(
-                              tour["image"].toString().startsWith("assets/")
-                                  ? tour["image"]
-                                  : "assets/${tour["image"]}",
-                              width: 120,
-                              height: 120,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-
-                          /// DETAILS
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 12,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    tour["title"],
-                                    style: const TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 6),
-
-                                  Text(
-                                    tour["country"] ?? "Nepal",
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 10),
-
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.star,
-                                        color: Colors.orange,
-                                        size: 18,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        (tour["average_rating"] ?? "4.5")
-                                            .toString(),
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        "(${tour["total_reviews"] ?? 0} reviews)",
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          /// REMOVE BUTTON
-                          Padding(
-                            padding: const EdgeInsets.only(right: 10),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.favorite,
-                                color: Colors.red,
-                                size: 30,
-                              ),
-                              onPressed: () {
-                                removeFavorite(tour["id"]);
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                  return _favoriteCard(tour);
                 },
               ),
             ),
