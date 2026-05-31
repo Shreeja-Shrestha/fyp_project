@@ -132,7 +132,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage> {
 
                   const SizedBox(height: 20),
 
-                  /// 🔥 TITLE
+                  /// TITLE
                   const Text(
                     "Booking Confirmed 🎉",
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),

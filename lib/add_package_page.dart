@@ -52,10 +52,12 @@ class _AddPackagePageState extends State<AddPackagePage> {
 
     // Food images
     "assets/food.jpg",
-    "assets/cooking1.jpg",
-    "assets/cooking2.jpg",
-    "assets/cooking3.jpg",
-    "assets/barista1.jpg",
+    "assets/cooking.png",
+    "assets/cooking1.png",
+    "assets/cooking2.png",
+    "assets/cooking3.png",
+    "assets/barista1.png",
+    "assets/Barista2.png",
   ];
 
   late String selectedImage;
@@ -382,6 +384,10 @@ class _AddPackagePageState extends State<AddPackagePage> {
                   DropdownMenuItem(value: "food", child: Text("Food")),
                   DropdownMenuItem(value: "outdoor", child: Text("Outdoor")),
                   DropdownMenuItem(value: "culture", child: Text("Culture")),
+                  DropdownMenuItem(
+                    value: "religious",
+                    child: Text("Religious"),
+                  ),
                   DropdownMenuItem(value: "water", child: Text("Water")),
                 ],
                 onChanged: (value) {
@@ -393,7 +399,7 @@ class _AddPackagePageState extends State<AddPackagePage> {
 
               const SizedBox(height: 12),
 
-              // SUBCATEGORY FOR FOOD AND OUTDOOR ONLY
+              // SUBCATEGORY FOR FOOD, OUTDOOR AND WATER ONLY
               if (_hasSubcategory(selectedCategory)) ...[
                 DropdownButtonFormField<String>(
                   value: selectedSubcategory,

@@ -14,20 +14,28 @@ class FavoritePage extends StatefulWidget {
 class _FavoritePageState extends State<FavoritePage> {
   List favoriteTours = [];
   int userId = 0;
+  bool isLoading = true;
 
-  // 🔹 Load user ID
+  // Load user ID
   Future<void> loadUserId() async {
     final prefs = await SharedPreferences.getInstance();
     userId = prefs.getInt("user_id") ?? 0;
   }
 
-  // 🔹 Fetch favorites from backend
+  // Fetch favorites from backend
   Future<void> fetchFavorites() async {
     if (userId == 0) {
       await loadUserId();
     }
 
-    if (userId == 0) return;
+    if (userId == 0) {
+      if (!mounted) return;
+      setState(() {
+        favoriteTours = [];
+        isLoading = false;
+      });
+      return;
+    }
 
     try {
       final response = await http.get(
@@ -36,24 +44,39 @@ class _FavoritePageState extends State<FavoritePage> {
         ),
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        if (!mounted) return;
-
         setState(() {
           favoriteTours = data;
+          isLoading = false;
         });
+      } else {
+        setState(() {
+          favoriteTours = [];
+          isLoading = false;
+        });
+
+        print("Failed to fetch favorites: ${response.statusCode}");
       }
     } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        favoriteTours = [];
+        isLoading = false;
+      });
+
       print("Fetch error: $e");
     }
   }
 
-  // 🔹 Remove favorite
+  // Remove favorite
   Future<void> removeFavorite(int tourId) async {
     try {
-      await http.post(
+      final response = await http.post(
         Uri.parse(
           "https://backend-production-551c.up.railway.app/api/favorites/remove",
         ),
@@ -61,10 +84,59 @@ class _FavoritePageState extends State<FavoritePage> {
         body: jsonEncode({"user_id": userId, "tour_id": tourId}),
       );
 
-      await fetchFavorites();
+      if (response.statusCode == 200) {
+        await fetchFavorites();
+      } else {
+        print("Failed to remove favorite: ${response.statusCode}");
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to remove favorite")),
+        );
+      }
     } catch (e) {
       print("Remove error: $e");
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Something went wrong")));
     }
+  }
+
+  int? getCorrectTourId(dynamic tour) {
+    final rawId = tour["tour_id"] ?? tour["id"];
+
+    if (rawId == null) return null;
+
+    return int.tryParse(rawId.toString());
+  }
+
+  String getTourTitle(dynamic tour) {
+    return tour["title"]?.toString() ?? "Tour Package";
+  }
+
+  String getTourLocation(dynamic tour) {
+    return tour["destination"]?.toString() ??
+        tour["country"]?.toString() ??
+        "Nepal";
+  }
+
+  String getAverageRating(dynamic tour) {
+    final rating = tour["average_rating"] ?? tour["rating"] ?? "0.0";
+
+    final parsedRating = double.tryParse(rating.toString()) ?? 0.0;
+
+    return parsedRating.toStringAsFixed(1);
+  }
+
+  String getReviewCount(dynamic tour) {
+    final reviews =
+        tour["total_reviews"] ?? tour["review_count"] ?? tour["reviews"] ?? 0;
+
+    return reviews.toString();
   }
 
   @override
@@ -115,7 +187,20 @@ class _FavoritePageState extends State<FavoritePage> {
   }
 
   Widget _favoriteImage(dynamic tour) {
-    final image = tour["image"]?.toString() ?? "";
+    final image = tour["image"]?.toString().trim() ?? "";
+
+    if (image.isEmpty) {
+      return Container(
+        width: 120,
+        height: 120,
+        color: Theme.of(context).cardColor,
+        child: Icon(
+          Icons.image_not_supported_outlined,
+          color: Theme.of(context).textTheme.bodySmall?.color,
+          size: 34,
+        ),
+      );
+    }
 
     final imagePath = image.startsWith("assets/") ? image : "assets/$image";
 
@@ -140,11 +225,12 @@ class _FavoritePageState extends State<FavoritePage> {
   }
 
   Widget _favoriteCard(dynamic tour) {
-    return GestureDetector(
-      onTap: () {
-        print("CLICKED ITEM: $tour");
+    final tourId = getCorrectTourId(tour);
 
-        final tourId = tour["id"] ?? tour["tour_id"];
+    return GestureDetector(
+      onTap: () async {
+        print("CLICKED FAVORITE ITEM: $tour");
+        print("OPENING TOUR ID: $tourId");
 
         if (tourId == null) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -153,12 +239,16 @@ class _FavoritePageState extends State<FavoritePage> {
           return;
         }
 
-        Navigator.push(
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => TourDetailPage(tourId: tourId),
           ),
         );
+
+        if (!mounted) return;
+
+        fetchFavorites();
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 18),
@@ -198,7 +288,7 @@ class _FavoritePageState extends State<FavoritePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      tour["title"]?.toString() ?? "Tour Package",
+                      getTourTitle(tour),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -211,7 +301,7 @@ class _FavoritePageState extends State<FavoritePage> {
                     const SizedBox(height: 6),
 
                     Text(
-                      tour["country"]?.toString() ?? "Nepal",
+                      getTourLocation(tour),
                       style: TextStyle(
                         fontSize: 13,
                         color: Theme.of(context).textTheme.bodySmall?.color,
@@ -225,7 +315,7 @@ class _FavoritePageState extends State<FavoritePage> {
                         const Icon(Icons.star, color: Colors.orange, size: 18),
                         const SizedBox(width: 4),
                         Text(
-                          (tour["average_rating"] ?? "4.5").toString(),
+                          getAverageRating(tour),
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: Theme.of(context).colorScheme.onBackground,
@@ -234,7 +324,7 @@ class _FavoritePageState extends State<FavoritePage> {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            "(${tour["total_reviews"] ?? 0} reviews)",
+                            "(${getReviewCount(tour)} reviews)",
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 12,
@@ -257,10 +347,12 @@ class _FavoritePageState extends State<FavoritePage> {
               child: IconButton(
                 icon: const Icon(Icons.favorite, color: Colors.red, size: 30),
                 onPressed: () {
-                  final tourId = tour["id"] ?? tour["tour_id"];
-
                   if (tourId != null) {
-                    removeFavorite(int.parse(tourId.toString()));
+                    removeFavorite(tourId);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Error: Tour ID missing")),
+                    );
                   }
                 },
               ),
@@ -290,7 +382,9 @@ class _FavoritePageState extends State<FavoritePage> {
         ),
       ),
 
-      body: favoriteTours.isEmpty
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : favoriteTours.isEmpty
           ? _emptyState()
           : RefreshIndicator(
               onRefresh: fetchFavorites,

@@ -17,14 +17,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool isOtpSent = false;
   bool isLoading = false;
 
-  // STEP 1: Request the OTP
   Future<void> requestOtp() async {
-    if (emailController.text.isEmpty) {
+    if (emailController.text.trim().isEmpty) {
       _showSnackBar("Please enter your email");
       return;
     }
 
     setState(() => isLoading = true);
+
     try {
       final response = await http.post(
         Uri.parse(
@@ -34,27 +34,45 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         body: jsonEncode({"email": emailController.text.trim()}),
       );
 
+      final data = jsonDecode(response.body);
+
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         setState(() => isOtpSent = true);
-        _showSnackBar("OTP sent to your email");
+        _showSnackBar(data["message"] ?? "OTP sent to your email");
       } else {
-        _showSnackBar("User not found or server error");
+        _showSnackBar(data["message"] ?? "Failed to send OTP");
       }
     } catch (e) {
       _showSnackBar("Server not reachable");
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
-  // STEP 2: Verify OTP and Reset Password
   Future<void> resetPassword() async {
-    if (otpController.text.isEmpty || newPasswordController.text.isEmpty) {
+    if (otpController.text.trim().isEmpty ||
+        newPasswordController.text.isEmpty) {
       _showSnackBar("All fields are required");
       return;
     }
 
+    final passwordRegex = RegExp(
+      r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$',
+    );
+
+    if (!passwordRegex.hasMatch(newPasswordController.text)) {
+      _showSnackBar(
+        "Password must be at least 8 characters with letters and numbers",
+      );
+      return;
+    }
+
     setState(() => isLoading = true);
+
     try {
       final response = await http.post(
         Uri.parse(
@@ -68,16 +86,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         }),
       );
 
+      final data = jsonDecode(response.body);
+
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
-        _showSnackBar("Password reset successful! Please login.");
-        Navigator.pop(context); // Go back to Login
+        _showSnackBar(data["message"] ?? "Password reset successful");
+        Navigator.pop(context);
       } else {
-        _showSnackBar("Invalid or expired OTP");
+        _showSnackBar(data["message"] ?? "Password reset failed");
       }
     } catch (e) {
       _showSnackBar("Error connecting to server");
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
@@ -85,6 +109,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    otpController.dispose();
+    newPasswordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -105,16 +137,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               isOtpSent ? "Verify OTP" : "Forgot Password",
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
+
             const SizedBox(height: 10),
+
             Text(
               isOtpSent
-                  ? "Enter the code sent to ${emailController.text}"
+                  ? "Enter the code sent to ${emailController.text.trim()}"
                   : "Enter your email to receive a password reset code",
               style: const TextStyle(color: Colors.grey),
             ),
+
             const SizedBox(height: 30),
 
-            // EMAIL FIELD (Always visible)
             _buildField(
               emailController,
               Icons.email_outlined,

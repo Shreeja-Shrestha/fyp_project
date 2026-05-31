@@ -18,17 +18,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   bool _rememberMe = false;
   bool _isPasswordVisible = false;
+  bool isLoading = false;
 
   Future<void> signup() async {
-    if (nameController.text.isEmpty ||
-        emailController.text.isEmpty ||
+    if (nameController.text.trim().isEmpty ||
+        emailController.text.trim().isEmpty ||
         passwordController.text.isEmpty ||
         confirmController.text.isEmpty) {
       _showSnackBar("All fields are required");
       return;
     }
 
-    if (nameController.text.length < 3) {
+    if (nameController.text.trim().length < 3) {
       _showSnackBar("Name must be at least 3 characters");
       return;
     }
@@ -56,6 +57,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
+    setState(() => isLoading = true);
+
     try {
       final response = await http.post(
         Uri.parse(
@@ -71,20 +74,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       if (!mounted) return;
 
+      final data = jsonDecode(response.body);
+
       if (response.statusCode == 200 || response.statusCode == 201) {
-        _showSnackBar("Signup successful");
+        _showSnackBar(data["message"] ?? "Signup successful");
+
         await Future.delayed(const Duration(seconds: 1));
 
-        // Redirect to Login after successful signup
+        if (!mounted) return;
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const LoginPage()),
         );
       } else {
-        _showSnackBar("Signup failed");
+        _showSnackBar(data["message"] ?? "Signup failed");
       }
     } catch (e) {
       _showSnackBar("Server not reachable");
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
@@ -92,6 +103,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmController.dispose();
+    super.dispose();
   }
 
   @override
@@ -110,7 +130,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // --- HEADER TEXT ---
                       Text(
                         "Sign Up to Explore and",
                         textAlign: TextAlign.center,
@@ -120,6 +139,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           color: Theme.of(context).colorScheme.onBackground,
                         ),
                       ),
+
                       const Text(
                         "Book Tickets",
                         textAlign: TextAlign.center,
@@ -132,26 +152,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                       const SizedBox(height: 40),
 
-                      // --- INPUT FIELDS ---
                       _buildField(
                         nameController,
                         Icons.person,
                         "enter your name",
                       ),
+
                       const SizedBox(height: 15),
+
                       _buildField(
                         emailController,
                         Icons.email_outlined,
                         "enter your email",
                       ),
+
                       const SizedBox(height: 15),
+
                       _buildField(
                         passwordController,
                         Icons.lock_outline,
                         "enter your password",
                         isPassword: true,
+                        showVisibilityToggle: true,
                       ),
+
                       const SizedBox(height: 15),
+
                       _buildField(
                         confirmController,
                         Icons.lock_outline,
@@ -169,7 +195,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             value: _rememberMe,
                             activeColor: Theme.of(context).colorScheme.primary,
                             onChanged: (value) {
-                              setState(() => _rememberMe = value!);
+                              setState(() => _rememberMe = value ?? false);
                             },
                           ),
                           Text(
@@ -199,15 +225,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ),
                             elevation: 0,
                           ),
-                          onPressed: signup,
-                          child: const Text(
-                            "Sign Up",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          onPressed: isLoading ? null : signup,
+                          child: isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : const Text(
+                                  "Sign Up",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                         ),
                       ),
 
@@ -243,6 +273,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 20),
                     ],
                   ),
@@ -280,8 +311,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       : Icons.visibility_off_outlined,
                   color: Theme.of(context).textTheme.bodySmall?.color,
                 ),
-                onPressed: () =>
-                    setState(() => _isPasswordVisible = !_isPasswordVisible),
+                onPressed: () {
+                  setState(() {
+                    _isPasswordVisible = !_isPasswordVisible;
+                  });
+                },
               )
             : null,
         hintText: hint,

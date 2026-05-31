@@ -124,14 +124,52 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  Future<void> refreshHomeData() async {
+    await fetchTours();
+    await fetchReligiousTours();
+  }
+
+  Future<void> openTourDetail(dynamic tourId) async {
+    if (tourId == null) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => TourDetailPage(tourId: tourId)),
+    );
+
+    if (!mounted) return;
+
+    refreshHomeData();
+  }
+
   List<dynamic> filterHomeTours(List<dynamic> data) {
     return data.where((tour) {
       final category = tour["category"]?.toString().toLowerCase().trim() ?? "";
 
-      return category != "food" &&
-          category != "outdoor" &&
-          category != "culture" &&
-          category != "water";
+      final subcategory =
+          tour["subcategory"]?.toString().toLowerCase().trim() ?? "";
+
+      // Hide food from main Home page
+      if (category == "food") return false;
+
+      // Hide water from main Home page
+      if (category == "water") return false;
+
+      // Outdoor: show trekking only, hide camping/safari/other outdoor subcategories
+      if (category == "outdoor" && subcategory != "trekking") {
+        return false;
+      }
+
+      // Extra safety: hide these subcategories wherever they appear
+      if (subcategory == "safari" ||
+          subcategory == "camping" ||
+          subcategory == "rafting" ||
+          subcategory == "boating") {
+        return false;
+      }
+
+      // Show culture, religious, outdoor + trekking, and normal/general tours
+      return true;
     }).toList();
   }
 
@@ -151,10 +189,12 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> fetchTours() async {
     try {
-      final response = await http.get(Uri.parse("$apiBaseUrl/tours/home"));
+      final response = await http.get(Uri.parse("$apiBaseUrl/tours"));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+
+        if (!mounted) return;
 
         setState(() {
           tours = filterHomeTours(data);
@@ -174,8 +214,12 @@ class _HomePageState extends State<HomePage> {
       );
 
       if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (!mounted) return;
+
         setState(() {
-          religiousTours = jsonDecode(response.body);
+          religiousTours = data;
         });
       } else {
         print("Failed to load religious tours");
@@ -212,11 +256,15 @@ class _HomePageState extends State<HomePage> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
+        if (!mounted) return;
+
         setState(() {
           searchResults = data;
           isSearchLoading = false;
         });
       } else {
+        if (!mounted) return;
+
         setState(() {
           searchResults = [];
           isSearchLoading = false;
@@ -224,6 +272,8 @@ class _HomePageState extends State<HomePage> {
       }
     } catch (e) {
       print("Search error: $e");
+
+      if (!mounted) return;
 
       setState(() {
         searchResults = [];
@@ -359,13 +409,7 @@ class _HomePageState extends State<HomePage> {
                             reviewCount: getTourReviewCount(tour),
                             duration: tour["duration"]?.toString() ?? "5 days",
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      TourDetailPage(tourId: tour["id"]),
-                                ),
-                              );
+                              openTourDetail(tour["id"]);
                             },
                           );
                         },
@@ -395,17 +439,11 @@ class _HomePageState extends State<HomePage> {
                           return ExploreCard(
                             title: tour["title"] ?? "",
                             image: tour["image"] ?? "",
-                            price: tour["price"].toString(),
+                            price: tour["price"]?.toString() ?? "0",
                             rating: getTourRating(tour),
                             reviewCount: getTourReviewCount(tour),
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      TourDetailPage(tourId: tour["id"]),
-                                ),
-                              );
+                              openTourDetail(tour["id"]);
                             },
                           );
                         },
@@ -433,17 +471,11 @@ class _HomePageState extends State<HomePage> {
                         return ReligiousTempleCard(
                           title: temple["title"] ?? "",
                           image: temple["image"] ?? "",
-                          price: temple["price"].toString(),
+                          price: temple["price"]?.toString() ?? "0",
                           rating: getTourRating(temple),
                           reviews: getTourReviewCount(temple),
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    TourDetailPage(tourId: temple["id"]),
-                              ),
-                            );
+                            openTourDetail(temple["id"]);
                           },
                         );
                       },
@@ -579,12 +611,7 @@ class _HomePageState extends State<HomePage> {
 
                     clearSearch();
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => TourDetailPage(tourId: tourId),
-                      ),
-                    );
+                    openTourDetail(tourId);
                   },
                 );
               },
@@ -843,6 +870,8 @@ class TourCard extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             const SizedBox(height: 2),
+
+            /// FIXED: reviewCount is now displayed here
             Row(
               children: [
                 Text(
@@ -853,8 +882,19 @@ class TourCard extends StatelessWidget {
                 const Text("•", style: TextStyle(color: Colors.grey)),
                 const SizedBox(width: 6),
                 Text(
-                  duration,
+                  "Reviews($reviewCount)",
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(width: 6),
+                const Text("•", style: TextStyle(color: Colors.grey)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    duration,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
                 ),
               ],
             ),

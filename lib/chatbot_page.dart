@@ -11,7 +11,6 @@ class ChatbotPage extends StatefulWidget {
 class _ChatbotPageState extends State<ChatbotPage> {
   final TextEditingController controller = TextEditingController();
 
-  // 🔥 FIXED TYPE (IMPORTANT)
   List<Map<String, dynamic>> messages = [];
 
   void sendMessage() async {
@@ -29,7 +28,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
       messages.add({
         "role": "bot",
         "text": data["reply"] ?? "No response",
-        "tours": data["tours"], // ✅ store tours
+        "tours": data["tours"], //  store tours
       });
     });
   }
@@ -38,18 +37,6 @@ class _ChatbotPageState extends State<ChatbotPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          "Travel Assistant",
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onBackground,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).colorScheme.onBackground,
-        elevation: 0,
-      ),
       body: Column(
         children: [
           Expanded(
