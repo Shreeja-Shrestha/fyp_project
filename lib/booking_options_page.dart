@@ -220,17 +220,22 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     await _handleBookingSave(); // ADD THIS LINE
   }
 
+  // Use the same full BookingOptionsPage code you sent,
+  // but replace ONLY this function:
+
   Future<void> _handleBookingSave() async {
+    if (isProcessing) return;
+
+    setState(() => isProcessing = true);
+
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getInt("user_id");
-    print("SENDING USER ID: $userId");
 
     if (userId == null) {
       _showError("User not logged in");
       setState(() => isProcessing = false);
       return;
     }
-    setState(() => isProcessing = true);
 
     try {
       final bookingResponse = await http.post(
@@ -249,48 +254,60 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
       final bookingData = jsonDecode(bookingResponse.body);
 
-      if (bookingResponse.statusCode == 200) {
-        int bookingId = bookingData["booking_id"];
-
-        final paymentResponse = await http.post(
-          Uri.parse(
-            'https://backend-production-551c.up.railway.app/api/payment/initiate-payment',
-          ),
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode({
-            "amount": totalPrice.toInt(),
-            "booking_id": bookingId,
-          }),
-        );
-
-        if (paymentResponse.statusCode != 200) {
-          print("Payment Error: ${paymentResponse.body}");
-          _showError("Payment initiation failed");
-          return;
-        }
-
-        final paymentData = jsonDecode(paymentResponse.body);
-
-        print("Payment Response: $paymentData");
-
-        String? paymentUrl = paymentData["payment_url"];
-
-        if (paymentUrl == null) {
-          _showError("Payment URL not received from the server");
-          return;
-        }
-        await launchUrl(
-          Uri.parse(paymentUrl),
-          mode: LaunchMode.externalApplication,
-        );
-      } else {
+      if (bookingResponse.statusCode != 200) {
         _showError("Booking creation failed");
+        setState(() => isProcessing = false);
+        return;
+      }
+
+      final int bookingId = bookingData["booking_id"];
+
+      final paymentResponse = await http.post(
+        Uri.parse(
+          'https://backend-production-551c.up.railway.app/api/payment/initiate-payment',
+        ),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "amount": totalPrice.toInt(),
+          "booking_id": bookingId,
+        }),
+      );
+
+      if (paymentResponse.statusCode != 200) {
+        print("Payment Error: ${paymentResponse.body}");
+        _showError("Payment initiation failed");
+        setState(() => isProcessing = false);
+        return;
+      }
+
+      final paymentData = jsonDecode(paymentResponse.body);
+      print("Payment Response: $paymentData");
+
+      final String? paymentUrl = paymentData["payment_url"];
+
+      if (paymentUrl == null || paymentUrl.isEmpty) {
+        _showError("Payment URL not received from the server");
+        setState(() => isProcessing = false);
+        return;
+      }
+
+      final uri = Uri.parse(paymentUrl);
+
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+
+        // Do not set isProcessing = false here.
+        // This prevents opening Khalti multiple times.
+        return;
+      } else {
+        _showError("Could not open Khalti");
+        setState(() => isProcessing = false);
+        return;
       }
     } catch (e) {
       _showError("Error: $e");
+      setState(() => isProcessing = false);
     }
-
-    setState(() => isProcessing = false);
   }
 
   // --- UI COMPONENTS ---
