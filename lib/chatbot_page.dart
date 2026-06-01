@@ -28,14 +28,27 @@ class _ChatbotPageState extends State<ChatbotPage> {
       messages.add({
         "role": "bot",
         "text": data["reply"] ?? "No response",
-        "tours": data["tours"], //  store tours
+        "tours": data["tours"],
       });
     });
   }
 
   @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("Travel Assistant"),
+        centerTitle: true,
+        backgroundColor: Theme.of(context).cardColor,
+        foregroundColor: Theme.of(context).colorScheme.onBackground,
+        elevation: 0,
+      ),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
@@ -45,9 +58,6 @@ class _ChatbotPageState extends State<ChatbotPage> {
               itemBuilder: (context, index) {
                 final msg = messages[index];
 
-                // -------------------------------
-                // USER MESSAGE
-                // -------------------------------
                 if (msg["role"] == "user") {
                   return Align(
                     alignment: Alignment.centerRight,
@@ -68,13 +78,9 @@ class _ChatbotPageState extends State<ChatbotPage> {
                   );
                 }
 
-                // -------------------------------
-                // BOT MESSAGE + TOURS
-                // -------------------------------
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Bot text
                     Container(
                       margin: const EdgeInsets.all(8),
                       padding: const EdgeInsets.all(12),
@@ -88,7 +94,6 @@ class _ChatbotPageState extends State<ChatbotPage> {
                       ),
                     ),
 
-                    // 🔥 TOUR CARDS
                     if (msg["tours"] != null)
                       ...List.generate(msg["tours"].length, (i) {
                         final tour = msg["tours"][i];
@@ -104,7 +109,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
                           ),
                           child: ListTile(
                             title: Text(
-                              tour["title"],
+                              tour["title"] ?? "",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(
@@ -113,7 +118,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
                               ),
                             ),
                             subtitle: Text(
-                              "${tour["destination"]} • ${tour["duration"]}",
+                              "${tour["destination"] ?? ""} • ${tour["duration"] ?? ""}",
                               style: TextStyle(
                                 color: Theme.of(
                                   context,
@@ -121,14 +126,13 @@ class _ChatbotPageState extends State<ChatbotPage> {
                               ),
                             ),
                             trailing: Text(
-                              "Rs ${tour["price"]}",
+                              "Rs ${tour["price"] ?? ""}",
                               style: const TextStyle(
                                 color: Colors.green,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             onTap: () {
-                              // 🔥 NEXT STEP: NAVIGATE
                               print("Clicked: ${tour["title"]}");
                             },
                           ),
@@ -140,9 +144,6 @@ class _ChatbotPageState extends State<ChatbotPage> {
             ),
           ),
 
-          // -------------------------------
-          // INPUT BOX
-          // -------------------------------
           Row(
             children: [
               Expanded(

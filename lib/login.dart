@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+
 import 'home.dart';
 import 'signup.dart';
 import 'forgotpassword.dart';
@@ -18,42 +19,39 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  bool isLoading = false;
+  bool rememberMe = false;
+
+  static const String loginUrl =
+      "https://backend-production-551c.up.railway.app/api/auth/login";
+
   bool isValidEmail(String email) {
     final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]+$');
     return emailRegex.hasMatch(email);
   }
 
-  bool isValidPassword(String password) {
-    final passwordRegex = RegExp(
-      r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$',
-    );
-    return passwordRegex.hasMatch(password);
-  }
-
-  bool isLoading = false;
-  bool rememberMe = false;
-
-  Future<void> saveUserSession(Map<String, dynamic> user) async {
+  Future<void> saveUserSession(Map<String, dynamic> user, String token) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt("user_id", user["id"]);
-    await prefs.setString("user_name", user["name"]);
-    await prefs.setString("user_email", user["email"]);
-    await prefs.setString("user_role", user["role"]);
+
+    await prefs.setInt("user_id", int.tryParse(user["id"].toString()) ?? 0);
+    await prefs.setString("user_name", user["name"]?.toString() ?? "");
+    await prefs.setString("user_email", user["email"]?.toString() ?? "");
+    await prefs.setString("user_role", user["role"]?.toString() ?? "user");
+    await prefs.setString("token", token);
+    await prefs.setBool("remember_me", rememberMe);
   }
 
   Future<void> login() async {
-    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
       _showSnackBar("All fields are required");
       return;
     }
-    if (!isValidEmail(emailController.text.trim())) {
+
+    if (!isValidEmail(email)) {
       _showSnackBar("Enter a valid email address");
-      return;
-    }
-    if (!isValidPassword(passwordController.text)) {
-      _showSnackBar(
-        "Password must be at least 8 characters with letters and numbers",
-      );
       return;
     }
 
@@ -61,48 +59,49 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final response = await http.post(
-        Uri.parse(
-          "https://backend-production-551c.up.railway.app/api/auth/login",
-        ),
+        Uri.parse(loginUrl),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "email": emailController.text.trim(),
-          "password": passwordController.text,
-        }),
+        body: jsonEncode({"email": email, "password": password}),
       );
 
       if (!mounted) return;
-      setState(() => isLoading = false);
+
+      final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
         final user = data["user"];
-        final role = user["role"];
-        await saveUserSession(user);
-        _showSnackBar("Login successful");
-        final token = data["token"];
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString("token", token);
+        final token = data["token"]?.toString() ?? "";
 
-        if (role == "admin") {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const HomePage()),
-          );
+        if (user == null || token.isEmpty) {
+          _showSnackBar("Invalid login response");
+          return;
         }
+
+        await saveUserSession(user, token);
+
+        if (!mounted) return;
+
+        _showSnackBar("Login successful");
+
+        final role = user["role"]?.toString() ?? "user";
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                role == "admin" ? const AdminDashboardPage() : const HomePage(),
+          ),
+        );
       } else {
-        final data = jsonDecode(response.body);
-        _showSnackBar(data['message'] ?? "Login failed");
+        _showSnackBar(data["message"]?.toString() ?? "Login failed");
       }
     } catch (e) {
       if (!mounted) return;
-      setState(() => isLoading = false);
       _showSnackBar("Server not reachable");
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
@@ -113,19 +112,23 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
         child: Column(
           children: [
-            /// 1. IMAGE WITH DEEP UPWARD CURVE
             ClipPath(
               clipper: DeepUpwardCurveClipper(),
               child: Container(
-                height:
-                    MediaQuery.of(context).size.height *
-                    0.38, // Slightly taller to account for the deep curve
+                height: MediaQuery.of(context).size.height * 0.38,
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   image: DecorationImage(
@@ -136,7 +139,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
 
-            const SizedBox(height: 10), // Reduced since curve is deep
+            const SizedBox(height: 10),
 
             Text(
               "Login to Access Your",
@@ -146,6 +149,7 @@ class _LoginPageState extends State<LoginPage> {
                 color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
+
             const Text(
               "Travel Tickets",
               style: TextStyle(
@@ -161,8 +165,11 @@ class _LoginPageState extends State<LoginPage> {
               "enter your email",
               Icons.email_outlined,
               emailController,
+              keyboardType: TextInputType.emailAddress,
             ),
+
             const SizedBox(height: 15),
+
             _inputField(
               "enter your password",
               Icons.lock_outline,
@@ -180,7 +187,9 @@ class _LoginPageState extends State<LoginPage> {
                       Checkbox(
                         value: rememberMe,
                         activeColor: Theme.of(context).primaryColor,
-                        onChanged: (val) => setState(() => rememberMe = val!),
+                        onChanged: (val) {
+                          setState(() => rememberMe = val ?? false);
+                        },
                       ),
                       Text(
                         "Remember me",
@@ -188,13 +197,18 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ],
                   ),
+
                   TextButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ForgotPasswordScreen(),
-                      ),
-                    ),
+                    onPressed: isLoading
+                        ? null
+                        : () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ForgotPasswordScreen(),
+                              ),
+                            );
+                          },
                     child: Text(
                       "Forgot password?",
                       style: TextStyle(
@@ -217,14 +231,27 @@ class _LoginPageState extends State<LoginPage> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).primaryColor,
+                    disabledBackgroundColor: Theme.of(
+                      context,
+                    ).primaryColor.withOpacity(0.6),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
                   onPressed: isLoading ? null : login,
                   child: isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : Text("Login", style: TextStyle(color: Colors.white)),
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text(
+                          "Login",
+                          style: TextStyle(color: Colors.white),
+                        ),
                 ),
               ),
             ),
@@ -239,10 +266,16 @@ class _LoginPageState extends State<LoginPage> {
                   style: TextStyle(color: Theme.of(context).hintColor),
                 ),
                 GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SignUpScreen()),
-                  ),
+                  onTap: isLoading
+                      ? null
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SignUpScreen(),
+                            ),
+                          );
+                        },
                   child: const Text(
                     "Sign Up",
                     style: TextStyle(
@@ -253,6 +286,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ],
             ),
+
             const SizedBox(height: 40),
           ],
         ),
@@ -265,12 +299,18 @@ class _LoginPageState extends State<LoginPage> {
     IconData icon,
     TextEditingController controller, {
     bool obscure = false,
+    TextInputType keyboardType = TextInputType.text,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 30),
       child: TextField(
         controller: controller,
         obscureText: obscure,
+        keyboardType: keyboardType,
+        textInputAction: obscure ? TextInputAction.done : TextInputAction.next,
+        onSubmitted: (_) {
+          if (obscure && !isLoading) login();
+        },
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: Theme.of(context).iconTheme.color),
           hintText: hint,
@@ -293,15 +333,13 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-/// THE CLIPPER FOR A VERY DEEP UPWARD CURVE
 class DeepUpwardCurveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
-    Path path = Path();
+    final Path path = Path();
+
     path.lineTo(0, size.height);
 
-    // We move the control point much higher (size.height - 120)
-    // to create a very deep curve "up" into the image.
     path.quadraticBezierTo(
       size.width / 2,
       size.height - 130,
@@ -311,6 +349,7 @@ class DeepUpwardCurveClipper extends CustomClipper<Path> {
 
     path.lineTo(size.width, 0);
     path.close();
+
     return path;
   }
 

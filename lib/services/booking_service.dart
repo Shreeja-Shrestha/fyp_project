@@ -57,10 +57,10 @@ class BookingService {
     }
   }
 
-  // CANCEL BOOKING
+  // CANCEL BOOKING BY USER
   static Future<bool> cancelBooking(int id) async {
     try {
-      final response = await http.put(Uri.parse("$baseUrl/cancel-admin/$id"));
+      final response = await http.put(Uri.parse("$baseUrl/cancel/$id"));
 
       print("Cancel Response: ${response.statusCode}");
       print("Cancel Body: ${response.body}");

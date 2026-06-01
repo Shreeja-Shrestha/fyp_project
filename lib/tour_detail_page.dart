@@ -19,13 +19,14 @@ class TourDetailPage extends StatefulWidget {
 
 class _TourDetailPageState extends State<TourDetailPage> {
   bool isFavorite = false;
+  bool isSubmittingReview = false;
+
   final TextEditingController _reviewController = TextEditingController();
 
   Map<String, dynamic>? tour;
   bool isLoading = true;
   int currentUserId = 0;
 
-  // Dynamic list for reviews
   List<Map<String, dynamic>> reviews = [];
 
   final PageController _pageController = PageController();
@@ -55,11 +56,9 @@ class _TourDetailPageState extends State<TourDetailPage> {
   double getAverageRating() {
     if (reviews.isNotEmpty) {
       double total = 0;
-
       for (final review in reviews) {
         total += double.tryParse(review["rating"].toString()) ?? 0;
       }
-
       return total / reviews.length;
     }
 
@@ -97,8 +96,6 @@ class _TourDetailPageState extends State<TourDetailPage> {
         ),
       );
 
-      print("API RESPONSE: ${response.body}");
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
@@ -116,8 +113,6 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
           isLoading = false;
         });
-      } else {
-        print("Failed to load tour");
       }
     } catch (e) {
       print("Error fetching tour: $e");
@@ -210,6 +205,8 @@ class _TourDetailPageState extends State<TourDetailPage> {
   }
 
   Future<void> _submitReview() async {
+    if (isSubmittingReview) return;
+
     final String comment = _reviewController.text.trim();
 
     if (comment.isEmpty) {
@@ -220,6 +217,17 @@ class _TourDetailPageState extends State<TourDetailPage> {
       );
       return;
     }
+
+    if (currentUserId == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please login before submitting review")),
+      );
+      return;
+    }
+
+    setState(() {
+      isSubmittingReview = true;
+    });
 
     final url = Uri.parse(
       'https://backend-production-551c.up.railway.app/api/reviews/submit',
@@ -262,6 +270,12 @@ class _TourDetailPageState extends State<TourDetailPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Error submitting review: $e")));
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSubmittingReview = false;
+        });
+      }
     }
   }
 
@@ -308,9 +322,6 @@ class _TourDetailPageState extends State<TourDetailPage> {
         body: jsonEncode({"user_id": currentUserId, "tour_id": widget.tourId}),
       );
 
-      print("Response status: ${response.statusCode}");
-      print("Response body: ${response.body}");
-
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data["status"] == "success") {
@@ -329,8 +340,6 @@ class _TourDetailPageState extends State<TourDetailPage> {
         ).showSnackBar(SnackBar(content: Text("Failed: ${data["message"]}")));
       }
     } catch (e) {
-      print("Error: $e");
-
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Error: $e")));
@@ -368,7 +377,6 @@ class _TourDetailPageState extends State<TourDetailPage> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // IMAGE SLIDESHOW
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.5,
             child: Stack(
@@ -413,7 +421,6 @@ class _TourDetailPageState extends State<TourDetailPage> {
                   ),
                 ),
 
-                // SLIDESHOW INDICATOR
                 Positioned(
                   bottom: 60,
                   child: Row(
@@ -511,7 +518,6 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
           const SizedBox(height: 25),
 
-          // QUICK INFO TILES
           Row(
             children: [
               _infoTile(
@@ -548,7 +554,6 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
           const SizedBox(height: 35),
 
-          // DESCRIPTION HEADER WITH BOOK BUTTON
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -587,7 +592,6 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
           const SizedBox(height: 40),
 
-          // REVIEWS SECTION
           const Text(
             "Reviews",
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
@@ -608,15 +612,16 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
           const SizedBox(height: 12),
 
-          // Star Rating Selector
           Row(
             children: List.generate(5, (index) {
               return IconButton(
-                onPressed: () {
-                  setState(() {
-                    _userSelectedRating = index + 1;
-                  });
-                },
+                onPressed: isSubmittingReview
+                    ? null
+                    : () {
+                        setState(() {
+                          _userSelectedRating = index + 1;
+                        });
+                      },
                 icon: Icon(
                   index < _userSelectedRating
                       ? Icons.star_rounded
@@ -627,9 +632,9 @@ class _TourDetailPageState extends State<TourDetailPage> {
             }),
           ),
 
-          // Review TextField
           TextField(
             controller: _reviewController,
+            enabled: !isSubmittingReview,
             maxLines: 3,
             decoration: InputDecoration(
               hintText: "Write your review here...",
@@ -645,17 +650,17 @@ class _TourDetailPageState extends State<TourDetailPage> {
 
           const SizedBox(height: 12),
 
-          // Submit Button
           ElevatedButton(
-            onPressed: _submitReview,
+            onPressed: isSubmittingReview ? null : _submitReview,
             style: ElevatedButton.styleFrom(
               backgroundColor: primarySkyBlue,
+              disabledBackgroundColor: Colors.grey.shade400,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
             child: Text(
-              "Submit Review",
+              isSubmittingReview ? "Submitting..." : "Submit Review",
               style: TextStyle(
                 color: Theme.of(context).cardColor,
                 fontWeight: FontWeight.bold,
@@ -753,7 +758,9 @@ class _TourDetailPageState extends State<TourDetailPage> {
               if (isOwner)
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => deleteReview(r["id"]),
+                  onPressed: isSubmittingReview
+                      ? null
+                      : () => deleteReview(r["id"]),
                 ),
 
               const Icon(Icons.star_rounded, color: Colors.amber, size: 18),

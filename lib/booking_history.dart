@@ -27,7 +27,6 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getInt("user_id");
-      print("USER ID FROM APP: $userId");
 
       if (userId == null) {
         setState(() {
@@ -53,11 +52,13 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
   }
 
   Future<void> cancelBooking(dynamic bookingId) async {
-    bool? confirm = await showDialog(
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text("Cancel Booking?"),
-        content: const Text("Are you sure you want to cancel this trip?"),
+        content: const Text(
+          "Are you sure you want to cancel this trip? If payment is already completed, admin will review the refund manually.",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -74,32 +75,32 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
     if (confirm != true) return;
 
     try {
-      int id = int.tryParse(bookingId.toString()) ?? 0;
+      final id = int.tryParse(bookingId.toString()) ?? 0;
       if (id == 0) throw Exception("Invalid Booking ID");
 
-      bool success = await BookingService.cancelBooking(id);
+      final success = await BookingService.cancelBooking(id);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              success
-                  ? "Booking cancelled successfully"
-                  : "Failed to cancel booking",
-            ),
-            backgroundColor: success ? Colors.green : Colors.red,
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success
+                ? "Booking cancelled successfully"
+                : "Failed to cancel booking",
           ),
-        );
+          backgroundColor: success ? Colors.green : Colors.red,
+        ),
+      );
 
-        if (success) fetchBookings();
-      }
+      if (success) fetchBookings();
     } catch (e) {
       debugPrint("Cancel error: $e");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Error cancelling booking")),
-        );
-      }
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Error cancelling booking")));
     }
   }
 
@@ -138,14 +139,19 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
         itemBuilder: (context, index) {
           final b = bookings[index];
 
-          String name = b["title"] ?? "Unknown Tour";
-          String date = b["travel_date"]?.toString().split('T')[0] ?? "N/A";
-          String transport = b["transport_mode"] ?? "Standard";
-          int travelers = b["number_of_people"] ?? 1;
+          final name = b["title"] ?? "Unknown Tour";
+          final date = b["travel_date"]?.toString().split('T')[0] ?? "N/A";
+          final transport = b["transport_mode"] ?? "Standard";
+          final travelers = b["number_of_people"] ?? 1;
+
+          final bookingStatus = (b["booking_status"] ?? "Pending").toString();
+          final paymentStatus = (b["payment_status"] ?? "").toString();
+
+          final isCancelled = bookingStatus.toLowerCase() == "cancelled";
 
           return GestureDetector(
             onTap: () {
-              if (b["payment_status"] == "Paid") {
+              if (paymentStatus.toLowerCase() == "paid") {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -177,7 +183,6 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    /// TITLE + STATUS
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -190,14 +195,13 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
                             ),
                           ),
                         ),
-
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            _statusChip(b["booking_status"] ?? "Pending"),
+                            _statusChip(bookingStatus),
                             const SizedBox(height: 4),
                             Text(
-                              b["payment_status"] ?? "",
+                              paymentStatus,
                               style: const TextStyle(
                                 fontSize: 11,
                                 color: Colors.grey,
@@ -218,20 +222,23 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
 
                     const SizedBox(height: 16),
 
-                    /// CANCEL BUTTON
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton.icon(
-                        onPressed: () => cancelBooking(b["id"]),
-                        icon: const Icon(
-                          Icons.cancel_outlined,
-                          color: Colors.redAccent,
+                        onPressed: isCancelled
+                            ? null
+                            : () => cancelBooking(b["id"]),
+                        icon: Icon(
+                          isCancelled
+                              ? Icons.check_circle_outline
+                              : Icons.cancel_outlined,
+                          color: isCancelled ? Colors.grey : Colors.redAccent,
                           size: 18,
                         ),
-                        label: const Text(
-                          "Cancel Trip",
+                        label: Text(
+                          isCancelled ? "Cancelled" : "Cancel Trip",
                           style: TextStyle(
-                            color: Colors.redAccent,
+                            color: isCancelled ? Colors.grey : Colors.redAccent,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -253,24 +260,43 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
         Icon(icon, size: 16, color: Colors.teal),
         const SizedBox(width: 8),
         Text("$label: ", style: const TextStyle(color: Colors.grey)),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+        ),
       ],
     );
   }
 
   Widget _statusChip(String status) {
-    final bool isPending = status.toLowerCase() == 'pending';
+    final lower = status.toLowerCase();
+
+    Color bg;
+    Color text;
+
+    if (lower == "pending") {
+      bg = Colors.orange.shade50;
+      text = Colors.orange.shade800;
+    } else if (lower == "cancelled") {
+      bg = Colors.red.shade50;
+      text = Colors.red.shade800;
+    } else {
+      bg = Colors.green.shade50;
+      text = Colors.green.shade800;
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: isPending ? Colors.orange[50] : Colors.green[50],
+        color: bg,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         status.toUpperCase(),
         style: TextStyle(
-          color: isPending ? Colors.orange[800] : Colors.green[800],
+          color: text,
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),

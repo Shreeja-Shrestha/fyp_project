@@ -1,12 +1,9 @@
-import 'dart:ui';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
-//import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../services/hotel_service.dart';
-import 'dart:developer' as dev;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -34,51 +31,25 @@ class BookingOptionsPage extends StatefulWidget {
 }
 
 class _BookingOptionsPageState extends State<BookingOptionsPage> {
-  String calculateTravelTime(double distanceKm) {
-    double speed;
-
-    switch (selectedTransport) {
-      case "Car":
-        speed = 40; // km/h
-        break;
-      case "Bus":
-        speed = 35;
-        break;
-      case "Walk":
-        speed = 5;
-        break;
-      default:
-        speed = 40;
-    }
-
-    double timeInHours = distanceKm / speed;
-    int minutes = (timeInHours * 60).round();
-
-    if (minutes < 60) {
-      return "$minutes mins";
-    } else {
-      int hours = minutes ~/ 60;
-      int remaining = minutes % 60;
-      return "$hours hr $remaining mins";
-    }
-  }
-
-  //Restored Event Map
   Map<DateTime, List<Map<String, dynamic>>> eventMap = {};
+
   DateTime focusedDay = DateTime.now();
   DateTime? selectedDate;
   DateTime? checkOutDate;
+
   String selectedTransport = "Bus";
+
   final TextEditingController personsController = TextEditingController(
     text: "1",
   );
+
   bool isProcessing = false;
+  bool hasLaunchedKhalti = false;
 
   final double basePrice = 500.0;
   double totalPrice = 500.0;
 
   final Color primarySkyBlue = const Color(0xFF00B4D8);
-  final Color bgCanvas = const Color(0xFFF8FDFF);
 
   @override
   void initState() {
@@ -87,7 +58,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     fetchTourEvents("Lumbini");
   }
 
-  //Restored fetchTourEvents with full logic
   Future<void> fetchTourEvents(String place) async {
     try {
       final response = await http.get(
@@ -96,33 +66,23 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
       if (response.statusCode == 200) {
         List data = jsonDecode(response.body);
-
         Map<DateTime, List<Map<String, dynamic>>> temp = {};
 
         for (var item in data) {
-          // parse date from backend
           DateTime parsedDate = DateTime.parse(item['date']);
-
-          // normalize date (important for TableCalendar)
           DateTime cleanDate = DateTime(
             parsedDate.year,
             parsedDate.month,
             parsedDate.day,
           );
 
-          // group events by date
           temp.putIfAbsent(cleanDate, () => []);
           temp[cleanDate]!.add(item);
         }
 
+        if (!mounted) return;
         setState(() {
           eventMap = temp;
-
-          // optional: auto focus first event date
-          if (temp.isNotEmpty) {
-            final firstEventDate = temp.keys.toList()..sort();
-            focusedDay = firstEventDate.first;
-          }
         });
       } else {
         print("API ERROR: ${response.body}");
@@ -133,74 +93,13 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   }
 
   void _updateTotalPrice() {
-    setState(() {
-      int count = int.tryParse(personsController.text) ?? 1;
-      if (count < 1) count = 1;
-      totalPrice = count * basePrice;
-    });
-  }
+    int count = int.tryParse(personsController.text) ?? 1;
+    if (count < 1) count = 1;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              _buildAppBar(),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 10, 24, 160),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _sectionHeader(
-                        "Travel Schedule",
-                        "Pick your preferred date",
-                      ),
-                      const SizedBox(height: 15),
-                      _selectionTile(
-                        icon: Icons.calendar_month_rounded,
-                        title: selectedDate == null
-                            ? "Select Travel Date"
-                            : "${selectedDate!.day} / ${selectedDate!.month} / ${selectedDate!.year}",
-                        subtitle: selectedDate == null
-                            ? "Tap to open calendar"
-                            : "Date confirmed",
-                        onTap: _pickDate,
-                      ),
-                      const SizedBox(height: 30),
-                      _sectionHeader("Group Size", "How many travelers?"),
-                      const SizedBox(height: 15),
-                      _buildPersonsInput(),
-                      const SizedBox(height: 30),
-                      _sectionHeader("Transportation", "Select mode of travel"),
-                      const SizedBox(height: 15),
-                      _buildTransportRow(),
-                      const SizedBox(height: 30),
-                      _sectionHeader(
-                        "Accommodation",
-                        "Nearby hotels for your stay",
-                      ),
-                      const SizedBox(height: 15),
-                      _mapPreview(widget.lat, widget.lng),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          _buildBottomActionWithPrice(),
-          if (isProcessing)
-            Container(
-              color: Colors.black26,
-              child: const Center(child: CircularProgressIndicator()),
-            ),
-        ],
-      ),
-    );
+    setState(() {
+      totalPrice = count * basePrice;
+      hasLaunchedKhalti = false;
+    });
   }
 
   Future<void> _onConfirmBooking() async {
@@ -217,14 +116,11 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       return;
     }
 
-    await _handleBookingSave(); // ADD THIS LINE
+    await _handleBookingSave();
   }
 
-  // Use the same full BookingOptionsPage code you sent,
-  // but replace ONLY this function:
-
   Future<void> _handleBookingSave() async {
-    if (isProcessing) return;
+    if (isProcessing || hasLaunchedKhalti) return;
 
     setState(() => isProcessing = true);
 
@@ -233,6 +129,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
     if (userId == null) {
       _showError("User not logged in");
+      if (!mounted) return;
       setState(() => isProcessing = false);
       return;
     }
@@ -256,6 +153,7 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
 
       if (bookingResponse.statusCode != 200) {
         _showError("Booking creation failed");
+        if (!mounted) return;
         setState(() => isProcessing = false);
         return;
       }
@@ -276,17 +174,17 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       if (paymentResponse.statusCode != 200) {
         print("Payment Error: ${paymentResponse.body}");
         _showError("Payment initiation failed");
+        if (!mounted) return;
         setState(() => isProcessing = false);
         return;
       }
 
       final paymentData = jsonDecode(paymentResponse.body);
-      print("Payment Response: $paymentData");
-
       final String? paymentUrl = paymentData["payment_url"];
 
       if (paymentUrl == null || paymentUrl.isEmpty) {
         _showError("Payment URL not received from the server");
+        if (!mounted) return;
         setState(() => isProcessing = false);
         return;
       }
@@ -294,23 +192,136 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       final uri = Uri.parse(paymentUrl);
 
       if (await canLaunchUrl(uri)) {
+        hasLaunchedKhalti = true;
+
         await launchUrl(uri, mode: LaunchMode.externalApplication);
 
-        // Do not set isProcessing = false here.
-        // This prevents opening Khalti multiple times.
         return;
       } else {
         _showError("Could not open Khalti");
+        if (!mounted) return;
         setState(() => isProcessing = false);
         return;
       }
     } catch (e) {
       _showError("Error: $e");
+      if (!mounted) return;
       setState(() => isProcessing = false);
     }
   }
 
-  // --- UI COMPONENTS ---
+  Future<void> _pickDate() async {
+    final today = DateTime.now();
+    final cleanToday = DateTime(today.year, today.month, today.day);
+
+    if (focusedDay.isBefore(cleanToday)) {
+      focusedDay = cleanToday;
+    }
+
+    final selected = await showModalBottomSheet<DateTime>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (context) {
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.65,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                const Text(
+                  "Select Travel Date",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 15),
+                Expanded(
+                  child: TableCalendar(
+                    firstDay: cleanToday,
+                    lastDay: DateTime(cleanToday.year + 2, 12, 31),
+                    focusedDay: selectedDate ?? focusedDay,
+                    enabledDayPredicate: (day) {
+                      final cleanDay = DateTime(day.year, day.month, day.day);
+                      return !cleanDay.isBefore(cleanToday);
+                    },
+                    onPageChanged: (newFocusedDay) {
+                      focusedDay = newFocusedDay;
+                    },
+                    selectedDayPredicate: (day) => isSameDay(selectedDate, day),
+                    eventLoader: (day) {
+                      final cleanDay = DateTime(day.year, day.month, day.day);
+                      return eventMap[cleanDay] ?? [];
+                    },
+                    calendarStyle: const CalendarStyle(
+                      todayDecoration: BoxDecoration(
+                        color: Colors.orange,
+                        shape: BoxShape.circle,
+                      ),
+                      selectedDecoration: BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                      ),
+                      markerDecoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    onDaySelected: (selectedDay, newFocusedDay) {
+                      Navigator.pop(context, selectedDay);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selected != null) {
+      setState(() {
+        selectedDate = selected;
+        focusedDay = selected;
+        hasLaunchedKhalti = false;
+      });
+
+      final clean = DateTime(selected.year, selected.month, selected.day);
+
+      final events = eventMap.entries
+          .firstWhere(
+            (entry) => isSameDay(entry.key, clean),
+            orElse: () => MapEntry(DateTime(0), []),
+          )
+          .value;
+
+      if (events.isNotEmpty) {
+        await showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text("Major Cultural Events"),
+            content: SingleChildScrollView(
+              child: Text(
+                events
+                    .map((e) {
+                      final title = e['title'] ?? "Event";
+                      final desc =
+                          (e['description'] != null &&
+                              e['description'].toString().trim().isNotEmpty)
+                          ? e['description']
+                          : "No description available";
+
+                      return "$title\n$desc";
+                    })
+                    .join("\n\n"),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildAppBar() {
     return SliverAppBar(
       expandedHeight: 90,
@@ -445,9 +456,15 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
   }
 
   Widget _transportCard(String type, IconData iconData) {
-    bool isSelected = selectedTransport == type;
+    final bool isSelected = selectedTransport == type;
+
     return GestureDetector(
-      onTap: () => setState(() => selectedTransport = type),
+      onTap: () {
+        setState(() {
+          selectedTransport = type;
+          hasLaunchedKhalti = false;
+        });
+      },
       child: Container(
         width: MediaQuery.of(context).size.width * 0.26,
         padding: const EdgeInsets.symmetric(vertical: 20),
@@ -493,30 +510,20 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       child: FutureBuilder<List<dynamic>>(
         future: HotelService.fetchNearbyHotels(widget.tourId),
         builder: (context, snapshot) {
-          // =========================
-          // LOADING
-          // =========================
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // =========================
-          // ERROR
-          // =========================
           if (snapshot.hasError) {
             return const Center(child: Text("Failed to load hotels"));
           }
 
-          // =========================
-          // EMPTY DATA
-          // =========================
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text("No nearby hotels found"));
           }
 
           List<Marker> markers = [];
 
-          // 🔵 Destination Marker
           markers.add(
             Marker(
               width: 40,
@@ -536,9 +543,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
           for (var hotel in snapshot.data!) {
             if (hotelCount >= 6) break;
 
-            // =========================
-            // VALIDATE NAME
-            // =========================
             if (hotel['name'] == null ||
                 hotel['name'].toString().trim().isEmpty ||
                 hotel['name'] == "Hotel data unavailable" ||
@@ -580,18 +584,12 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
             hotelCount++;
           }
 
-          // =========================
-          // NO VALID HOTELS AFTER FILTER
-          // =========================
           if (validHotels == 0) {
             return const Center(
               child: Text("No valid hotels found for this location"),
             );
           }
 
-          // =========================
-          // MAP RENDER
-          // =========================
           return FlutterMap(
             options: MapOptions(
               initialCenter: LatLng(lat, lng),
@@ -642,7 +640,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: Image.asset(
@@ -652,33 +649,23 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
               fit: BoxFit.cover,
             ),
           ),
-
           const SizedBox(height: 15),
-
           Text(
             hotel['name'],
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
-
           const SizedBox(height: 10),
           const Divider(),
           const SizedBox(height: 10),
-
           const Text(
             "Stay Details",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-
           const SizedBox(height: 10),
-
           Text("Check-in: ${checkIn.day}/${checkIn.month}/${checkIn.year}"),
-
           const SizedBox(height: 5),
-
           Text("Check-out: ${checkOut.day}/${checkOut.month}/${checkOut.year}"),
-
           const SizedBox(height: 30),
-
           SizedBox(
             width: double.infinity,
             height: 55,
@@ -768,8 +755,8 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
                   );
 
                   if (response.statusCode == 200) {
-                    Navigator.pop(context); // close dialog
-                    Navigator.pop(context); // close bottom sheet
+                    Navigator.pop(context);
+                    Navigator.pop(context);
 
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text("Hotel confirmed & saved!")),
@@ -785,7 +772,6 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
                   ).showSnackBar(SnackBar(content: Text("Error: $e")));
                 }
               },
-
               child: const Text("Confirm"),
             ),
           ],
@@ -844,9 +830,9 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                child: const Text(
-                  "Confirm & Pay",
-                  style: TextStyle(
+                child: Text(
+                  isProcessing ? "Opening Khalti..." : "Confirm & Pay",
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
@@ -863,138 +849,67 @@ class _BookingOptionsPageState extends State<BookingOptionsPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: const Text("Trek Confirmed!"),
-        content: const Text("Your booking has been saved successfully."),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: const Text("Finish"),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Stack(
+        children: [
+          CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              _buildAppBar(),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 10, 24, 160),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _sectionHeader(
+                        "Travel Schedule",
+                        "Pick your preferred date",
+                      ),
+                      const SizedBox(height: 15),
+                      _selectionTile(
+                        icon: Icons.calendar_month_rounded,
+                        title: selectedDate == null
+                            ? "Select Travel Date"
+                            : "${selectedDate!.day} / ${selectedDate!.month} / ${selectedDate!.year}",
+                        subtitle: selectedDate == null
+                            ? "Tap to open calendar"
+                            : "Date confirmed",
+                        onTap: _pickDate,
+                      ),
+                      const SizedBox(height: 30),
+                      _sectionHeader("Group Size", "How many travelers?"),
+                      const SizedBox(height: 15),
+                      _buildPersonsInput(),
+                      const SizedBox(height: 30),
+                      _sectionHeader("Transportation", "Select mode of travel"),
+                      const SizedBox(height: 15),
+                      _buildTransportRow(),
+                      const SizedBox(height: 30),
+                      _sectionHeader(
+                        "Accommodation",
+                        "Nearby hotels for your stay",
+                      ),
+                      const SizedBox(height: 15),
+                      _mapPreview(widget.lat, widget.lng),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
+          _buildBottomActionWithPrice(),
+          if (isProcessing)
+            Container(
+              color: Colors.black26,
+              child: const Center(child: CircularProgressIndicator()),
+            ),
         ],
       ),
     );
-  }
-
-  //  Restored _pickDate with Event descriptions logic
-  Future<void> _pickDate() async {
-    final selected = await showModalBottomSheet<DateTime>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      builder: (context) {
-        return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.65,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                const Text(
-                  "Select Travel Date",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 15),
-                Expanded(
-                  child: TableCalendar(
-                    firstDay: DateTime(2020),
-                    lastDay: DateTime(2030),
-                    focusedDay: focusedDay,
-                    enabledDayPredicate: (day) {
-                      final today = DateTime.now();
-                      final cleanToday = DateTime(
-                        today.year,
-                        today.month,
-                        today.day,
-                      );
-                      return !day.isBefore(cleanToday);
-                    },
-                    onPageChanged: (newFocusedDay) {
-                      focusedDay = newFocusedDay;
-                    },
-                    selectedDayPredicate: (day) => isSameDay(selectedDate, day),
-                    eventLoader: (day) {
-                      DateTime cleanDay = DateTime(
-                        day.year,
-                        day.month,
-                        day.day,
-                      );
-                      return eventMap[cleanDay] ?? [];
-                    },
-                    calendarStyle: const CalendarStyle(
-                      todayDecoration: BoxDecoration(
-                        color: Colors.orange,
-                        shape: BoxShape.circle,
-                      ),
-                      selectedDecoration: BoxDecoration(
-                        color: Colors.blue,
-                        shape: BoxShape.circle,
-                      ),
-                      markerDecoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    onDaySelected: (selectedDay, newFocusedDay) {
-                      Navigator.pop(context, selectedDay);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    if (selected != null) {
-      setState(() {
-        selectedDate = selected;
-        focusedDay = selected;
-      });
-
-      // Restored the Cultural Event Dialog Logic
-      DateTime clean = DateTime(selected.year, selected.month, selected.day);
-      var events = eventMap.entries
-          .firstWhere(
-            (entry) => isSameDay(entry.key, clean),
-            orElse: () => MapEntry(DateTime(0), []),
-          )
-          .value;
-
-      if (events.isNotEmpty) {
-        await showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Major Cultural Events"),
-            content: SingleChildScrollView(
-              child: Text(
-                events
-                    .map((e) {
-                      final title = e['title'] ?? "Event";
-                      final desc =
-                          (e['description'] != null &&
-                              e['description'].toString().trim().isNotEmpty)
-                          ? e['description']
-                          : "No description available";
-
-                      return "$title\n$desc";
-                    })
-                    .join("\n\n"),
-              ),
-            ),
-          ),
-        );
-      }
-    }
   }
 
   @override
